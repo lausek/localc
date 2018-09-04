@@ -9,7 +9,7 @@ mod feature {
     pub type Num = f64;
     pub type Res = Result<Num, &'static str>;
 
-#[derive(Clone, Debug)]
+    #[derive(Clone, Debug)]
     pub enum Operation {
         Add(Box<Node>, Box<Node>),
         Sub(Box<Node>, Box<Node>),
@@ -19,7 +19,7 @@ mod feature {
         Sqrt(Box<Node>),
     }
 
-#[derive(Clone, Debug)]
+    #[derive(Clone, Debug)]
     pub enum Node {
         Operation(Operation),
         Value(f64),

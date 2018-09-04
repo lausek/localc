@@ -1,0 +1,8 @@
+[package]
+name = "playrust"
+version = "0.1.0"
+authors = ["lausek <root@lausek.eu>"]
+
+[dependencies]
+nalgebra = "*"
+ncollide2d = "*"

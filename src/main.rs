@@ -30,24 +30,21 @@ mod feature {
         {
 
             match program {
-                Operation(op) => {
-                    match op {
-                        Add(x, y) => Ok(execute(x)? + execute(y)?),
-                        Sub(x, y) => Ok(execute(x)? - execute(y)?),
-                        Mul(x, y) => Ok(execute(x)? * execute(y)?),
-                        Pow(x, y) => Ok(execute(x)?.powf(execute(y)?)),
-                        Sqrt(x)   => Ok(execute(x)?.sqrt()),
-                        Div(x, y) => {
-                            let arg1 = execute(x)?;
-                            let arg2 = execute(y)?;
-                            if arg2 == 0 as Num {
-                                Err("Division with 0")
-                            } else {
-                                Ok(arg1 / arg2)
-                            }
-                        },
-                        _ => Err("Not implemented"),
-                    }
+                Operation(op) => match op {
+                    Add(x, y) => Ok(execute(x)? + execute(y)?),
+                    Sub(x, y) => Ok(execute(x)? - execute(y)?),
+                    Mul(x, y) => Ok(execute(x)? * execute(y)?),
+                    Pow(x, y) => Ok(execute(x)?.powf(execute(y)?)),
+                    Sqrt(x)   => Ok(execute(x)?.sqrt()),
+                    Div(x, y) => {
+                        let arg2 = execute(y)?;
+                        if arg2 == 0 as Num {
+                            Err("Division with 0")
+                        } else {
+                            Ok(execute(x)? / arg2)
+                        }
+                    },
+                    _ => Err("Not implemented"),
                 },
                 Value(n) => Ok(*n),
             }

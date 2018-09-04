@@ -6,11 +6,11 @@ mod feature {
     use self::Node::*;
     use self::Operation::*;
 
-    type Num = f64;
-    type Res = Result<Num, &'static str>;
+    pub type Num = f64;
+    pub type Res = Result<Num, &'static str>;
 
 #[derive(Clone, Debug)]
-    enum Operation {
+    pub enum Operation {
         Add(Box<Node>, Box<Node>),
         Sub(Box<Node>, Box<Node>),
         Mul(Box<Node>, Box<Node>),
@@ -20,12 +20,12 @@ mod feature {
     }
 
 #[derive(Clone, Debug)]
-    enum Node {
+    pub enum Node {
         Operation(Operation),
         Value(f64),
     }
 
-    fn execute(program: &Node)
+    pub fn execute(program: &Node)
         -> Res
         {
 
@@ -70,8 +70,7 @@ mod feature {
 
 #[cfg(test)]
 mod tests {
-    use Node::*;
-    use Operation::*;
+    use feature::{*, Node::*, Operation::*};
 
     #[test]
     fn addition() {
@@ -82,4 +81,39 @@ mod tests {
         assert_eq!(execute(&program).unwrap(), 36.0);
     }
 
+    #[test]
+    fn subtraction() {
+        let program = Operation(Sub(
+                Box::new(Value(18.0)),
+                Box::new(Value(18.0))
+                ));
+        assert_eq!(execute(&program).unwrap(), 0.0);
+    }
+
+    #[test]
+    fn multiplication() {
+        let program = Operation(Mul(
+                Box::new(Value(18.0)),
+                Box::new(Value(18.0))
+                ));
+        assert_eq!(execute(&program).unwrap(), 324.0);
+    }
+
+    #[test]
+    fn division() {
+        let program = Operation(Div(
+                Box::new(Value(18.0)),
+                Box::new(Value(18.0))
+                ));
+        assert_eq!(execute(&program).unwrap(), 1.0);
+    }
+
+    #[test]
+    fn division_zero() {
+        let program = Operation(Div(
+                Box::new(Value(18.0)),
+                Box::new(Value(0.0))
+                ));
+        assert!(execute(&program).is_err(), "division with zero should not be possible");
+    }
 }

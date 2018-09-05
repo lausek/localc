@@ -21,59 +21,71 @@ enum Token {
 pub fn parse(script: String)
     -> Result<Node, &'static str>
 {
+    match make_parseable(tokenize(script)) {
+        Ok(mut tokens) => {
+            'outer: loop {
+                let mut hbind = 0;
+                let mut hbind_min = 0;
+                let mut hbind_group: Vec<usize> = Vec::new();
 
-    let mut tokens: Vec<ParseToken> = tokenize(script)
-        .into_iter()
-        .map(|t| match t {
-            Number(arg) => {
-                let num = arg.parse::<f64>().unwrap();
-                Done(Value(num))
-            },
-            _ => Waiting(t),
-        })
-    .collect();
+                {
+                    let iter = tokens.iter();
 
-    'outer: loop {
-        let mut hbind = 0;
-        let mut hbind_min = 0;
-        let mut hbind_group: Vec<usize> = Vec::new();
-
-        {
-            let iter = tokens.iter();
-
-            for (i, token) in iter.enumerate() {
-                if let Waiting(token) = token {
-                    match token {
-                        Operator(binding, _) => {
-                            if &hbind < binding {
-                                hbind_group.clear();
-                                hbind = *binding;
+                    for (i, token) in iter.enumerate() {
+                        if let Waiting(token) = token {
+                            match token {
+                                Operator(binding, _) => {
+                                    if &hbind < binding {
+                                        hbind_group.clear();
+                                        hbind = *binding;
+                                    }
+                                    if &hbind == binding {
+                                        hbind_group.push(i);
+                                    }
+                                    if binding < &hbind_min {
+                                        hbind_min = *binding;
+                                    }
+                                },
+                                _ => {},
                             }
-                            if &hbind == binding {
-                                hbind_group.push(i);
-                            }
-                            if binding < &hbind_min {
-                                hbind_min = *binding;
-                            }
-                        },
-                        _ => {},
+                        }
                     }
                 }
+
+                if hbind == hbind_min {
+                    break 'outer;
+                }
+
+                adjust_binding(&mut tokens, &mut hbind_group);
             }
-        }
 
-        if hbind == hbind_min {
-            break 'outer;
-        }
-
-        adjust_binding(&mut tokens, &mut hbind_group);
+            if let Done(prog) = tokens.into_iter().next().unwrap() {
+                Ok(prog)
+            } else {
+                Err("jag vet inte")
+            }
+        },
+        Err(msg) => Err(msg),
     }
+}
 
-    if let Done(prog) = tokens.into_iter().next().unwrap() {
-        Ok(prog)
-    } else {
-        Err("jag vet inte")
+fn make_parseable(tokens: Vec<Token>)
+    -> Result<Vec<ParseToken>, &'static str>
+{
+    let mut ptokens: Vec<ParseToken> = Vec::new();
+    for token in tokens {
+        match token {
+            Number(arg) => if let Ok(num) = arg.parse::<f64>() {
+                ptokens.push(Done(Value(num)));
+            } else {
+                return Err("could not parse number")
+            },
+            _ => {
+                ptokens.push(Waiting(token));
+            },
+        }
     }
+    Ok(ptokens)
 }
 
 fn tokenize(script: String)
@@ -119,6 +131,8 @@ fn tokenize(script: String)
 
 fn adjust_binding(tokens: &mut Vec<ParseToken>, group: &mut Vec<usize>)
 {
+    // if we change the order of the tokens vec by removing 3 items, we
+    // have to normalize the index access in the next cycle
     let mut normalize = 0;
 
     for i in group.iter() {
@@ -130,7 +144,7 @@ fn adjust_binding(tokens: &mut Vec<ParseToken>, group: &mut Vec<usize>)
         let prev = tokens.remove(n);
         let curr = tokens.remove(n);
         let next = tokens.remove(n);
-        
+
         normalize += 2;
 
         let done = match (prev, curr, next) {
@@ -141,9 +155,7 @@ fn adjust_binding(tokens: &mut Vec<ParseToken>, group: &mut Vec<usize>)
                     '*' => Mul(Box::new(n1), Box::new(n2)), 
                     _   => Div(Box::new(n1), Box::new(n2)), 
                 },
-                _ => {
-                    panic!("neeeej")
-                },
+                _ => panic!("neeeej"),
             }),
             (_, _, _) => panic!("neeeej"),
         }; 

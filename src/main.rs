@@ -12,7 +12,7 @@ pub fn main()
                 Ok(program) => {
                     println!("{:?}", program::execute(&program));
                 },
-                Err(msg) => println!("{}", msg),
+                Err(msg) => println!("{:?}", msg),
             }
         }
     }

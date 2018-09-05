@@ -8,24 +8,18 @@ mod parser {
 
 mod feature {
     use self::Node::*;
-    use self::Operation::*;
 
     pub type Num = f64;
     pub type Res = Result<Num, &'static str>;
 
     #[derive(Clone, Debug)]
-    pub enum Operation {
+    pub enum Node {
         Add(Box<Node>, Box<Node>),
         Sub(Box<Node>, Box<Node>),
         Mul(Box<Node>, Box<Node>),
         Div(Box<Node>, Box<Node>),
         Pow(Box<Node>, Box<Node>),
         Sqrt(Box<Node>),
-    }
-
-    #[derive(Clone, Debug)]
-    pub enum Node {
-        Operation(Operation),
         Value(f64),
     }
 
@@ -34,23 +28,21 @@ mod feature {
         {
 
             match program {
-                Operation(op) => match op {
-                    Add(x, y) => Ok(execute(x)? + execute(y)?),
-                    Sub(x, y) => Ok(execute(x)? - execute(y)?),
-                    Mul(x, y) => Ok(execute(x)? * execute(y)?),
-                    Pow(x, y) => Ok(execute(x)?.powf(execute(y)?)),
-                    Sqrt(x)   => Ok(execute(x)?.sqrt()),
-                    Div(x, y) => {
-                        let arg2 = execute(y)?;
-                        if arg2 == 0 as Num {
-                            Err("Division with 0")
-                        } else {
-                            Ok(execute(x)? / arg2)
-                        }
-                    },
-                    _ => Err("Not implemented"),
+                Add(x, y) => Ok(execute(x)? + execute(y)?),
+                Sub(x, y) => Ok(execute(x)? - execute(y)?),
+                Mul(x, y) => Ok(execute(x)? * execute(y)?),
+                Pow(x, y) => Ok(execute(x)?.powf(execute(y)?)),
+                Sqrt(x)   => Ok(execute(x)?.sqrt()),
+                Div(x, y) => {
+                    let arg2 = execute(y)?;
+                    if arg2 == 0 as Num {
+                        Err("Division with 0")
+                    } else {
+                        Ok(execute(x)? / arg2)
+                    }
                 },
                 Value(n) => Ok(*n),
+                _ => Err("Not implemented"),
             }
         }
     
@@ -91,16 +83,15 @@ mod feature {
 
             let done = match (prev, curr, next) {
                 //(Waiting(p), Waiting(c), Waiting(n)) => parse(p, c, n),
-                (Done(d), Waiting(op), Done(w))
-                    => Done(match (d, op, w) {
-                        (op @ Operation(_), Operator(_, c), v1 @ Value(_)) => Operation(
-                            match c {
-                                '+' => Add(Box::new(op), Box::new(v1)), 
-                                '-' => Sub(Box::new(op), Box::new(v1)), 
-                                '*' => Mul(Box::new(op), Box::new(v1)), 
-                                _   => Div(Box::new(op), Box::new(v1)), 
-                            }
-                        ),
+                (Done(n1), Waiting(op), Done(n2))
+                    => Done(match op {
+                        Operator(_, c) => match c {
+                            '+' => Add(Box::new(n1), Box::new(n2)), 
+                            '-' => Sub(Box::new(n1), Box::new(n2)), 
+                            '*' => Mul(Box::new(n1), Box::new(n2)), 
+                            _   => Div(Box::new(n1), Box::new(n2)), 
+                        },
+                        /*
                         (v1 @ Value(_), Operator(_, c), op @ Operation(_)) => Operation(
                             match c {
                                 '+' => Add(Box::new(op), Box::new(v1)), 
@@ -125,7 +116,8 @@ mod feature {
                                 _   => Div(Box::new(op1), Box::new(op2)), 
                             }
                         ),
-                        (_, _, _) => {
+                        */
+                        _ => {
                             panic!("neeeej")
                         },
                     }),
@@ -153,14 +145,12 @@ mod feature {
 
                     //println!("{} {}", arg1, arg2);
 
-                    Operation(
-                        match op {
-                            '+' => Add(Box::new(Value(arg1)), Box::new(Value(arg2))), 
-                            '-' => Sub(Box::new(Value(arg1)), Box::new(Value(arg2))), 
-                            '*' => Mul(Box::new(Value(arg1)), Box::new(Value(arg2))), 
-                            _   => Div(Box::new(Value(arg1)), Box::new(Value(arg2))), 
-                        }
-                    )
+                    match op {
+                        '+' => Add(Box::new(Value(arg1)), Box::new(Value(arg2))), 
+                        '-' => Sub(Box::new(Value(arg1)), Box::new(Value(arg2))), 
+                        '*' => Mul(Box::new(Value(arg1)), Box::new(Value(arg2))), 
+                        _   => Div(Box::new(Value(arg1)), Box::new(Value(arg2))), 
+                    }
                 },
                 (_, _, _) => {
                     panic!("all must wait for now");
@@ -286,50 +276,50 @@ mod feature {
 
 #[cfg(test)]
 mod tests {
-    use feature::{*, Node::*, Operation::*};
+    use feature::{*, Node::*};
 
     #[test]
     fn addition() {
-        let program = Operation(Add(
+        let program = Add(
                 Box::new(Value(18.0)),
                 Box::new(Value(18.0))
-                ));
+                );
         assert_eq!(execute(&program).unwrap(), 36.0);
     }
 
     #[test]
     fn subtraction() {
-        let program = Operation(Sub(
+        let program = Sub(
                 Box::new(Value(18.0)),
                 Box::new(Value(18.0))
-                ));
+                );
         assert_eq!(execute(&program).unwrap(), 0.0);
     }
 
     #[test]
     fn multiplication() {
-        let program = Operation(Mul(
+        let program = Mul(
                 Box::new(Value(18.0)),
                 Box::new(Value(18.0))
-                ));
+                );
         assert_eq!(execute(&program).unwrap(), 324.0);
     }
 
     #[test]
     fn division() {
-        let program = Operation(Div(
+        let program = Div(
                 Box::new(Value(18.0)),
                 Box::new(Value(18.0))
-                ));
+                );
         assert_eq!(execute(&program).unwrap(), 1.0);
     }
 
     #[test]
     fn division_zero() {
-        let program = Operation(Div(
+        let program = Div(
                 Box::new(Value(18.0)),
                 Box::new(Value(0.0))
-                ));
+                );
         assert!(execute(&program).is_err(), "division with zero should not be possible");
     }
 }

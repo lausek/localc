@@ -116,6 +116,12 @@ fn tokenize(script: String)
 
                 buffer.clear();
             },
+            " " => {
+                if !buffer.is_empty() {
+                    tokens.push(Number(buffer.clone()));
+                    buffer.clear();
+                }
+            },
             c => {
                 buffer.push_str(c);
             }

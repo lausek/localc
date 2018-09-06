@@ -11,7 +11,7 @@ pub enum Node {
     Div(Box<Node>, Box<Node>),
     Pow(Box<Node>, Box<Node>),
     Sqrt(Box<Node>),
-    Value(f64),
+    Value(Num),
 }
 
 pub fn execute(program: &Node)

@@ -102,4 +102,11 @@ mod tests {
         let program = parse(script).unwrap();
         assert!(execute(&program).unwrap() == 6.0, format!("{:?}", program));
     }
+
+    #[test]
+    fn parse_two_numbers() {
+        let script = String::from("10 10");
+        let program = parse(script);
+        assert!(program.is_err(), "two numbers not allowed without operator");
+    }
 }

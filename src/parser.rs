@@ -21,7 +21,8 @@ enum Token {
 pub fn parse(script: String)
     -> Result<Node, &'static str>
 {
-    match make_parseable(tokenize(script)) {
+    let tokens = validate(tokenize(script))?;
+    match make_parseable(tokens) {
         Ok(mut tokens) => {
             'outer: loop {
                 let mut hbind = 0;
@@ -67,6 +68,30 @@ pub fn parse(script: String)
         },
         Err(msg) => Err(msg),
     }
+}
+
+fn validate(tokens: Vec<Token>)
+    -> Result<Vec<Token>, &'static str>
+{
+    {
+        let mut iter = tokens.iter().peekable();
+        loop {
+            let curr = iter.next();
+            let next = iter.peek();
+            
+            if next.is_none() {
+                break;
+            }
+
+            match (curr.unwrap(), next.unwrap()) {
+                (Number(_), Number(_)) => {
+                    return Err("two numbers with no operator");
+                },
+                (_, _) => continue,
+            }
+        }
+    }
+    Ok(tokens)
 }
 
 fn make_parseable(tokens: Vec<Token>)

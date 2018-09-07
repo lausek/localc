@@ -136,42 +136,34 @@ fn tokenize(script: String)
     let copy = script.clone();
 
     for c in copy.split("") {
-        
-        // FIXME: introduce function for pushing buffer
-
         match c {
-            op @ "+" | op @ "-" | op @ "*" | op @ "/" => {
+            "+" | "-" | "*" | "/" | "(" | ")" | " " => {
                 if !buffer.is_empty() {
                     tokens.push(Number(buffer.clone()));
+                    buffer.clear();
                 }
 
-                let op = op.chars().next().unwrap();
+                let op = c.chars().next().unwrap();
+
+                if op == ' ' {
+                    continue;
+                }
+
                 let power = paren_level * 3;
+
                 if op == '+' || op == '-' {
                     tokens.push(Operator(1 + power, op));
-                } else {
+                }
+                if op == '*' || op == '/' {
                     tokens.push(Operator(2 + power, op));
                 }
-
-                buffer.clear();
-            },
-            op @ "(" | op @ ")" => {
-                if !buffer.is_empty() {
-                    tokens.push(Number(buffer.clone()));
-                    buffer.clear();
-                }
-                tokens.push(Paren(op.chars().next().unwrap()));
-                
-                if op == "(" {
-                    paren_level += 1;
-                } else {
-                    paren_level -= 1;
-                }
-            },
-            " " => {
-                if !buffer.is_empty() {
-                    tokens.push(Number(buffer.clone()));
-                    buffer.clear();
+                if op == '(' || op == ')' {
+                    if op == '(' {
+                        paren_level += 1;
+                    } else {
+                        paren_level -= 1;
+                    }
+                    tokens.push(Paren(op));
                 }
             },
             c => {

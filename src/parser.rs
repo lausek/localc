@@ -7,21 +7,18 @@ enum ParseToken {
     Waiting(Token),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum Token {
     Operator(u8, char),
     Number(String),
-    /*
-       Variable(&'static str),
-       ParanOpen,
-       ParanClose,
-       */
+    Paren(char),
 }
 
 pub fn parse(script: String)
     -> Result<Node, &'static str>
 {
     let tokens = validate(tokenize(script))?;
+    let tokens = reduce(tokens)?;
     match make_parseable(tokens) {
         Ok(mut tokens) => {
             'outer: loop {
@@ -43,7 +40,7 @@ pub fn parse(script: String)
                                     if &hbind == binding {
                                         hbind_group.push(i);
                                     }
-                                    if binding < &hbind_min {
+                                    if binding < &mut hbind_min {
                                         hbind_min = *binding;
                                     }
                                 },
@@ -73,6 +70,7 @@ pub fn parse(script: String)
 fn validate(tokens: Vec<Token>)
     -> Result<Vec<Token>, &'static str>
 {
+    // FIXME: test parentheses nesting
     {
         let mut iter = tokens.iter().peekable();
         loop {
@@ -113,6 +111,46 @@ fn make_parseable(tokens: Vec<Token>)
     Ok(ptokens)
 }
 
+fn reduce(tokens: Vec<Token>)
+    -> Result<Vec<Token>, &'static str>
+{
+    // FIXME: program panics if paren_level should become -1
+    let mut paren_level = 0;
+    
+    let adjusted = tokens
+        .into_iter()
+        .filter_map(move |item| {
+            match item {
+                Paren(op) => {
+                    match op {
+                        '(' => { paren_level += 1; },
+                        ')' => { paren_level -= 1; },
+                        _   => { panic!("not possible"); },
+                    }
+                    None
+                },
+                mut token => {
+                    if let Operator(ref mut binding, _) = token {
+                        // if we are inside parentheses
+                        if paren_level != 0 {
+                            *binding += paren_level * 3;
+                        }
+                    }
+                    Some(token)
+                }
+            }
+        })
+        .collect();
+
+    println!("paren_level: {:?}", paren_level);
+
+    if paren_level != 0 {
+        Err("nesting not correct")
+    } else {
+        Ok(adjusted)
+    }
+}
+
 fn tokenize(script: String)
     -> Vec<Token>
 {
@@ -122,9 +160,8 @@ fn tokenize(script: String)
     let copy = script.clone();
 
     for c in copy.split("") {
-
-        // FIXME: what if two numbers are separated by space like `10 10`
-        //        currently, the space is pushed and parsed
+        
+        // FIXME: introduce function for pushing buffer
 
         match c {
             op @ "+" | op @ "-" | op @ "*" | op @ "/" => {
@@ -140,6 +177,13 @@ fn tokenize(script: String)
                 }
 
                 buffer.clear();
+            },
+            op @ "(" | op @ ")" => {
+                if !buffer.is_empty() {
+                    tokens.push(Number(buffer.clone()));
+                    buffer.clear();
+                }
+                tokens.push(Paren(op.chars().next().unwrap()));
             },
             " " => {
                 if !buffer.is_empty() {

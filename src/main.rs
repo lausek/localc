@@ -109,4 +109,26 @@ mod tests {
         let program = parse(script);
         assert!(program.is_err(), "two numbers not allowed without operator");
     }
+
+    #[test]
+    fn parse_parens_simple() {
+        let script = String::from("10*(2+1)");
+        let program = parse(script).unwrap();
+        assert_eq!(execute(&program).unwrap(), 30.0);
+    }
+
+    #[test]
+    fn parse_parens_complex() {
+        let script = String::from("10*(2*(2+1)-1)-1");
+        let program = parse(script).unwrap();
+        assert_eq!(execute(&program).unwrap(), 49.0);
+    }
+    
+    #[test]
+    fn parse_parens_incorrect() {
+        let script = String::from("10*((2*(2+1)-1)-1");
+        let program = parse(script);
+        println!("{:?}", program);
+        assert!(program.is_err(), "nesting is not valid");
+    }
 }

@@ -17,8 +17,7 @@ enum Token {
 pub fn parse(script: String)
     -> Result<Node, &'static str>
 {
-    let tokens = validate(tokenize(script))?;
-    let tokens = reduce(tokens)?;
+    let tokens = reduce(validate(tokenize(script)?)?)?;
     match make_parseable(tokens) {
         Ok(mut tokens) => {
             'outer: loop {
@@ -114,48 +113,25 @@ fn make_parseable(tokens: Vec<Token>)
 fn reduce(tokens: Vec<Token>)
     -> Result<Vec<Token>, &'static str>
 {
-    // FIXME: program panics if paren_level should become -1
-    let mut paren_level = 0;
-    
-    let adjusted = tokens
+    Ok(
+        tokens
         .into_iter()
-        .filter_map(move |item| {
+        .filter(|item| {
             match item {
-                Paren(op) => {
-                    match op {
-                        '(' => { paren_level += 1; },
-                        ')' => { paren_level -= 1; },
-                        _   => { panic!("not possible"); },
-                    }
-                    None
-                },
-                mut token => {
-                    if let Operator(ref mut binding, _) = token {
-                        // if we are inside parentheses
-                        if paren_level != 0 {
-                            *binding += paren_level * 3;
-                        }
-                    }
-                    Some(token)
-                }
+                Paren(_) => false,
+                _ => true,
             }
         })
-        .collect();
-
-    println!("paren_level: {:?}", paren_level);
-
-    if paren_level != 0 {
-        Err("nesting not correct")
-    } else {
-        Ok(adjusted)
-    }
+        .collect()
+    )
 }
 
 fn tokenize(script: String)
-    -> Vec<Token>
+    -> Result<Vec<Token>, &'static str>
 {
     let mut buffer = String::new();
     let mut tokens: Vec<Token> = Vec::new();
+    let mut paren_level = 0;
 
     let copy = script.clone();
 
@@ -170,10 +146,11 @@ fn tokenize(script: String)
                 }
 
                 let op = op.chars().next().unwrap();
+                let power = paren_level * 3;
                 if op == '+' || op == '-' {
-                    tokens.push(Operator(1, op));
+                    tokens.push(Operator(1 + power, op));
                 } else {
-                    tokens.push(Operator(2, op));
+                    tokens.push(Operator(2 + power, op));
                 }
 
                 buffer.clear();
@@ -184,6 +161,12 @@ fn tokenize(script: String)
                     buffer.clear();
                 }
                 tokens.push(Paren(op.chars().next().unwrap()));
+                
+                if op == "(" {
+                    paren_level += 1;
+                } else {
+                    paren_level -= 1;
+                }
             },
             " " => {
                 if !buffer.is_empty() {
@@ -201,7 +184,11 @@ fn tokenize(script: String)
         tokens.push(Number(buffer.clone()));
     }
 
-    tokens
+    if paren_level != 0 {
+        Err("nesting is not correct")
+    } else {
+        Ok(tokens)
+    }
 }
 
 fn adjust_binding(tokens: &mut Vec<ParseToken>, group: &mut Vec<usize>)

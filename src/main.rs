@@ -131,4 +131,11 @@ mod tests {
         println!("{:?}", program);
         assert!(program.is_err(), "nesting is not valid");
     }
+
+    #[test]
+    fn parse_empty() {
+        let script = String::from("(())");
+        let program = parse(script).unwrap();
+        assert_eq!(execute(&program).unwrap(), 0.0);
+    }
 }

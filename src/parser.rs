@@ -9,7 +9,7 @@ enum ParseToken {
 
 #[derive(Clone, Debug)]
 enum Token {
-    Operator(u8, char),
+    Operator(i8, char),
     Number(String),
     Paren(char),
 }
@@ -56,10 +56,15 @@ pub fn parse(script: String)
                 adjust_binding(&mut tokens, &mut hbind_group);
             }
 
-            if let Done(prog) = tokens.into_iter().next().unwrap() {
-                Ok(prog)
+            if let Some(tok) = tokens.into_iter().next() {
+                if let Done(prog) = tok {
+                    Ok(prog)
+                } else {
+                    Err("program couldn't be parsed")
+                }
             } else {
-                Err("jag vet inte")
+                // program is empty
+                Ok(Value(0.0))
             }
         },
         Err(msg) => Err(msg),

@@ -12,6 +12,7 @@ enum Token {
     Operator(i8, char),
     Number(String),
     Paren(char),
+    Ident(String),
 }
 
 pub fn parse(script: String)
@@ -144,7 +145,13 @@ fn tokenize(script: String)
         match c {
             "+" | "-" | "*" | "/" | "(" | ")" | " " => {
                 if !buffer.is_empty() {
-                    tokens.push(Number(buffer.clone()));
+                    tokens.push(
+                        if buffer.parse::<f64>().is_err() {
+                            Ident(buffer.clone())
+                        } else {
+                            Number(buffer.clone())
+                        }
+                    );
                     buffer.clear();
                 }
 

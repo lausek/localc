@@ -138,4 +138,33 @@ mod tests {
         let program = parse(script).unwrap();
         assert_eq!(execute(&program).unwrap(), 0.0);
     }
+
+    #[test]
+    fn parse_brackets_empty() {
+        let script = String::from("[]");
+        let program = parse(script).unwrap();
+        assert_eq!(execute(&program).unwrap(), 0.0);
+    }
+
+    #[test]
+    fn parse_brackets_simple() {
+        let script = String::from("10*[2+1]");
+        let program = parse(script).unwrap();
+        assert_eq!(execute(&program).unwrap(), 30.0);
+    }
+
+    #[test]
+    fn parse_brackets_complex() {
+        let script = String::from("10*[2*(2+1)-1]-1");
+        let program = parse(script).unwrap();
+        assert_eq!(execute(&program).unwrap(), 49.0);
+    }
+    
+    #[test]
+    fn parse_brackets_incorrect() {
+        let script = String::from("10*[(2*(2+1)-1]]-1");
+        let program = parse(script);
+        println!("{:?}", program);
+        assert!(program.is_err(), "nesting is not valid");
+    }
 }

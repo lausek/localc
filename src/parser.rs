@@ -137,13 +137,14 @@ fn tokenize(script: String)
 {
     let mut buffer = String::new();
     let mut tokens: Vec<Token> = Vec::new();
-    let mut paren_level = 0;
+
+    let mut paren_stack: Vec<char> = Vec::new();
 
     let copy = script.clone();
 
     for c in copy.split("") {
         match c {
-            "+" | "-" | "*" | "/" | "(" | ")" | " " => {
+            "+" | "-" | "*" | "/" | "(" | ")" | " " | "[" | "]" => {
                 if !buffer.is_empty() {
                     tokens.push(
                         if buffer.parse::<f64>().is_err() {
@@ -161,7 +162,7 @@ fn tokenize(script: String)
                     continue;
                 }
 
-                let power = paren_level * 3;
+                let power = paren_stack.len() as i8 * 3;
 
                 if op == '+' || op == '-' {
                     tokens.push(Operator(1 + power, op));
@@ -169,13 +170,23 @@ fn tokenize(script: String)
                 if op == '*' || op == '/' {
                     tokens.push(Operator(2 + power, op));
                 }
-                if op == '(' || op == ')' {
-                    if op == '(' {
-                        paren_level += 1;
-                    } else {
-                        paren_level -= 1;
-                    }
-                    tokens.push(Paren(op));
+
+                match op {
+                    op @ '(' | op @ '[' => {
+                        paren_stack.push(op);
+                        tokens.push(Paren(op));
+                    },
+                    op @ ')' | op @ ']' => {
+                        if let Some(popd) = paren_stack.pop() {
+                            if (popd == '(' && op != ')') || (popd == '[' && op != ']') {
+                                return Err("nesting is not correct");
+                            }
+                        } else {
+                            return Err("nesting is not correct");
+                        }
+                        tokens.push(Paren(op));
+                    },
+                    _ => {},
                 }
             },
             c => {
@@ -188,7 +199,7 @@ fn tokenize(script: String)
         tokens.push(Number(buffer.clone()));
     }
 
-    if paren_level != 0 {
+    if paren_stack.len() != 0 {
         Err("nesting is not correct")
     } else {
         Ok(tokens)

@@ -13,6 +13,7 @@ enum Token {
     Number(String),
     Paren(char),
     Ident(String),
+    Sep(char),
 }
 
 pub fn parse(script: String)
@@ -20,64 +21,68 @@ pub fn parse(script: String)
 {
     let tokens = reduce(validate(tokenize(script)?)?)?;
     match make_parseable(tokens) {
-        Ok(mut tokens) => {
-            'outer: loop {
-                let mut hbind = 0;
-                let mut hbind_min = 0;
-                let mut hbind_group: Vec<usize> = Vec::new();
+        Ok(tokens) => translate(tokens),
+        Err(msg) => Err(msg),
+    }
+}
 
-                {
-                    let iter = tokens.iter();
+fn translate(mut tokens: Vec<ParseToken>)
+    -> Result<Node, &'static str>
+{
+    'outer: loop {
+        let mut hbind = 0;
+        let mut hbind_min = 0;
+        let mut hbind_group: Vec<usize> = Vec::new();
 
-                    for (i, token) in iter.enumerate() {
-                        if let Waiting(token) = token {
-                            match token {
-                                Operator(binding, _) => {
-                                    if &hbind < binding {
-                                        hbind_group.clear();
-                                        hbind = *binding;
-                                    }
-                                    if &hbind == binding {
-                                        hbind_group.push(i);
-                                    }
-                                    if binding < &mut hbind_min {
-                                        hbind_min = *binding;
-                                    }
-                                },
-                                _ => {},
+        {
+            let iter = tokens.iter();
+
+            for (i, token) in iter.enumerate() {
+                if let Waiting(token) = token {
+                    match token {
+                        Operator(binding, _) => {
+                            if &hbind < binding {
+                                hbind_group.clear();
+                                hbind = *binding;
                             }
-                        }
+                            if &hbind == binding {
+                                hbind_group.push(i);
+                            }
+                            if binding < &mut hbind_min {
+                                hbind_min = *binding;
+                            }
+                        },
+                        _ => {},
                     }
                 }
-
-                if hbind == hbind_min {
-                    break 'outer;
-                }
-
-                adjust_binding(&mut tokens, &mut hbind_group);
             }
+        }
 
-            if let Some(tok) = tokens.into_iter().next() {
-                if let Done(prog) = tok {
-                    Ok(prog)
-                } else {
-                    Err("program couldn't be parsed")
-                }
-            } else {
-                // program is empty
-                Ok(Value(0.0))
-            }
-        },
-        Err(msg) => Err(msg),
+        if hbind == hbind_min {
+            break 'outer;
+        }
+
+        adjust_binding(&mut tokens, &mut hbind_group);
+    }
+
+    if let Some(tok) = tokens.into_iter().next() {
+        if let Done(prog) = tok {
+            Ok(prog)
+        } else {
+            Err("program couldn't be parsed")
+        }
+    } else {
+        // program is empty
+        Ok(Value(0.0))
     }
 }
 
 fn validate(tokens: Vec<Token>)
     -> Result<Vec<Token>, &'static str>
 {
-    // FIXME: test parentheses nesting
     {
         let mut iter = tokens.iter().peekable();
+        // FIXME: try rewriting with while let 
         loop {
             let curr = iter.next();
             let next = iter.peek();
@@ -119,17 +124,36 @@ fn make_parseable(tokens: Vec<Token>)
 fn reduce(tokens: Vec<Token>)
     -> Result<Vec<Token>, &'static str>
 {
-    Ok(
-        tokens
-        .into_iter()
-        .filter(|item| {
-            match item {
-                Paren(_) => false,
-                _ => true,
-            }
-        })
-        .collect()
-    )
+    println!("{:?}", tokens);
+    let mut next_tokens: Vec<Token> = Vec::new();
+    let mut it = tokens.into_iter();
+
+    while let Some(item) = it.next() {
+        match item {
+            Ident(name) => match name.as_str() {
+                "sqrt" => {
+                    /*
+                    if let Some(Paren('(')) = it.next() {
+                        let mut parens: Vec<Token> = vec![Paren('(')]; 
+                        let term = it.take_while(move |t| {
+                            false
+                        });
+                    } else {
+                        panic!("sqrt is a function and must be continued by ()");
+                    }
+                    //it.take_while()
+                    */
+                },
+                _ => {},
+            },
+            Paren(_) => {},
+            _ => {
+                next_tokens.push(item);
+            },
+        }
+    }
+
+    Ok(next_tokens)
 }
 
 fn tokenize(script: String)
@@ -144,7 +168,7 @@ fn tokenize(script: String)
 
     for c in copy.split("") {
         match c {
-            "+" | "-" | "*" | "/" | "(" | ")" | " " | "[" | "]" => {
+            "+" | "-" | "*" | "/" | "(" | ")" | " " | "[" | "]" | "," | ";" => {
                 if !buffer.is_empty() {
                     tokens.push(
                         if buffer.parse::<f64>().is_err() {
@@ -164,13 +188,6 @@ fn tokenize(script: String)
 
                 let power = paren_stack.len() as i8 * 3;
 
-                if op == '+' || op == '-' {
-                    tokens.push(Operator(1 + power, op));
-                }
-                if op == '*' || op == '/' {
-                    tokens.push(Operator(2 + power, op));
-                }
-
                 match op {
                     op @ '(' | op @ '[' => {
                         paren_stack.push(op);
@@ -185,6 +202,15 @@ fn tokenize(script: String)
                             return Err("nesting is not correct");
                         }
                         tokens.push(Paren(op));
+                    },
+                    op @ '+' | op @ '-' => {
+                        tokens.push(Operator(1 + power, op));
+                    },
+                    op @ '*' | op @ '/' => {
+                        tokens.push(Operator(2 + power, op));
+                    },
+                    op @ ',' | op @ ';' => {
+                        tokens.push(Sep(op));
                     },
                     _ => {},
                 }

@@ -167,4 +167,11 @@ mod tests {
         println!("{:?}", program);
         assert!(program.is_err(), "nesting is not valid");
     }
+
+    #[test]
+    fn parse_function() {
+        let script = String::from("sqrt(16)");
+        let program = parse(script).unwrap();
+        assert_eq!(execute(&program).unwrap(), 4.0);
+    }
 }

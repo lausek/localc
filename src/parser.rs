@@ -1,4 +1,4 @@
-use program::{Node, Node::*};
+use program::{Num, Node, Node::*};
 use self::{Token::*, ParseToken::*};
 
 #[derive(Debug)]
@@ -16,8 +16,10 @@ enum Token {
     Sep(char),
 }
 
+type ParserResult<T> = Result<T, &'static str>;
+
 pub fn parse(script: String)
-    -> Result<Node, &'static str>
+    -> ParserResult<Node> 
 {
     let tokens = reduce(validate(tokenize(script)?)?)?;
     match make_parseable(tokens) {
@@ -27,7 +29,7 @@ pub fn parse(script: String)
 }
 
 fn translate(mut tokens: Vec<ParseToken>)
-    -> Result<Node, &'static str>
+    -> ParserResult<Node> 
 {
     'outer: loop {
         let mut hbind = 0;
@@ -78,7 +80,7 @@ fn translate(mut tokens: Vec<ParseToken>)
 }
 
 fn validate(tokens: Vec<Token>)
-    -> Result<Vec<Token>, &'static str>
+    -> ParserResult<Vec<Token>>
 {
     {
         let mut iter = tokens.iter().peekable();
@@ -103,12 +105,12 @@ fn validate(tokens: Vec<Token>)
 }
 
 fn make_parseable(tokens: Vec<Token>)
-    -> Result<Vec<ParseToken>, &'static str>
+    -> ParserResult<Vec<ParseToken>>
 {
     let mut ptokens: Vec<ParseToken> = Vec::new();
     for token in tokens {
         match token {
-            Number(arg) => if let Ok(num) = arg.parse::<f64>() {
+            Number(arg) => if let Ok(num) = arg.parse::<Num>() {
                 ptokens.push(Done(Value(num)));
             } else {
                 return Err("could not parse number")
@@ -122,7 +124,7 @@ fn make_parseable(tokens: Vec<Token>)
 }
 
 fn reduce(tokens: Vec<Token>)
-    -> Result<Vec<Token>, &'static str>
+    -> ParserResult<Vec<Token>>
 {
     println!("{:?}", tokens);
     let mut next_tokens: Vec<Token> = Vec::new();
@@ -157,7 +159,7 @@ fn reduce(tokens: Vec<Token>)
 }
 
 fn tokenize(script: String)
-    -> Result<Vec<Token>, &'static str>
+    -> ParserResult<Vec<Token>>
 {
     let mut buffer = String::new();
     let mut tokens: Vec<Token> = Vec::new();

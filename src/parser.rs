@@ -16,6 +16,7 @@ enum Token {
     Sep(char),
 }
 
+type Tokens = Vec<Token>;
 type ParserResult<T> = Result<T, &'static str>;
 
 pub fn parse(script: String)
@@ -79,8 +80,8 @@ fn translate(mut tokens: Vec<ParseToken>)
     }
 }
 
-fn validate(tokens: Vec<Token>)
-    -> ParserResult<Vec<Token>>
+fn validate(tokens: Tokens)
+    -> ParserResult<Tokens>
 {
     {
         let mut iter = tokens.iter().peekable();
@@ -104,7 +105,7 @@ fn validate(tokens: Vec<Token>)
     Ok(tokens)
 }
 
-fn make_parseable(tokens: Vec<Token>)
+fn make_parseable(tokens: Tokens)
     -> ParserResult<Vec<ParseToken>>
 {
     let mut ptokens: Vec<ParseToken> = Vec::new();
@@ -123,11 +124,11 @@ fn make_parseable(tokens: Vec<Token>)
     Ok(ptokens)
 }
 
-fn reduce(tokens: Vec<Token>)
-    -> ParserResult<Vec<Token>>
+fn reduce(tokens: Tokens)
+    -> ParserResult<Tokens>
 {
     println!("{:?}", tokens);
-    let mut next_tokens: Vec<Token> = Vec::new();
+    let mut next_tokens: Tokens = Vec::new();
     let mut it = tokens.into_iter();
 
     while let Some(item) = it.next() {
@@ -136,7 +137,7 @@ fn reduce(tokens: Vec<Token>)
                 "sqrt" => {
                     /*
                     if let Some(Paren('(')) = it.next() {
-                        let mut parens: Vec<Token> = vec![Paren('(')]; 
+                        let mut parens: Tokens = vec![Paren('(')]; 
                         let term = it.take_while(move |t| {
                             false
                         });
@@ -159,18 +160,18 @@ fn reduce(tokens: Vec<Token>)
 }
 
 fn tokenize(script: String)
-    -> ParserResult<Vec<Token>>
+    -> ParserResult<Tokens>
 {
     let mut buffer = String::new();
-    let mut tokens: Vec<Token> = Vec::new();
+    let mut tokens: Tokens = Vec::new();
 
     let mut paren_stack: Vec<char> = Vec::new();
 
     let copy = script.clone();
 
-    for c in copy.split("") {
+    for c in copy.chars() {
         match c {
-            "+" | "-" | "*" | "/" | "(" | ")" | " " | "[" | "]" | "," | ";" => {
+            '+' | '-' | '*' | '/' | '(' | ')' | ' ' | '[' | ']' | ',' | ';' => {
                 if !buffer.is_empty() {
                     tokens.push(
                         if buffer.parse::<f64>().is_err() {
@@ -182,7 +183,7 @@ fn tokenize(script: String)
                     buffer.clear();
                 }
 
-                let op = c.chars().next().unwrap();
+                let op = c;
 
                 if op == ' ' {
                     continue;
@@ -218,7 +219,7 @@ fn tokenize(script: String)
                 }
             },
             c => {
-                buffer.push_str(c);
+                buffer.push(c);
             }
         }
     }

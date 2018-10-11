@@ -20,13 +20,16 @@ pub fn main()
     let mut executed = 0;
 
     while let Some(arg) = arg_iter.next() {
-        if arg == "-e" {
-            let expression = arg_iter.next();
-            if expression.is_none() {
-                break;
-            }
-            exec(expression.unwrap());
-            executed += 1;
+        match arg.as_str() {
+            "-e" => {
+                let expression = arg_iter.next();
+                if expression.is_none() {
+                    break;
+                }
+                exec(expression.unwrap());
+                executed += 1;
+            },
+            _ => {},
         }
     }
 
@@ -187,6 +190,13 @@ mod tests {
         let program = parse(script);
         println!("{:?}", program);
         assert!(program.is_err(), "nesting is not valid");
+    }
+
+    #[test]
+    fn parse_power() {
+        let script = String::from("10^3");
+        let program = parse(script).unwrap();
+        assert_eq!(execute(&program).unwrap(), 1000.0);
     }
 
     /*

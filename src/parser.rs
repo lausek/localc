@@ -27,7 +27,7 @@ pub fn parse(script: String)
     let tokens = tokenize(script)?;
 
     if tokens.len() == 0 {
-        return Err("No expression given");
+        return Err("no expression given");
     }
 
     let valid_tokens = validate(tokens)?;
@@ -66,8 +66,8 @@ fn parse_list(mut tokens: IntoIter<Token>)
     if subcomps.len() == 0 {
         return Err("No expression given");
     }
-
-    // FIXME: implement ^-power operator here too
+    
+    reduce(&mut subcomps, &['^']);
 
     reduce(&mut subcomps, &['*', '/']);
 
@@ -245,7 +245,9 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
                     '+' => Add(Box::new(n1), Box::new(n2)), 
                     '-' => Sub(Box::new(n1), Box::new(n2)), 
                     '*' => Mul(Box::new(n1), Box::new(n2)), 
-                    _   => Div(Box::new(n1), Box::new(n2)), 
+                    '/' => Div(Box::new(n1), Box::new(n2)), 
+                    '^' => Pow(Box::new(n1), Box::new(n2)), 
+                    _   => unreachable!(), 
                 },
                 _ => panic!("neeeej"),
             }),

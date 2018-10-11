@@ -26,12 +26,12 @@ pub fn execute(program: &Node)
         Div(x, y) => {
             let arg2 = execute(y)?;
             if arg2 == 0 as Num {
-                Err("Division with 0")
+                Err("division with 0")
             } else {
                 Ok(execute(x)? / arg2)
             }
         },
         Value(n) => Ok(*n),
-        _ => Err("Not implemented"),
+        _ => unreachable!(),
     }
 }

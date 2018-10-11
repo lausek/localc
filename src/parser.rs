@@ -46,7 +46,7 @@ fn parse_list(mut tokens: IntoIter<Token>)
 
             match t {
                 Paren(paren) => if paren == '(' || paren == '[' {
-                    let subquery = take_till(&mut tokens, paren);
+                    let subquery = take_till_match(&mut tokens, paren);
                     let node = parse_list(subquery.into_iter())?;
                     subcomps.push(Done(node));
                 },
@@ -80,11 +80,10 @@ fn parse_list(mut tokens: IntoIter<Token>)
     }
 }
 
-fn take_till(iter: &mut IntoIter<Token>, tillc: char)
+fn take_till_match(iter: &mut IntoIter<Token>, tillc: char)
     -> Tokens
 {
     // FIXME: should be a stack instead
-    let mut lvl = 1;
     let mut stack: Vec<char> = Vec::new();
     let mut buffer: Vec<Token> = vec![];
 

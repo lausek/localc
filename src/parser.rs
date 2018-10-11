@@ -45,13 +45,8 @@ fn parse_list(mut tokens: IntoIter<Token>)
         if let Some(t) = t {
 
             match t {
-                Paren('[') => {
-                    let subquery = take_till(&mut tokens, ']');
-                    let node = parse_list(subquery.into_iter())?;
-                    subcomps.push(Done(node));
-                },
-                Paren('(') => {
-                    let subquery = take_till(&mut tokens, ')');
+                Paren(paren) => if paren == '(' || paren == '[' {
+                    let subquery = take_till(&mut tokens, paren);
                     let node = parse_list(subquery.into_iter())?;
                     subcomps.push(Done(node));
                 },

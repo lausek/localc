@@ -85,34 +85,27 @@ fn take_till(iter: &mut IntoIter<Token>, tillc: char)
 {
     // FIXME: should be a stack instead
     let mut lvl = 1;
+    let mut stack: Vec<char> = Vec::new();
     let mut buffer: Vec<Token> = vec![];
+
+    stack.push(tillc);
 
     while let Some(t) = iter.next() {
         match t {
-            paren @ Paren(']') => {
-                if lvl != 0 {
-                    lvl -= 1;
-                    if lvl == 0 {
+            Paren(paren) => if paren == '(' || paren == '[' {
+                stack.push(paren);
+                buffer.push(Paren(paren));
+            } else {
+                if !stack.is_empty() {
+                    let last = stack.pop().unwrap();
+                    if stack.is_empty() {
+                        assert!(last == tillc);
                         break;
                     }
-                    buffer.push(paren);
+                    buffer.push(Paren(paren));
                 }
             },
-            paren @ Paren(')') => {
-                if lvl != 0 {
-                    lvl -= 1;
-                    if lvl == 0 {
-                        break;
-                    }
-                    buffer.push(paren);
-                }
-            },
-            t => {
-                if let Paren(_) = t {
-                    lvl += 1;
-                }
-                buffer.push(t);
-            },
+            t => buffer.push(t),
         }
     }
 

@@ -83,7 +83,6 @@ fn parse_list(mut tokens: IntoIter<Token>)
 fn take_till_match(iter: &mut IntoIter<Token>, tillc: char)
     -> Tokens
 {
-    // FIXME: should be a stack instead
     let mut stack: Vec<char> = Vec::new();
     let mut buffer: Vec<Token> = vec![];
 
@@ -116,7 +115,6 @@ fn validate(tokens: Tokens)
 {
     {
         let mut iter = tokens.iter().peekable();
-        // FIXME: try rewriting with while let 
         loop {
             let curr = iter.next();
             let next = iter.peek();
@@ -181,8 +179,8 @@ fn tokenize(script: String)
                         }
                         tokens.push(Paren(op));
                     },
-                    op @ '+' | op @ '-' | //=> tokens.push(Operator(op)),
-                    op @ '*' | op @ '/' | //=> tokens.push(Operator(op)),
+                    op @ '+' | op @ '-' |
+                    op @ '*' | op @ '/' |
                     op @ '^'            => tokens.push(Operator(op)),
                     op @ ',' | op @ ';' => tokens.push(Sep(op)),
                     _ => {},

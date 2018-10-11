@@ -1,18 +1,41 @@
 mod program;
 mod parser;
 
+fn exec(script: String)
+{
+    match parser::parse(script) {
+        Ok(program) => {
+            println!("{:?}", program::execute(&program));
+        },
+        Err(msg) => println!("{:?}", msg),
+    }
+}
+
 pub fn main()
 {
+    use std::env;
     use std::io::{self, BufRead};
-    let stdin = io::stdin();
+  
+    let mut arg_iter = env::args();
+    let mut executed = 0;
 
-    for line in stdin.lock().lines() {
-        if let Ok(script) = line {
-            match parser::parse(script) {
-                Ok(program) => {
-                    println!("{:?}", program::execute(&program));
-                },
-                Err(msg) => println!("{:?}", msg),
+    while let Some(arg) = arg_iter.next() {
+        if arg == "-e" {
+            let expression = arg_iter.next();
+            if expression.is_none() {
+                break;
+            }
+            exec(expression.unwrap());
+            executed += 1;
+        }
+    }
+
+    if executed == 0 {
+        let stdin = io::stdin();
+
+        for line in stdin.lock().lines() {
+            if let Ok(script) = line {
+                exec(script);
             }
         }
     }
@@ -135,15 +158,13 @@ mod tests {
     #[test]
     fn parse_empty() {
         let script = String::from("(())");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 0.0);
+        assert!(parse(script).is_err(), "empty expression is an error");
     }
 
     #[test]
     fn parse_brackets_empty() {
         let script = String::from("[]");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 0.0);
+        assert!(parse(script).is_err(), "empty expression is an error");
     }
 
     #[test]
@@ -168,10 +189,12 @@ mod tests {
         assert!(program.is_err(), "nesting is not valid");
     }
 
+    /*
     #[test]
     fn parse_function() {
         let script = String::from("sqrt(16)");
         let program = parse(script).unwrap();
         assert_eq!(execute(&program).unwrap(), 4.0);
     }
+    */
 }

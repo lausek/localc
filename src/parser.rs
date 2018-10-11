@@ -1,8 +1,10 @@
+use std::vec::IntoIter;
+
+use self::{Token::*, TempToken::*};
 use program::{Num, Node, Node::*};
-use self::{Token::*, ParseToken::*};
 
 #[derive(Debug)]
-enum ParseToken {
+enum TempToken {
     Done(Node),
     Waiting(Token),
 }
@@ -22,62 +24,104 @@ type ParserResult<T> = Result<T, &'static str>;
 pub fn parse(script: String)
     -> ParserResult<Node> 
 {
-    let tokens = reduce(validate(tokenize(script)?)?)?;
-    match make_parseable(tokens) {
-        Ok(tokens) => translate(tokens),
-        Err(msg) => Err(msg),
+    let tokens = tokenize(script)?;
+
+    if tokens.len() == 0 {
+        return Err("No expression given");
+    }
+
+    let valid_tokens = validate(tokens)?;
+    parse_list(valid_tokens.into_iter())
+}
+
+fn parse_list(mut tokens: IntoIter<Token>)
+    -> ParserResult<Node>
+{
+    let mut subcomps: Vec<TempToken> = Vec::new();
+
+    loop {
+        let t = tokens.next();
+        
+        if let Some(t) = t {
+
+            match t {
+                Paren('[') => {
+                    let subquery = take_till(&mut tokens, ']');
+                    let node = parse_list(subquery.into_iter())?;
+                    subcomps.push(Done(node));
+                },
+                Paren('(') => {
+                    let subquery = take_till(&mut tokens, ')');
+                    let node = parse_list(subquery.into_iter())?;
+                    subcomps.push(Done(node));
+                },
+                Number(raw) => if let Ok(num) = raw.parse::<Num>() {
+                    subcomps.push(Done(Value(num)));
+                } else {
+                    return Err("could not parse number")
+                },
+                node => subcomps.push(Waiting(node)),
+            }
+
+        } else {
+            break;
+        }
+    }
+    
+    if subcomps.len() == 0 {
+        return Err("No expression given");
+    }
+
+    // FIXME: implement ^-power operator here too
+
+    reduce(&mut subcomps, &['*', '/']);
+
+    reduce(&mut subcomps, &['+', '-']);
+
+    if let Some(Done(node)) = subcomps.into_iter().next() {
+        Ok(node)
+    } else {
+        panic!("subcomps contains more than one or no child after reduction.")
     }
 }
 
-fn translate(mut tokens: Vec<ParseToken>)
-    -> ParserResult<Node> 
+fn take_till(iter: &mut IntoIter<Token>, tillc: char)
+    -> Tokens
 {
-    'outer: loop {
-        let mut hbind = 0;
-        let mut hbind_min = 0;
-        let mut hbind_group: Vec<usize> = Vec::new();
+    // FIXME: should be a stack instead
+    let mut lvl = 1;
+    let mut buffer: Vec<Token> = vec![];
 
-        {
-            let iter = tokens.iter();
-
-            for (i, token) in iter.enumerate() {
-                if let Waiting(token) = token {
-                    match token {
-                        Operator(binding, _) => {
-                            if &hbind < binding {
-                                hbind_group.clear();
-                                hbind = *binding;
-                            }
-                            if &hbind == binding {
-                                hbind_group.push(i);
-                            }
-                            if binding < &mut hbind_min {
-                                hbind_min = *binding;
-                            }
-                        },
-                        _ => {},
+    while let Some(t) = iter.next() {
+        match t {
+            paren @ Paren(']') => {
+                if lvl != 0 {
+                    lvl -= 1;
+                    if lvl == 0 {
+                        break;
                     }
+                    buffer.push(paren);
                 }
-            }
+            },
+            paren @ Paren(')') => {
+                if lvl != 0 {
+                    lvl -= 1;
+                    if lvl == 0 {
+                        break;
+                    }
+                    buffer.push(paren);
+                }
+            },
+            t => {
+                if let Paren(_) = t {
+                    lvl += 1;
+                }
+                buffer.push(t);
+            },
         }
-
-        if hbind == hbind_min {
-            break 'outer;
-        }
-
-        adjust_binding(&mut tokens, &mut hbind_group);
     }
 
-    if let Some(tok) = tokens.into_iter().next() {
-        if let Done(prog) = tok {
-            Ok(prog)
-        } else {
-            Err("program couldn't be parsed")
-        }
-    } else {
-        // program is empty
-        Ok(Value(0.0))
-    }
+    buffer
 }
 
 fn validate(tokens: Tokens)
@@ -103,60 +147,6 @@ fn validate(tokens: Tokens)
         }
     }
     Ok(tokens)
-}
-
-fn make_parseable(tokens: Tokens)
-    -> ParserResult<Vec<ParseToken>>
-{
-    let mut ptokens: Vec<ParseToken> = Vec::new();
-    for token in tokens {
-        match token {
-            Number(arg) => if let Ok(num) = arg.parse::<Num>() {
-                ptokens.push(Done(Value(num)));
-            } else {
-                return Err("could not parse number")
-            },
-            _ => {
-                ptokens.push(Waiting(token));
-            },
-        }
-    }
-    Ok(ptokens)
-}
-
-fn reduce(tokens: Tokens)
-    -> ParserResult<Tokens>
-{
-    println!("{:?}", tokens);
-    let mut next_tokens: Tokens = Vec::new();
-    let mut it = tokens.into_iter();
-
-    while let Some(item) = it.next() {
-        match item {
-            Ident(name) => match name.as_str() {
-                "sqrt" => {
-                    /*
-                    if let Some(Paren('(')) = it.next() {
-                        let mut parens: Tokens = vec![Paren('(')]; 
-                        let term = it.take_while(move |t| {
-                            false
-                        });
-                    } else {
-                        panic!("sqrt is a function and must be continued by ()");
-                    }
-                    //it.take_while()
-                    */
-                },
-                _ => {},
-            },
-            Paren(_) => {},
-            _ => {
-                next_tokens.push(item);
-            },
-        }
-    }
-
-    Ok(next_tokens)
 }
 
 fn tokenize(script: String)
@@ -235,13 +225,27 @@ fn tokenize(script: String)
     }
 }
 
-fn adjust_binding(tokens: &mut Vec<ParseToken>, group: &mut Vec<usize>)
+fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
 {
     // if we change the order of the tokens vec by removing 3 items, we
     // have to normalize the index access in the next cycle
     let mut normalize = 0;
 
-    for i in group.iter() {
+    let indices: Vec<usize> = tokens.iter()
+                        .enumerate()
+                        .filter(|t| {
+                            if let Waiting(Operator(_, op)) = t.1 {
+                                group.contains(op)
+                            } else {
+                                false
+                            }
+                        })
+                        .map(|t| {
+                            t.0 as usize
+                        })
+                        .collect();
+
+    for i in indices.iter() {
         let n = {
             let res = (i - 1).overflowing_sub(normalize);
             if res.1 {0} else {res.0}
@@ -263,7 +267,7 @@ fn adjust_binding(tokens: &mut Vec<ParseToken>, group: &mut Vec<usize>)
                 },
                 _ => panic!("neeeej"),
             }),
-            (_, _, _) => panic!("neeeej"),
+            (x, y, z) => panic!("What is that? {:?}, {:?}, {:?}", x, y, z),
         }; 
 
         tokens.insert(n, done);

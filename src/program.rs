@@ -1,17 +1,21 @@
 use self::Node::*;
 
-pub type Num = f64;
-pub type Res = Result<Num, &'static str>;
+pub type Num        = f64;
+pub type NodeBox    = Box<Node>;
+pub type Res        = Result<Num, &'static str>;
 
 #[derive(Clone, Debug)]
 pub enum Node {
-    Add(Box<Node>, Box<Node>),
-    Sub(Box<Node>, Box<Node>),
-    Mul(Box<Node>, Box<Node>),
-    Div(Box<Node>, Box<Node>),
-    Pow(Box<Node>, Box<Node>),
-    Sqrt(Box<Node>),
+    Add(NodeBox, NodeBox),
+    Sub(NodeBox, NodeBox),
+    Mul(NodeBox, NodeBox),
+    Div(NodeBox, NodeBox),
+
     Value(Num),
+
+    // FIXME: should be replaced by context functions in near future
+    Pow(NodeBox, NodeBox),
+    Sqrt(NodeBox),
 }
 
 pub fn execute(program: &Node)

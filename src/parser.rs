@@ -18,8 +18,8 @@ enum Token {
     Sep(char),
 }
 
-type Tokens = Vec<Token>;
-type ParserResult<T> = Result<T, &'static str>;
+type Tokens             = Vec<Token>;
+type ParserResult<T>    = Result<T, &'static str>;
 
 pub fn parse(script: String)
     -> ParserResult<Node> 

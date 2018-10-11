@@ -26,7 +26,7 @@ pub fn parse(script: String)
 {
     let tokens = tokenize(script)?;
 
-    if tokens.len() == 0 {
+    if tokens.is_empty() {
         return Err("no expression given");
     }
 

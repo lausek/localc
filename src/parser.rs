@@ -11,7 +11,7 @@ enum TempToken {
 
 #[derive(Clone, Debug)]
 enum Token {
-    Operator(i8, char),
+    Operator(char),
     Number(String),
     Paren(char),
     Ident(String),
@@ -166,8 +166,6 @@ fn tokenize(script: String)
                     continue;
                 }
 
-                let power = paren_stack.len() as i8 * 3;
-
                 match op {
                     op @ '(' | op @ '[' => {
                         paren_stack.push(op);
@@ -183,9 +181,9 @@ fn tokenize(script: String)
                         }
                         tokens.push(Paren(op));
                     },
-                    op @ '+' | op @ '-' => tokens.push(Operator(1 + power, op)),
-                    op @ '*' | op @ '/' => tokens.push(Operator(2 + power, op)),
-                    op @ '^'            => tokens.push(Operator(4 + power, op)),
+                    op @ '+' | op @ '-' | //=> tokens.push(Operator(op)),
+                    op @ '*' | op @ '/' | //=> tokens.push(Operator(op)),
+                    op @ '^'            => tokens.push(Operator(op)),
                     op @ ',' | op @ ';' => tokens.push(Sep(op)),
                     _ => {},
                 }
@@ -216,7 +214,7 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
     let indices: Vec<usize> = tokens.iter()
                         .enumerate()
                         .filter(|t| {
-                            if let Waiting(Operator(_, op)) = t.1 {
+                            if let Waiting(Operator(op)) = t.1 {
                                 group.contains(op)
                             } else {
                                 false
@@ -241,7 +239,7 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
 
         let done = match (prev, curr, next) {
             (Done(n1), Waiting(op), Done(n2)) => Done(match op {
-                Operator(_, c) => match c {
+                Operator(c) => match c {
                     '+' => Add(Box::new(n1), Box::new(n2)), 
                     '-' => Sub(Box::new(n1), Box::new(n2)), 
                     '*' => Mul(Box::new(n1), Box::new(n2)), 

@@ -148,7 +148,7 @@ fn tokenize(script: String)
 
     for c in copy.chars() {
         match c {
-            '+' | '-' | '*' | '/' | '(' | ')' | ' ' | '[' | ']' | ',' | ';' => {
+            '+' | '-' | '*' | '/' | '^' | '(' | ')' | ' ' | '[' | ']' | ',' | ';' => {
                 if !buffer.is_empty() {
                     tokens.push(
                         if buffer.parse::<f64>().is_err() {
@@ -183,15 +183,10 @@ fn tokenize(script: String)
                         }
                         tokens.push(Paren(op));
                     },
-                    op @ '+' | op @ '-' => {
-                        tokens.push(Operator(1 + power, op));
-                    },
-                    op @ '*' | op @ '/' => {
-                        tokens.push(Operator(2 + power, op));
-                    },
-                    op @ ',' | op @ ';' => {
-                        tokens.push(Sep(op));
-                    },
+                    op @ '+' | op @ '-' => tokens.push(Operator(1 + power, op)),
+                    op @ '*' | op @ '/' => tokens.push(Operator(2 + power, op)),
+                    op @ '^'            => tokens.push(Operator(4 + power, op)),
+                    op @ ',' | op @ ';' => tokens.push(Sep(op)),
                     _ => {},
                 }
             },

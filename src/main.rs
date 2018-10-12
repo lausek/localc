@@ -1,4 +1,5 @@
 mod program;
+mod lexer;
 mod parser;
 
 fn exec(script: String)

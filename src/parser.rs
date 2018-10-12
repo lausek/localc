@@ -40,36 +40,28 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
 {
     let mut subcomps: Vec<TempToken> = Vec::new();
 
-    loop {
-        let t = tokens.next();
-        
-        if let Some(t) = t {
-
-            match t {
-                Paren(paren) => if paren == '(' || paren == '[' {
-                    let subquery = take_till_match(&mut tokens, paren);
-                    let node = parse_list(subquery.into_iter().peekable())?;
-                    subcomps.push(Done(node));
-                },
-                Number(raw) => if let Ok(num) = raw.parse::<Num>() {
-                    subcomps.push(Done(Value(num)));
+    while let Some(t) = tokens.next() {
+        match t {
+            Paren(paren) => if paren == '(' || paren == '[' {
+                let subquery = take_till_match(&mut tokens, paren);
+                let node = parse_list(subquery.into_iter().peekable())?;
+                subcomps.push(Done(node));
+            },
+            Number(raw) => if let Ok(num) = raw.parse::<Num>() {
+                subcomps.push(Done(Value(num)));
+            } else {
+                return Err("could not parse number")
+            },
+            Ident(ref name) => {
+                if let Some(Paren('(')) = tokens.peek() {
+                    tokens.next();
+                    let func = parse_function(&mut tokens);
+                    subcomps.push(Done(func));
                 } else {
-                    return Err("could not parse number")
-                },
-                Ident(ref name) => {
-                    if let Some(Paren('(')) = tokens.peek() {
-                        tokens.next();
-                        let func = parse_function(&mut tokens);
-                        subcomps.push(Done(func));
-                    } else {
-                        subcomps.push(Done(Var(name.to_string())));
-                    }
-                },
-                node => subcomps.push(Waiting(node)),
-            }
-
-        } else {
-            break;
+                    subcomps.push(Done(Var(name.to_string())));
+                }
+            },
+            node => subcomps.push(Waiting(node)),
         }
     }
     
@@ -181,6 +173,8 @@ fn tokenize(script: String)
                     buffer.clear();
                 }
 
+                // FIXME: this doesn't look good
+
                 let op = c;
 
                 if op == ' ' {
@@ -231,6 +225,8 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
     // if we change the order of the tokens vec by removing 3 items, we
     // have to normalize the index access in the next cycle
     let mut normalize = 0;
+
+    // FIXME: this needs some refactoring
 
     let indices: Vec<usize> = tokens.iter()
                         .enumerate()

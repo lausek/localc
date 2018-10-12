@@ -1,4 +1,5 @@
 use std::vec::IntoIter;
+use std::iter::Peekable;
 
 use self::{Token::*, TempToken::*};
 use program::{Num, Node, Node::*};
@@ -31,10 +32,10 @@ pub fn parse(script: String)
     }
 
     let valid_tokens = validate(tokens)?;
-    parse_list(valid_tokens.into_iter())
+    parse_list(valid_tokens.into_iter().peekable())
 }
 
-fn parse_list(mut tokens: IntoIter<Token>)
+fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
     -> ParserResult<Node>
 {
     let mut subcomps: Vec<TempToken> = Vec::new();
@@ -47,13 +48,22 @@ fn parse_list(mut tokens: IntoIter<Token>)
             match t {
                 Paren(paren) => if paren == '(' || paren == '[' {
                     let subquery = take_till_match(&mut tokens, paren);
-                    let node = parse_list(subquery.into_iter())?;
+                    let node = parse_list(subquery.into_iter().peekable())?;
                     subcomps.push(Done(node));
                 },
                 Number(raw) => if let Ok(num) = raw.parse::<Num>() {
                     subcomps.push(Done(Value(num)));
                 } else {
                     return Err("could not parse number")
+                },
+                Ident(ref name) => {
+                    if let Some(Paren('(')) = tokens.peek() {
+                        tokens.next();
+                        let func = parse_function(&mut tokens);
+                        subcomps.push(Done(func));
+                    } else {
+                        subcomps.push(Done(Var(name.to_string())));
+                    }
                 },
                 node => subcomps.push(Waiting(node)),
             }
@@ -63,8 +73,8 @@ fn parse_list(mut tokens: IntoIter<Token>)
         }
     }
     
-    if subcomps.len() == 0 {
-        return Err("No expression given");
+    if subcomps.is_empty() {
+        return Err("no expression given");
     }
     
     reduce(&mut subcomps, &['^']);
@@ -80,7 +90,20 @@ fn parse_list(mut tokens: IntoIter<Token>)
     }
 }
 
-fn take_till_match(iter: &mut IntoIter<Token>, tillc: char)
+fn parse_function(iter: &mut Peekable<IntoIter<Token>>)
+    -> Node
+{
+    let subquery = take_till_match(iter, '(');
+
+    // TODO: split subquery correctly at separators (`;`)
+    //       this must pay attention to nested expressions
+
+    let node = parse_list(subquery.into_iter().peekable());
+    // FIXME: this is just a temporary solution
+    Func(Box::new(Value(1.0)))
+}
+
+fn take_till_match(iter: &mut Peekable<IntoIter<Token>>, tillc: char)
     -> Tokens
 {
     let mut stack: Vec<char> = Vec::new();

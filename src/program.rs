@@ -11,7 +11,11 @@ pub enum Node {
     Mul(NodeBox, NodeBox),
     Div(NodeBox, NodeBox),
 
+    // FIXME: rename this to `Val`
     Value(Num),
+
+    Var(String),
+    Func(NodeBox),
 
     // FIXME: should be replaced by context functions in near future
     Pow(NodeBox, NodeBox),
@@ -35,7 +39,11 @@ pub fn execute(program: &Node)
                 Ok(execute(x)? / arg2)
             }
         },
-        Value(n) => Ok(*n),
+        Value(n)  => Ok(*n),
+        Var(_) | Func(_) => {
+            // TODO: implement variable lookup
+            unimplemented!();
+        },
         _ => unreachable!(),
     }
 }

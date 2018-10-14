@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use self::Node::*;
 
 pub type Num        = f64;
 pub type NodeBox    = Box<Node>;
-pub type Res        = Result<Num, &'static str>;
+pub type Context    = HashMap<String, Node>;
 
 #[derive(Clone, Debug)]
 pub enum Node {
@@ -22,8 +24,8 @@ pub enum Node {
     Sqrt(NodeBox),
 }
 
-pub fn execute(program: &Node)
-    -> Res
+pub fn execute_with_ctx(program: &Node, mut ctx: &Context)
+    -> Result<Num, String>
 {
     match program {
         Add(x, y) => Ok(execute(x)? + execute(y)?),
@@ -34,16 +36,33 @@ pub fn execute(program: &Node)
         Div(x, y) => {
             let arg2 = execute(y)?;
             if arg2 == 0 as Num {
-                Err("division with 0")
+                Err("division with 0".to_string())
             } else {
                 Ok(execute(x)? / arg2)
             }
         },
-        Value(n)  => Ok(*n),
-        Var(_) | Func(_) => {
+        Value(n) => Ok(*n),
+        Var(ref name) => {
             // TODO: implement variable lookup
+            if let Some(var) = ctx.get(name) {
+                Ok(execute(var)?)
+            } else {
+                return Err(format!("variable `{}` not declared", name));
+            }
+        },
+        Func(_) => {
             unimplemented!();
         },
         _ => unreachable!(),
     }
+}
+
+pub fn execute(program: &Node)
+    -> Result<Num, String>
+{
+    let mut ctx = HashMap::new();
+
+    ctx.insert(String::from("pi"), Value(3.14159265));
+
+    execute_with_ctx(program, &mut ctx)
 }

@@ -129,7 +129,13 @@ pub fn tokenize(script: String)
     }
 
     if !buffer.is_empty() {
-        tokens.push(Number(buffer.clone()));
+        tokens.push(
+            if buffer.parse::<f64>().is_err() {
+                Ident(buffer.clone())
+            } else {
+                Number(buffer.clone())
+            }
+        );
     }
 
     if paren_stack.len() != 0 {

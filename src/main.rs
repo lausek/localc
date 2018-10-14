@@ -200,6 +200,20 @@ mod tests {
         assert_eq!(execute(&program).unwrap(), 1000.0);
     }
 
+    #[test]
+    fn parse_pi() {
+        let script = String::from("pi");
+        let program = parse(script).unwrap();
+        assert_eq!(execute(&program).unwrap(), 3.14159265);
+    }
+
+    #[test]
+    fn parse_pi_multiply() {
+        let script = String::from("2*pi");
+        let program = parse(script).unwrap();
+        assert_eq!(execute(&program).unwrap(), 6.2831853);
+    }
+
     /*
     #[test]
     fn parse_function() {

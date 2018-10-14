@@ -24,26 +24,42 @@ pub enum Node {
     Sqrt(NodeBox),
 }
 
+fn get_standard_ctx()
+    -> Context
+{
+    let mut ctx = HashMap::new();
+    ctx.insert(String::from("pi"), Value(3.14159265));
+    ctx
+}
+
 pub fn execute_with_ctx(program: &Node, mut ctx: &Context)
     -> Result<Num, String>
 {
     match program {
-        Add(x, y) => Ok(execute(x)? + execute(y)?),
-        Sub(x, y) => Ok(execute(x)? - execute(y)?),
-        Mul(x, y) => Ok(execute(x)? * execute(y)?),
-        Pow(x, y) => Ok(execute(x)?.powf(execute(y)?)),
-        Sqrt(x)   => Ok(execute(x)?.sqrt()),
-        Div(x, y) => {
+        Add(x, y) | Sub(x, y) |
+        Mul(x, y) | Div(x, y) |
+        Pow(x, y) => {
+            let arg1 = execute(x)?;
             let arg2 = execute(y)?;
-            if arg2 == 0 as Num {
-                Err("division with 0".to_string())
-            } else {
-                Ok(execute(x)? / arg2)
+
+            match program {
+                Add(_, _) => Ok(arg1 + arg2),
+                Sub(_, _) => Ok(arg1 - arg2),
+                Mul(_, _) => Ok(arg1 * arg2),
+                Pow(_, _) => Ok(arg1.powf(arg2)),
+                Div(_, _) => {
+                    if arg2 == 0 as Num {
+                        Err("division with 0".to_string())
+                    } else {
+                        Ok(arg1 / arg2)
+                    }
+                },
+                _ => unreachable!(),
             }
         },
+        Sqrt(x)  => Ok(execute(x)?.sqrt()),
         Value(n) => Ok(*n),
         Var(ref name) => {
-            // TODO: implement variable lookup
             if let Some(var) = ctx.get(name) {
                 Ok(execute(var)?)
             } else {
@@ -60,9 +76,6 @@ pub fn execute_with_ctx(program: &Node, mut ctx: &Context)
 pub fn execute(program: &Node)
     -> Result<Num, String>
 {
-    let mut ctx = HashMap::new();
-
-    ctx.insert(String::from("pi"), Value(3.14159265));
-
+    let mut ctx = get_standard_ctx();
     execute_with_ctx(program, &mut ctx)
 }

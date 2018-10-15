@@ -47,7 +47,7 @@ pub fn main()
 
 #[cfg(test)]
 mod tests {
-    use program::{*, Node::*};
+    use program::*;
     use parser::*;
 
     fn parse_str(script: &'static str)
@@ -64,47 +64,28 @@ mod tests {
 
     #[test]
     fn addition() {
-        let program = Add(
-            Box::new(Value(18.0)),
-            Box::new(Value(18.0))
-            );
-        assert_eq!(execute(&program).unwrap(), 36.0);
+        assert_eq!(exec_str("18+18"), 36.0);
     }
 
     #[test]
     fn subtraction() {
-        let program = Sub(
-            Box::new(Value(18.0)),
-            Box::new(Value(18.0))
-            );
-        assert_eq!(execute(&program).unwrap(), 0.0);
+        assert_eq!(exec_str("18-18"), 0.0);
     }
 
     #[test]
     fn multiplication() {
-        let program = Mul(
-            Box::new(Value(18.0)),
-            Box::new(Value(18.0))
-            );
-        assert_eq!(execute(&program).unwrap(), 324.0);
+        assert_eq!(exec_str("18*18"), 324.0);
     }
 
     #[test]
     fn division() {
-        let program = Div(
-            Box::new(Value(18.0)),
-            Box::new(Value(18.0))
-            );
-        assert_eq!(execute(&program).unwrap(), 1.0);
+        assert_eq!(exec_str("18/18"), 1.0);
     }
 
     #[test]
     fn division_zero() {
-        let program = Div(
-            Box::new(Value(18.0)),
-            Box::new(Value(0.0))
-            );
-        assert!(execute(&program).is_err(), "division with zero should not be possible");
+        let program = parse_str("18/0").unwrap();
+        assert!(execute(&program).is_err(), "division with zero is not possible");
     }
 
     #[test]

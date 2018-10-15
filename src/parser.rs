@@ -45,7 +45,8 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
                 if let Some(Paren('(')) = tokens.peek() {
                     tokens.next();
                     let func = parse_function(&mut tokens);
-                    subcomps.push(Done(func));
+                    // FIXME: this is a temporary solution
+                    subcomps.push(Done(FCall(String::from("nop"), vec![])));
                 } else {
                     subcomps.push(Done(Var(name.to_string())));
                 }
@@ -72,16 +73,65 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
 }
 
 fn parse_function(iter: &mut Peekable<IntoIter<Token>>)
-    -> Node
+    -> Vec<Node>
 {
     let subquery = take_till_match(iter, '(');
+    /*
+    split_arguments(subquery)
+        .map(|s| parse_list(s.into_iter().peekable()))
+        .collect()
+        */
 
     // TODO: split subquery correctly at separators (`;`)
     //       this must pay attention to nested expressions
 
-    let node = parse_list(subquery.into_iter().peekable());
+    //let node = parse_list(subquery.into_iter().peekable());
     // FIXME: this is just a temporary solution
-    Func(Box::new(Value(1.0)))
+    
+    vec![]
+}
+
+fn split_arguments(subquery: Vec<Token>)
+    -> Vec<Tokens> 
+{
+    let mut stack: Vec<char> = vec![];
+    let mut args: Vec<Tokens> = vec![];
+    let mut buffer: Tokens = vec![];
+
+    for token in subquery {
+        match token {
+            Paren(c) => {
+                if c == '(' || c == '[' {
+                    stack.push(c);
+                }
+                if c == ')' || c == ']' {
+                    let last = stack.pop();
+                    assert!(last.is_some());
+                }
+            },
+            // FIXME: should both separators stay allowed?
+            Sep(';') | Sep(',') => {
+                // if the stack level is not 0, we need to 
+                // push the buffer
+                if stack.is_empty() {
+                    args.push(buffer.clone());
+                    buffer.clear();
+                    continue;
+                }
+            },
+            _ => {},
+        }
+        buffer.push(token);
+    }
+
+    if !buffer.is_empty() {
+        args.push(buffer);
+    }
+
+    // stack must be empty at the end of this function
+    assert!(stack.is_empty());
+
+    args
 }
 
 fn reduce(tokens: &mut Vec<TempToken>, group: &[char])

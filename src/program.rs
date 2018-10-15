@@ -12,15 +12,18 @@ pub enum Node {
     Sub(NodeBox, NodeBox),
     Mul(NodeBox, NodeBox),
     Div(NodeBox, NodeBox),
+    Pow(NodeBox, NodeBox),
 
     // FIXME: rename this to `Val`
     Value(Num),
-
+    
+    // identifier
     Var(String),
-    Func(NodeBox),
+    // identifier, arguments
+    FCall(String, Vec<NodeBox>),
+    FDef(String, Vec<String>),
 
     // FIXME: should be replaced by context functions in near future
-    Pow(NodeBox, NodeBox),
     Sqrt(NodeBox),
 }
 
@@ -28,7 +31,10 @@ fn get_standard_ctx()
     -> Context
 {
     let mut ctx = HashMap::new();
-    ctx.insert(String::from("pi"), Value(3.14159265));
+
+    ctx.insert(String::from("pi"), Value(std::f64::consts::PI));
+    ctx.insert(String::from("e"), Value(std::f64::consts::E));
+
     ctx
 }
 
@@ -66,7 +72,7 @@ pub fn execute_with_ctx(program: &Node, mut ctx: &Context)
                 return Err(format!("variable `{}` not declared", name));
             }
         },
-        Func(_) => {
+        FCall(ref name, args) => {
             unimplemented!();
         },
         _ => unreachable!(),

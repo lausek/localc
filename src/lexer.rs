@@ -41,7 +41,7 @@ pub fn validate(tokens: Tokens)
 pub fn take_till_match(iter: &mut Peekable<IntoIter<Token>>, tillc: char)
     -> Tokens
 {
-    let mut stack: Vec<char> = Vec::new();
+    let mut stack: Vec<char> = vec![];
     let mut buffer: Vec<Token> = vec![];
 
     stack.push(tillc);

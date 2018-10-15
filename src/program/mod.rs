@@ -33,14 +33,13 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
         },
         Equ(x, y) => {
             // FIXME: find alternative for `box`
-            if let box Var(ref name) = *x {
+            if let box Var(ref name) = x {
                 ctx.set(name.clone(), y.clone());
                 Ok(execute_with_ctx(y, ctx)?)
             } else {
                 Err(format!("cannot assign to `{:?}`", x))
             }
         },
-        Sqrt(x)  => Ok(execute_with_ctx(x, ctx)?.sqrt()),
         Var(ref name) => {
             if ctx.get(name).is_none() {
                 return Err(format!("variable `{}` not declared", name));
@@ -53,6 +52,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
         FCall(ref name, args) => {
             unimplemented!();
         },
+        Sqrt(x)  => Ok(execute_with_ctx(x, ctx)?.sqrt()),
         _ => unreachable!(),
     }
 }

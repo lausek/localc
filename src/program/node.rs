@@ -41,7 +41,7 @@ impl std::fmt::Display for Node
             Equ(x, y) => write!(f, "{} = {}", x, y),
             Var(x)    => write!(f, "{}", x),
             Value(x)  => write!(f, "{}", x),
-            _ => Ok(()), 
+            _ => unimplemented!(), 
         }
     }
 }

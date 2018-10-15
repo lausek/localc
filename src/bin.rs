@@ -14,6 +14,7 @@ pub fn main()
 {
     use std::env;
     use std::io::{self, BufRead};
+    use treecalc::program::context::GenericContext;
   
     let mut arg_iter = env::args();
     let mut executed = 0;
@@ -34,7 +35,7 @@ pub fn main()
 
     if executed == 0 {
         let stdin = io::stdin();
-        let mut ctx = treecalc::program::get_standard_ctx();
+        let mut ctx: GenericContext = Default::default();
 
         for line in stdin.lock().lines() {
             if let Ok(script) = line {

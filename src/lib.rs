@@ -5,7 +5,7 @@ pub mod program;
 
 #[cfg(test)]
 mod tests {
-    use program::*;
+    use program::{*, node::Node};
     use parser::*;
 
     fn parse_str(script: &'static str)

@@ -4,7 +4,7 @@ use std::vec::IntoIter;
 use std::iter::Peekable;
 
 use self::{TempToken::*, lexer::{Tokens, Token, Token::*}};
-use program::{Num, Node, Node::*};
+use program::{Num, node::{Node, Node::*}};
 
 #[derive(Debug)]
 enum TempToken {

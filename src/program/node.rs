@@ -20,8 +20,11 @@ pub enum Node {
     // identifier
     Var(String),
     // identifier, arguments
+    Func(String, Vec<NodeBox>),
+    /*
     FCall(String, Vec<NodeBox>),
     FDef(String, Vec<String>),
+    */
 
     // FIXME: should be replaced by context functions in near future
     Sqrt(NodeBox),

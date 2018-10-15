@@ -46,7 +46,7 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
                 if let Some(Paren('(')) = tokens.peek() {
                     tokens.next();
                     let args = parse_func_args(&mut tokens)?;
-                    subcomps.push(Done(FCall(name.clone(), args)));
+                    subcomps.push(Done(Func(name.clone(), args)));
                 } else {
                     subcomps.push(Done(Var(name.to_string())));
                 }

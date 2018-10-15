@@ -3,11 +3,12 @@ use super::node::{Node::*, NodeBox};
 
 pub type GenericContext = Context<String, NodeBox>;
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Context<K, V>
     where K: Eq + std::hash::Hash
 {
-    pool: HashMap<K, V>,
+    vars: HashMap<K, V>,
+    funcs: HashMap<K, (Vec<V>, V)>,
 }
 
 impl<K, V> Context<K, V> 
@@ -16,12 +17,23 @@ impl<K, V> Context<K, V>
     pub fn get(&self, key: &K)
         -> Option<&V>
     {
-        self.pool.get(key)
+        self.vars.get(key)
+    }
+
+    pub fn getf(&self, key: &K)
+        -> Option<&(Vec<V>, V)>
+    {
+        self.funcs.get(key)
     }
 
     pub fn set(&mut self, key: K, value: V)
     {
-        self.pool.insert(key, value);
+        self.vars.insert(key, value);
+    }
+
+    pub fn setf(&mut self, key: K, value: (Vec<V>, V))
+    {
+        self.funcs.insert(key, value);
     }
 }
 
@@ -30,8 +42,11 @@ impl std::fmt::Display for Context<String, NodeBox>
     fn fmt(&self, f: &mut std::fmt::Formatter)
         -> std::fmt::Result
     {
-        for (k, v) in self.pool.iter() {
+        for (k, v) in self.vars.iter() {
             writeln!(f, "{}: {}", k, v);
+        }
+        for (k, (d, v)) in self.funcs.iter() {
+            writeln!(f, "{}({:?}): {}", k, d, v);
         }
         Ok(())
     }
@@ -47,7 +62,8 @@ impl Default for Context<String, NodeBox>
         standard.insert(String::from("e"), Box::new(Value(std::f64::consts::E)));
 
         Self {
-            pool: standard,
+            vars: standard,
+            funcs: HashMap::new(),
         }
     }
 }

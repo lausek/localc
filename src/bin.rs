@@ -1,13 +1,10 @@
-#![feature(box_patterns)]
-
-mod program;
-mod parser;
+extern crate treecalc;
 
 fn exec(script: String)
 {
-    match parser::parse(script) {
+    match treecalc::parser::parse(script) {
         Ok(program) => {
-            println!("{:?}", program::execute(&program));
+            println!("{:?}", treecalc::program::execute(&program));
         },
         Err(msg) => println!("{:?}", msg),
     }
@@ -37,13 +34,13 @@ pub fn main()
 
     if executed == 0 {
         let stdin = io::stdin();
-        let mut ctx = program::get_standard_ctx();
+        let mut ctx = treecalc::program::get_standard_ctx();
 
         for line in stdin.lock().lines() {
             if let Ok(script) = line {
-                match parser::parse(script) {
+                match treecalc::parser::parse(script) {
                     Ok(program) => {
-                        println!("{:?}", program::execute_with_ctx(&program, &mut ctx));
+                        println!("{:?}", treecalc::program::execute_with_ctx(&program, &mut ctx));
                         println!("\nContext:\n{:?}", ctx);
                     },
                     Err(msg) => println!("{:?}", msg),

@@ -1,3 +1,8 @@
+#![feature(box_patterns)]
+
+pub mod parser;
+pub mod program;
+
 #[cfg(test)]
 mod tests {
     use program::*;

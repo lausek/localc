@@ -65,6 +65,8 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
 
     reduce(&mut subcomps, &['+', '-']);
 
+    reduce(&mut subcomps, &['=']);
+
     if let Some(Done(node)) = subcomps.into_iter().next() {
         Ok(node)
     } else {
@@ -176,6 +178,7 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
                     '*' => Mul(Box::new(n1), Box::new(n2)), 
                     '/' => Div(Box::new(n1), Box::new(n2)), 
                     '^' => Pow(Box::new(n1), Box::new(n2)), 
+                    '=' => Equ(Box::new(n1), Box::new(n2)), 
                     _   => unreachable!(), 
                 },
                 _ => panic!("neeeej"),

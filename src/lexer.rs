@@ -80,7 +80,7 @@ pub fn tokenize(script: String)
 
     for c in copy.chars() {
         match c {
-            '+' | '-' | '*' | '/' | '^' | '(' | ')' | ' ' | '[' | ']' | ',' | ';' => {
+            '+' | '-' | '*' | '/' | '^' | '(' | ')' | ' ' | '[' | ']' | ',' | ';' | '=' => {
                 if !buffer.is_empty() {
                     tokens.push(
                         if buffer.parse::<f64>().is_err() {
@@ -117,9 +117,9 @@ pub fn tokenize(script: String)
                     },
                     op @ '+' | op @ '-' |
                     op @ '*' | op @ '/' |
-                    op @ '^'            => tokens.push(Operator(op)),
+                    op @ '^' | op @ '=' => tokens.push(Operator(op)),
                     op @ ',' | op @ ';' => tokens.push(Sep(op)),
-                    _ => {},
+                    _ => unreachable!(),
                 }
             },
             c => {

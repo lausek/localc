@@ -1,3 +1,5 @@
+#![feature(box_patterns)]
+
 mod program;
 mod lexer;
 mod parser;
@@ -36,10 +38,17 @@ pub fn main()
 
     if executed == 0 {
         let stdin = io::stdin();
+        let mut ctx = program::get_standard_ctx();
 
         for line in stdin.lock().lines() {
             if let Ok(script) = line {
-                exec(script);
+                match parser::parse(script) {
+                    Ok(program) => {
+                        println!("{:?}", program::execute_with_ctx(&program, &mut ctx));
+                        println!("\nContext:\n{:?}", ctx);
+                    },
+                    Err(msg) => println!("{:?}", msg),
+                }
             }
         }
     }
@@ -173,6 +182,22 @@ mod tests {
     fn parse_pi_multiply() {
         // FIXME: should round a little
         assert_eq!(exec_str("2*pi"), 6.283185307179586);
+    }
+
+    #[test]
+    fn parse_assign() {
+        assert_eq!(exec_str("x=10"), 10.0);
+    }
+
+    #[test]
+    fn parse_assign_to_num() {
+        let program = parse_str("2=10").unwrap();
+        assert!(execute(&program).is_err(), "assignment to number is not allowed");
+    }
+
+    #[test]
+    fn parse_assign_expression() {
+        assert_eq!(exec_str("x=[(10*19)+10]*2"), 400.0);
     }
 
     /*

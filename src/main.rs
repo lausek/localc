@@ -50,6 +50,18 @@ mod tests {
     use program::{*, Node::*};
     use parser::*;
 
+    fn parse_str(script: &'static str)
+        -> Result<Node, &'static str> 
+    {
+        parse(script.to_string())
+    }
+
+    fn exec_str(script: &'static str)
+        -> Num
+    {
+        execute(&parse_str(script).unwrap()).unwrap()
+    }
+
     #[test]
     fn addition() {
         let program = Add(
@@ -97,121 +109,89 @@ mod tests {
 
     #[test]
     fn parse_simple() {
-        let script = String::from("1+1");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 2.0);
+        assert_eq!(exec_str("1+1"), 2.0);
     }
 
     #[test]
     fn parse_long() {
-        let script = String::from("1+1-1+1-1+1-1+1-1");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 1.0);
+        assert_eq!(exec_str("1+1-1+1-1+1-1+1-1"), 1.0);
     }
 
     #[test]
     fn parse_simple_higher() {
-        let script = String::from("1*1");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 1.0);
+        assert_eq!(exec_str("1*1"), 1.0);
     }
 
     #[test]
     fn parse_long_higher() {
-        let script = String::from("2*5/2*5/2*5");
-        let program = parse(script).unwrap();
-        assert!(execute(&program).unwrap() == 62.5, format!("{:?}", program));
+        assert!(exec_str("2*5/2*5/2*5") == 62.5);
     }
 
     #[test]
     fn parse_complex() {
-        let script = String::from("2+10/2-2*1+1");
-        let program = parse(script).unwrap();
-        assert!(execute(&program).unwrap() == 6.0, format!("{:?}", program));
+        assert!(exec_str("2+10/2-2*1+1") == 6.0);
     }
 
     #[test]
     fn parse_two_numbers() {
-        let script = String::from("10 10");
-        let program = parse(script);
-        assert!(program.is_err(), "two numbers not allowed without operator");
+        assert!(parse_str("10 10").is_err(), "two numbers not allowed without operator");
     }
 
     #[test]
     fn parse_parens_simple() {
-        let script = String::from("10*(2+1)");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 30.0);
+        assert_eq!(exec_str("10*(2+1)"), 30.0);
     }
 
     #[test]
     fn parse_parens_complex() {
-        let script = String::from("10*(2*(2+1)-1)-1");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 49.0);
+        assert_eq!(exec_str("10*(2*(2+1)-1)-1"), 49.0);
     }
     
     #[test]
     fn parse_parens_incorrect() {
-        let script = String::from("10*((2*(2+1)-1)-1");
-        let program = parse(script);
-        println!("{:?}", program);
-        assert!(program.is_err(), "nesting is not valid");
+        assert!(parse_str("10*((2*(2+1)-1)-1").is_err(), "nesting is not valid");
     }
 
     #[test]
     fn parse_empty() {
-        let script = String::from("(())");
-        assert!(parse(script).is_err(), "empty expression is an error");
+        assert!(parse_str("(())").is_err(), "empty expression is an error");
     }
 
     #[test]
     fn parse_brackets_empty() {
-        let script = String::from("[]");
-        assert!(parse(script).is_err(), "empty expression is an error");
+        assert!(parse_str("[]").is_err(), "empty expression is an error");
     }
 
     #[test]
     fn parse_brackets_simple() {
-        let script = String::from("10*[2+1]");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 30.0);
+        assert_eq!(exec_str("10*[2+1]"), 30.0);
     }
 
     #[test]
     fn parse_brackets_complex() {
-        let script = String::from("10*[2*(2+1)-1]-1");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 49.0);
+        assert_eq!(exec_str("10*[2*(2+1)-1]-1"), 49.0);
     }
     
     #[test]
     fn parse_brackets_incorrect() {
-        let script = String::from("10*[(2*(2+1)-1]]-1");
-        let program = parse(script);
-        println!("{:?}", program);
-        assert!(program.is_err(), "nesting is not valid");
+        assert!(parse_str("10*[(2*(2+1)-1]]-1").is_err(), "nesting is not valid");
     }
 
     #[test]
     fn parse_power() {
-        let script = String::from("10^3");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 1000.0);
+        assert_eq!(exec_str("10^3"), 1000.0);
     }
 
     #[test]
     fn parse_pi() {
-        let script = String::from("pi");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 3.14159265);
+        // FIXME: should round a little
+        assert_eq!(exec_str("pi"), 3.141592653589793);
     }
 
     #[test]
     fn parse_pi_multiply() {
-        let script = String::from("2*pi");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 6.2831853);
+        // FIXME: should round a little
+        assert_eq!(exec_str("2*pi"), 6.283185307179586);
     }
 
     /*

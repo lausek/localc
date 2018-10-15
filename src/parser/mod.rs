@@ -1,9 +1,10 @@
+pub mod lexer;
+
 use std::vec::IntoIter;
 use std::iter::Peekable;
 
-use self::TempToken::*;
+use self::{TempToken::*, lexer::{Tokens, Token, Token::*}};
 use program::{Num, Node, Node::*};
-use lexer::{*, Token::*};
 
 #[derive(Debug)]
 enum TempToken {
@@ -14,13 +15,13 @@ enum TempToken {
 pub fn parse(script: String)
     -> Result<Node, &'static str> 
 {
-    let tokens = tokenize(script)?;
+    let tokens = lexer::tokenize(script)?;
 
     if tokens.is_empty() {
         return Err("no expression given");
     }
 
-    let valid_tokens = validate(tokens)?;
+    let valid_tokens = lexer::validate(tokens)?;
     parse_list(valid_tokens.into_iter().peekable())
 }
 
@@ -32,7 +33,7 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
     while let Some(t) = tokens.next() {
         match t {
             Paren(paren) => if paren == '(' || paren == '[' {
-                let subquery = take_till_match(&mut tokens, paren);
+                let subquery = lexer::take_till_match(&mut tokens, paren);
                 let node = parse_list(subquery.into_iter().peekable())?;
                 subcomps.push(Done(node));
             },
@@ -77,7 +78,7 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
 fn parse_function(iter: &mut Peekable<IntoIter<Token>>)
     -> Vec<Node>
 {
-    let subquery = take_till_match(iter, '(');
+    let subquery = lexer::take_till_match(iter, '(');
     /*
     split_arguments(subquery)
         .map(|s| parse_list(s.into_iter().peekable()))

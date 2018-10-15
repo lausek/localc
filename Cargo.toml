@@ -3,6 +3,14 @@ name = "tree-calc"
 version = "0.1.0"
 authors = ["lausek <root@lausek.eu>"]
 
+[lib]
+name = "libtreecalc"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tree-calc-repl"
+path = "src/bin.rs"
+
 [dependencies]
 nalgebra = "*"
 ncollide2d = "*"

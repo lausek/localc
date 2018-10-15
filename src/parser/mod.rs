@@ -76,14 +76,15 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
 }
 
 fn parse_function(iter: &mut Peekable<IntoIter<Token>>)
-    -> Vec<Node>
+    -> Result<Vec<Node>, String>
 {
     let subquery = lexer::take_till_match(iter, '(');
-    /*
-    split_arguments(subquery)
-        .map(|s| parse_list(s.into_iter().peekable()))
-        .collect()
-        */
+    let arguments = split_arguments(subquery)
+                        .into_iter()
+                        .map(|s| parse_list(s.into_iter().peekable()))
+                        .collect();
+
+    arguments.any()
 
     // TODO: split subquery correctly at separators (`;`)
     //       this must pay attention to nested expressions
@@ -91,7 +92,7 @@ fn parse_function(iter: &mut Peekable<IntoIter<Token>>)
     //let node = parse_list(subquery.into_iter().peekable());
     // FIXME: this is just a temporary solution
     
-    vec![]
+    //vec![]
 }
 
 fn split_arguments(subquery: Vec<Token>)

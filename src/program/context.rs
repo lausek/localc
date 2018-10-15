@@ -13,7 +13,6 @@ pub struct Context<K, V>
 impl<K, V> Context<K, V> 
     where K: Eq + std::hash::Hash
 {
-
     pub fn get(&self, key: &K)
         -> Option<&V>
     {
@@ -24,12 +23,22 @@ impl<K, V> Context<K, V>
     {
         self.pool.insert(key, value);
     }
+}
 
+impl std::fmt::Display for Context<String, NodeBox>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter)
+        -> std::fmt::Result
+    {
+        for (k, v) in self.pool.iter() {
+            writeln!(f, "{}: {}", k, v);
+        }
+        Ok(())
+    }
 }
 
 impl Default for Context<String, NodeBox>
 {
-
     fn default() -> Self
     {
         let mut standard = HashMap::new();
@@ -41,5 +50,4 @@ impl Default for Context<String, NodeBox>
             pool: standard,
         }
     }
-
 }

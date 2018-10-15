@@ -42,7 +42,7 @@ pub fn main()
                 match treecalc::parser::parse(script) {
                     Ok(program) => {
                         println!("{:?}", treecalc::program::execute_with_ctx(&program, &mut ctx));
-                        println!("\nContext:\n{:?}", ctx);
+                        println!("\nContext:\n{}", ctx);
                     },
                     Err(msg) => println!("{:?}", msg),
                 }

@@ -18,6 +18,7 @@ pub fn main()
   
     let mut arg_iter = env::args();
     let mut executed = 0;
+    let mut vcompile = false;
 
     while let Some(arg) = arg_iter.next() {
         match arg.as_str() {
@@ -28,6 +29,10 @@ pub fn main()
                 }
                 exec(expression.unwrap());
                 executed += 1;
+            },
+            // `vad` does this compile to?
+            "-v" => {
+                vcompile = true;
             },
             _ => {},
         }
@@ -41,8 +46,12 @@ pub fn main()
             if let Ok(script) = line {
                 match treecalc::parser::parse(script) {
                     Ok(program) => {
-                        println!("{:?}", treecalc::program::execute_with_ctx(&program, &mut ctx));
-                        println!("\nContext:\n{}", ctx);
+                        if vcompile {
+                            println!("{:?}", program);
+                        } else {
+                            println!("{:?}", treecalc::program::execute_with_ctx(&program, &mut ctx));
+                            println!("\nContext:\n{}", ctx);
+                        }
                     },
                     Err(msg) => println!("{:?}", msg),
                 }

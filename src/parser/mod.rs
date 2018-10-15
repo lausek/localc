@@ -4,7 +4,7 @@ use std::vec::IntoIter;
 use std::iter::Peekable;
 
 use self::{TempToken::*, lexer::{Tokens, Token, Token::*}};
-use program::{Num, node::{Node, Node::*}};
+use program::{Num, node::{Node, Node::*, NodeBox}};
 
 #[derive(Debug)]
 enum TempToken {
@@ -45,9 +45,8 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
             Ident(ref name) => {
                 if let Some(Paren('(')) = tokens.peek() {
                     tokens.next();
-                    let func = parse_function(&mut tokens);
-                    // FIXME: this is a temporary solution
-                    subcomps.push(Done(FCall(String::from("nop"), vec![])));
+                    let args = parse_func_args(&mut tokens)?;
+                    subcomps.push(Done(FCall(name.clone(), args)));
                 } else {
                     subcomps.push(Done(Var(name.to_string())));
                 }
@@ -75,24 +74,28 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
     }
 }
 
-fn parse_function(iter: &mut Peekable<IntoIter<Token>>)
-    -> Result<Vec<Node>, String>
+fn parse_func_args(iter: &mut Peekable<IntoIter<Token>>)
+    -> Result<Vec<NodeBox>, &'static str>
 {
     let subquery = lexer::take_till_match(iter, '(');
     let arguments = split_arguments(subquery)
                         .into_iter()
                         .map(|s| parse_list(s.into_iter().peekable()))
-                        .collect();
+                        .collect::<Vec<Result<Node, &'static str>>>();
 
-    arguments.any()
+    if arguments.iter().any(|arg| arg.is_err()) {
+        // FIXME: this should be translated into a more efficient approach
+        for arg in arguments.iter() {
+            if let Err(msg) = arg {
+                return Err(msg);
+            }
+        }
+    }
 
-    // TODO: split subquery correctly at separators (`;`)
-    //       this must pay attention to nested expressions
-
-    //let node = parse_list(subquery.into_iter().peekable());
-    // FIXME: this is just a temporary solution
-    
-    //vec![]
+    Ok(arguments
+        .into_iter()
+        .map(|arg| Box::new(arg.unwrap()))
+        .collect())
 }
 
 fn split_arguments(subquery: Vec<Token>)

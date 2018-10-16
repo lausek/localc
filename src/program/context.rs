@@ -45,8 +45,18 @@ impl std::fmt::Display for Context<String, NodeBox>
         for (k, v) in self.vars.iter() {
             writeln!(f, "{}: {}", k, v);
         }
-        for (k, (d, v)) in self.funcs.iter() {
-            writeln!(f, "{}({:?}): {}", k, d, v);
+        for (k, (arg, v)) in self.funcs.iter() {
+            let params = arg.iter()
+                            .enumerate()
+                            .fold(String::new(), |mut acc, (i, x)| {
+                                if 0 < i {
+                                    acc.push(',');
+                                }
+                                acc.push_str(&format!("{}", x));
+                                acc
+                            });
+
+            writeln!(f, "{}({}): {}", k, params, v);
         }
         Ok(())
     }

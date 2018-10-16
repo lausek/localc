@@ -66,14 +66,18 @@ impl Default for Context<String, NodeBox>
 {
     fn default() -> Self
     {
-        let mut standard = HashMap::new();
-
-        standard.insert(String::from("pi"), Box::new(Value(std::f64::consts::PI)));
-        standard.insert(String::from("e"), Box::new(Value(std::f64::consts::E)));
-
-        Self {
-            vars: standard,
+        let mut new = Self {
+            vars: HashMap::new(),
             funcs: HashMap::new(),
-        }
+        };
+
+        new.set("pi".to_string(), Box::new(Val(std::f64::consts::PI)));
+        new.set("e".to_string(), Box::new(Val(std::f64::consts::E)));
+
+        let ident = Box::new(Var("x".to_string()));
+        let sqrt = Box::new(Pow(ident.clone(), Box::new(Val(0.5))));
+        new.setf("sqrt".to_string(), (vec![ident], sqrt));
+
+        new
     }
 }

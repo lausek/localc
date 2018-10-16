@@ -9,7 +9,7 @@ use program::{Num, node::{Node, Node::*, NodeBox}};
 #[derive(Debug)]
 enum TempToken {
     Done(Node),
-    Waiting(Token),
+    Wait(Token),
 }
 
 pub fn parse(script: String)
@@ -38,7 +38,7 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
                 subcomps.push(Done(node));
             },
             Number(raw) => if let Ok(num) = raw.parse::<Num>() {
-                subcomps.push(Done(Value(num)));
+                subcomps.push(Done(Val(num)));
             } else {
                 return Err("could not parse number")
             },
@@ -51,7 +51,7 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
                     subcomps.push(Done(Var(name.to_string())));
                 }
             },
-            node => subcomps.push(Waiting(node)),
+            node => subcomps.push(Wait(node)),
         }
     }
     
@@ -152,7 +152,7 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
     let indices: Vec<usize> = tokens.iter()
                         .enumerate()
                         .filter(|t| {
-                            if let Waiting(Operator(op)) = t.1 {
+                            if let Wait(Operator(op)) = t.1 {
                                 group.contains(op)
                             } else {
                                 false
@@ -176,7 +176,7 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
         normalize += 2;
 
         let done = match (prev, curr, next) {
-            (Done(n1), Waiting(op), Done(n2)) => Done(match op {
+            (Done(n1), Wait(op), Done(n2)) => Done(match op {
                 Operator(c) => match c {
                     '+' => Add(Box::new(n1), Box::new(n2)), 
                     '-' => Sub(Box::new(n1), Box::new(n2)), 

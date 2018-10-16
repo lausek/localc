@@ -53,7 +53,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
             let var = ctx.get(name).unwrap().clone();
             Ok(execute_with_ctx(&var, ctx)?)
         },
-        Value(n) => Ok(*n),
+        Val(n) => Ok(*n),
         Func(ref name, args) => {
             if ctx.getf(name).is_none() {
                 return Err(format!("function `{}` not declared", name));
@@ -74,7 +74,6 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
 
             Ok(execute_with_ctx(&algo, &mut temp_ctx)?)
         },
-        Sqrt(x)  => Ok(execute_with_ctx(x, ctx)?.sqrt()),
         _ => unreachable!(),
     }
 }

@@ -15,19 +15,12 @@ pub enum Node {
     Equ(NodeBox, NodeBox),
 
     // FIXME: rename this to `Val`
-    Value(Num),
+    Val(Num),
     
     // identifier
     Var(String),
     // identifier, arguments
     Func(String, Vec<NodeBox>),
-    /*
-    FCall(String, Vec<NodeBox>),
-    FDef(String, Vec<String>),
-    */
-
-    // FIXME: should be replaced by context functions in near future
-    Sqrt(NodeBox),
 }
 
 impl std::fmt::Display for Node 
@@ -43,7 +36,7 @@ impl std::fmt::Display for Node
             Pow(x, y) => write!(f, "{}^{}", x, y),
             Equ(x, y) => write!(f, "{} = {}", x, y),
             Var(x)    => write!(f, "{}", x),
-            Value(x)  => write!(f, "{}", x),
+            Val(x)    => write!(f, "{}", x),
             _ => unimplemented!(), 
         }
     }

@@ -59,11 +59,14 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
                 return Err(format!("function `{}` not declared", name));
             }
             // FIXME: `clone` should be avoided here
-            let (def, algo) = ctx.getf(name).unwrap(); //.clone();
+            let (def, algo) = ctx.getf(name).unwrap();
             let mut temp_ctx = ctx.clone();
     
             // FIXME: supply senseful `expected n got m params` message
-            assert!(def.len() == args.len());
+            if def.len() != args.len() {
+                return Err(format!("invalid function call. expected `{}` got `{}` arguments.", 
+                                   def.len(), args.len()));
+            }
 
             for (i, d) in def.iter().enumerate() {
                 match d {

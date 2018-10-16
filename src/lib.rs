@@ -15,10 +15,16 @@ mod tests {
         parse(script.to_string())
     }
 
+    fn exec_str_pre(script: &'static str)
+        -> Result<Num, String> 
+    {
+        execute(&parse_str(script).unwrap())
+    }
+
     fn exec_str(script: &'static str)
         -> Num
     {
-        execute(&parse_str(script).unwrap()).unwrap()
+        exec_str_pre(script).unwrap()
     }
 
     #[test]
@@ -41,8 +47,7 @@ mod tests {
         assert_eq!(exec_str("10^3"), 1000.0);
 
         // division with zero
-        let program = parse_str("18/0").unwrap();
-        assert!(execute(&program).is_err(), "division with zero is not possible");
+        assert!(exec_str_pre("18/0").is_err(), "division with zero is not possible");
     }
 
     #[test]
@@ -90,8 +95,12 @@ mod tests {
         assert!(parse_str("(())").is_err(), "empty expression is an error");
 
         // assignments
-        let program = parse_str("2=10").unwrap();
-        assert!(execute(&program).is_err(), "assignment to number is not allowed");
+        assert!(exec_str_pre("2=10").is_err(), "assignment to number is not allowed");
+
+        // function calls
+        assert!(exec_str_pre("unknown()").is_err(), "unknown function called");
+        assert!(exec_str_pre("sqrt()").is_err(), "too few arguments");
+        assert!(exec_str_pre("sqrt(16,16)").is_err(), "too many arguments");
     }
 
     /*

@@ -1,6 +1,6 @@
 ## tree-calc
 
-Rust library that transforms mathematical expressions into an intermediate representation and execute it.
+Rust library that transforms mathematical expressions into an intermediate representation and executes it.
 
 ## Progress
 - [X] Addition, Subtraction, Multiplication, Division

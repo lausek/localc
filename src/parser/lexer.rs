@@ -51,7 +51,8 @@ pub fn take_till_match(iter: &mut Peekable<IntoIter<Token>>, tillc: char)
             Paren(paren) => if paren == '(' || paren == '[' {
                 stack.push(paren);
                 buffer.push(Paren(paren));
-            } else {
+            }
+            else {
                 if !stack.is_empty() {
                     let last = stack.pop().unwrap();
                     if stack.is_empty() {
@@ -85,7 +86,8 @@ pub fn tokenize(script: String)
                     tokens.push(
                         if buffer.parse::<f64>().is_err() {
                             Ident(buffer.clone())
-                        } else {
+                        }
+                        else {
                             Number(buffer.clone())
                         }
                     );
@@ -110,7 +112,8 @@ pub fn tokenize(script: String)
                             if (popd == '(' && op != ')') || (popd == '[' && op != ']') {
                                 return Err("nesting is not correct");
                             }
-                        } else {
+                        }
+                        else {
                             return Err("nesting is not correct");
                         }
                         tokens.push(Paren(op));
@@ -132,7 +135,8 @@ pub fn tokenize(script: String)
         tokens.push(
             if buffer.parse::<f64>().is_err() {
                 Ident(buffer.clone())
-            } else {
+            }
+            else {
                 Number(buffer.clone())
             }
         );
@@ -140,7 +144,8 @@ pub fn tokenize(script: String)
 
     if paren_stack.len() != 0 {
         Err("nesting is not correct")
-    } else {
+    }
+    else {
         Ok(tokens)
     }
 }

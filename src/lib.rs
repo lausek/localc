@@ -103,6 +103,21 @@ mod tests {
         assert!(exec_str_pre("sqrt(16,16)").is_err(), "too many arguments");
     }
 
+    #[test]
+    fn parse_default_functions()
+    {
+        // sqrt
+        assert_eq!(exec_str("sqrt(16)"), 4.0);
+        assert_eq!(exec_str("sqrt(64)"), 8.0);
+
+        // log
+        assert_eq!(exec_str("log(2, 8)"), 3.0);
+        assert_eq!(exec_str("log(10, 100)"), 2.0);
+
+        // log2
+        assert_eq!(exec_str("log2(8)"), 3.0);
+        assert_eq!(exec_str("log2(16)"), 4.0);
+    }
     /*
     #[test]
     fn parse_function() {

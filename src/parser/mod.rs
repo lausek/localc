@@ -39,7 +39,8 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
             },
             Number(raw) => if let Ok(num) = raw.parse::<Num>() {
                 subcomps.push(Done(Val(num)));
-            } else {
+            }
+            else {
                 return Err("could not parse number")
             },
             Ident(ref name) => {
@@ -47,7 +48,8 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
                     tokens.next();
                     let args = parse_func_args(&mut tokens)?;
                     subcomps.push(Done(Func(name.clone(), args)));
-                } else {
+                }
+                else {
                     subcomps.push(Done(Var(name.to_string())));
                 }
             },
@@ -69,7 +71,8 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
 
     if let Some(Done(node)) = subcomps.into_iter().next() {
         Ok(node)
-    } else {
+    }
+    else {
         panic!("subcomps contains more than one or no child after reduction.")
     }
 }
@@ -152,11 +155,7 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
     let indices: Vec<usize> = tokens.iter()
                         .enumerate()
                         .filter(|t| {
-                            if let Wait(Operator(op)) = t.1 {
-                                group.contains(op)
-                            } else {
-                                false
-                            }
+                            if let Wait(Operator(op)) = t.1 {group.contains(op)} else {false}
                         })
                         .map(|t| {
                             t.0 as usize

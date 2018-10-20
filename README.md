@@ -7,4 +7,4 @@ Rust library that transforms mathematical expressions into an intermediate repre
 - [X] Binding of operators 
 - [X] Parentheses and Brackets 
 - [X] Variables 
-- [ ] Functions (sqrt, pow, log ...) 
+- [X] Functions (sqrt, pow, log ...) 

@@ -48,7 +48,8 @@ pub fn main()
                     Ok(program) => {
                         if vcompile {
                             println!("{:?}", program);
-                        } else {
+                        }
+                        else {
                             println!("{:?}", treecalc::program::execute_with_ctx(&program, &mut ctx));
                             println!("\nContext:\n{}", ctx);
                         }

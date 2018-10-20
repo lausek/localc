@@ -35,8 +35,20 @@ impl std::fmt::Display for Node
             Div(x, y) => write!(f, "{} / {}", x, y),
             Pow(x, y) => write!(f, "{}^{}", x, y),
             Equ(x, y) => write!(f, "{} = {}", x, y),
-            Var(x)    => write!(f, "{}", x),
             Val(x)    => write!(f, "{}", x),
+            Var(x)    => write!(f, "{}", x),
+            Func(x, y) => {
+                let args = y.iter()
+                    .enumerate()
+                    .fold(String::new(), |mut acc, (i, x)| {
+                        if 0 < i {
+                            acc.push(',');
+                        }
+                        acc.push_str(&format!("{}", x));
+                        acc
+                    });
+                write!(f, "{}({})", x, args)
+            },
             _ => unimplemented!(), 
         }
     }

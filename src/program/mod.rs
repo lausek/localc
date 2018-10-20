@@ -5,9 +5,10 @@ use self::node::{Node, Node::*};
 use self::context::GenericContext;
 
 pub type Num = f64;
+pub type ComputationResult<V> = Result<V, String>;
 
 pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
-    -> Result<Num, String>
+    -> ComputationResult<Num>
 {
     match program {
         Add(x, y) | Sub(x, y) |
@@ -24,7 +25,8 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
                 Div(_, _) => {
                     if arg2 == 0 as Num {
                         Err("division with 0".to_string())
-                    } else {
+                    }
+                    else {
                         Ok(arg1 / arg2)
                     }
                 },
@@ -38,7 +40,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
                 Ok(execute_with_ctx(y, ctx)?)
             }
             else if let box Func(ref name, args) = x {
-                ctx.setf(name.clone(), (args.clone(), y.clone()));
+                ctx.setf(name.clone(), (args.clone(), context::ContextFunction::Virtual(y.clone())));
                 Ok(execute_with_ctx(y, ctx)?)
             }
             else {
@@ -59,7 +61,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
                 return Err(format!("function `{}` not declared", name));
             }
             // FIXME: `clone` should be avoided here
-            let (def, algo) = ctx.getf(name).unwrap();
+            let (def, algo) = ctx.getf(name).unwrap().clone();
             let mut temp_ctx = ctx.clone();
     
             // FIXME: supply senseful `expected n got m params` message
@@ -75,14 +77,17 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
                 }
             }
 
-            Ok(execute_with_ctx(&algo, &mut temp_ctx)?)
+            match algo {
+                context::ContextFunction::Virtual(node) => Ok(execute_with_ctx(&node, &mut temp_ctx)?),
+                context::ContextFunction::Native(func)  => func(ctx, args),
+            }
         },
         _ => unreachable!(),
     }
 }
 
 pub fn execute(program: &Node)
-    -> Result<Num, String>
+    -> ComputationResult<Num>
 {
     let mut ctx = Default::default();
     execute_with_ctx(program, &mut ctx)

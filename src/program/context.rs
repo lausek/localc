@@ -25,8 +25,8 @@ impl<K, V> std::fmt::Debug for ContextFunction<K, V>
     {
         use self::ContextFunction::*;
         match self {
-            Virtual(n) => writeln!(f, "{}", n),
-            _          => writeln!(f, "<native>"),
+            Virtual(n) => write!(f, "{}", n),
+            _          => write!(f, "<native>"),
         }.unwrap();
         Ok(())
     }
@@ -41,8 +41,8 @@ impl<K, V> std::fmt::Display for ContextFunction<K, V>
     {
         use self::ContextFunction::*;
         match self {
-            Virtual(n) => writeln!(f, "{}", n),
-            _          => writeln!(f, "<native>"),
+            Virtual(n) => write!(f, "{}", n),
+            _          => write!(f, "<native>"),
         }.unwrap();
         Ok(())
     }

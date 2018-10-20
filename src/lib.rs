@@ -118,12 +118,11 @@ mod tests {
         assert_eq!(exec_str("log2(8)"), 3.0);
         assert_eq!(exec_str("log2(16)"), 4.0);
     }
-    /*
+
+    #[cfg(feature = "v1-0")]
     #[test]
-    fn parse_function() {
-        let script = String::from("sqrt(16)");
-        let program = parse(script).unwrap();
-        assert_eq!(execute(&program).unwrap(), 4.0);
+    fn test_version1()
+    {
+        assert!(exec_str_pre("x=x+1").is_err(), "self assignment is an invalid operation");
     }
-    */
 }

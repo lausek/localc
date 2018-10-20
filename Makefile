@@ -8,3 +8,6 @@ run: all
 
 test: all
 	cargo test
+
+release:
+	@python3 make.py $(VERSION)

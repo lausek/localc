@@ -3,6 +3,10 @@ name = "tree-calc"
 version = "0.1.0"
 authors = ["lausek <root@lausek.eu>"]
 
+[features]
+v0-1 = []
+v1-0 = ["v0-1"]
+
 [lib]
 name = "treecalc"
 path = "src/lib.rs"

@@ -1,6 +1,6 @@
 extern crate treecalc;
 
-fn exec(script: String)
+fn exec(script: &str)
 {
     match treecalc::parser::parse(script) {
         Ok(program) => {
@@ -27,7 +27,7 @@ pub fn main()
                 if expression.is_none() {
                     break;
                 }
-                exec(expression.unwrap());
+                exec(&expression.unwrap());
                 executed += 1;
             },
             // `vad` does this compile to?
@@ -44,7 +44,7 @@ pub fn main()
 
         for line in stdin.lock().lines() {
             if let Ok(script) = line {
-                match treecalc::parser::parse(script) {
+                match treecalc::parser::parse(script.as_str()) {
                     Ok(program) => {
                         if vcompile {
                             println!("{:?}", program);

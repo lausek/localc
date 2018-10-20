@@ -46,21 +46,21 @@ pub fn take_till_match(iter: &mut Peekable<IntoIter<Token>>, tillc: char)
 
     stack.push(tillc);
 
-    while let Some(t) = iter.next() {
+    //while let Some(t) = iter.next() {
+    for t in iter {
         match t {
             Paren(paren) => if paren == '(' || paren == '[' {
                 stack.push(paren);
                 buffer.push(Paren(paren));
             }
-            else {
-                if !stack.is_empty() {
-                    let last = stack.pop().unwrap();
-                    if stack.is_empty() {
-                        assert!(last == tillc);
-                        break;
-                    }
-                    buffer.push(Paren(paren));
+            else if !stack.is_empty() {
+                let last = stack.pop().unwrap();
+                if stack.is_empty() {
+                    assert!(last == tillc);
+                    break;
                 }
+                buffer.push(Paren(paren));
+
             },
             t => buffer.push(t),
         }
@@ -69,7 +69,7 @@ pub fn take_till_match(iter: &mut Peekable<IntoIter<Token>>, tillc: char)
     buffer
 }
 
-pub fn tokenize(script: String)
+pub fn tokenize(script: &str)
     -> Result<Tokens, &'static str>
 {
     let mut buffer = String::new();
@@ -77,9 +77,7 @@ pub fn tokenize(script: String)
 
     let mut paren_stack: Vec<char> = Vec::new();
 
-    let copy = script.clone();
-
-    for c in copy.chars() {
+    for c in script.chars() {
         match c {
             '+' | '-' | '*' | '/' | '^' | '(' | ')' | ' ' | '[' | ']' | ',' | ';' | '=' => {
                 if !buffer.is_empty() {
@@ -142,7 +140,7 @@ pub fn tokenize(script: String)
         );
     }
 
-    if paren_stack.len() != 0 {
+    if !paren_stack.is_empty() {
         Err("nesting is not correct")
     }
     else {

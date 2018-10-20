@@ -12,7 +12,7 @@ mod tests {
     fn parse_str(script: &'static str)
         -> Result<Node, &'static str> 
     {
-        parse(script.to_string())
+        parse(script)
     }
 
     fn exec_str_pre(script: &'static str)

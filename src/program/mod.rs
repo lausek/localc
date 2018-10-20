@@ -23,7 +23,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
                 Mul(_, _) => Ok(arg1 * arg2),
                 Pow(_, _) => Ok(arg1.powf(arg2)),
                 Div(_, _) => {
-                    if arg2 == 0 as Num {
+                    if arg2 == 0.0 as Num {
                         Err("division with 0".to_string())
                     }
                     else {
@@ -72,7 +72,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
 
             for (i, d) in def.iter().enumerate() {
                 match d {
-                    box Var(name) => temp_ctx.set(name.clone(), args.get(i).unwrap().clone()),
+                    box Var(name) => temp_ctx.set(name.clone(), args[i].clone()),
                     _ => return Err(format!("`{:?}` is not allowed in a function definition", d)),
                 }
             }

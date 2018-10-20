@@ -127,8 +127,8 @@ impl Default for Context<String, NodeBox>
 
         {
             let closure = ContextFunction::Native(|ctx: &mut Self, args: &Vec<NodeBox>| {
-                let base = super::execute_with_ctx(args.get(0).unwrap(), ctx)?;
-                let x    = super::execute_with_ctx(args.get(1).unwrap(), ctx)?;
+                let base = super::execute_with_ctx(&args[0], ctx)?;
+                let x    = super::execute_with_ctx(&args[1], ctx)?;
                 Ok(x.log(base))
             });
             new.setf("log".to_string(), (vec![ident3.clone(), ident1.clone()], closure));

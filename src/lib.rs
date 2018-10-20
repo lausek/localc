@@ -18,6 +18,8 @@ mod tests {
     fn exec_str_pre(script: &'static str)
         -> Result<Num, String> 
     {
+        // FIXME: execute optimized version of code here to
+        //        and compare; panic if unequal
         execute(&parse_str(script).unwrap())
     }
 
@@ -123,6 +125,17 @@ mod tests {
     #[test]
     fn test_version1()
     {
+        // FIXME: extend this test by following scenario
+        //          x = y * 3
+        //          y = x - 1
+        
+        // self assignment
         assert!(exec_str_pre("x=x+1").is_err(), "self assignment is an invalid operation");
+
+        // reducing prefixes
+        assert_eq!(exec_str("--1"), 1.0);
+
+        // multiplication without parens
+        assert_eq!(exec_str("3*-1"), -3.0);
     }
 }

@@ -3,8 +3,8 @@
 Rust library that transforms mathematical expressions into an intermediate representation and executes it.
 
 ## Progress
-- [X] Addition, Subtraction, Multiplication, Division
-- [X] Binding of operators 
-- [X] Parentheses and Brackets 
-- [X] Variables 
-- [X] Functions (sqrt, pow, log ...) 
+- [X] addition, subtraction, multiplication, division
+- [X] binding of operators 
+- [X] parentheses and brackets 
+- [X] variables 
+- [X] functions (sqrt, pow, log ...) 

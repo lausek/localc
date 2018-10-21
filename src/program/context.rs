@@ -12,7 +12,6 @@ pub enum ContextFunction<K, V>
           V: std::fmt::Display
 {
     Virtual(V),
-    // FIXME: should return Result<V>
     Native(Closure<K, V>),
 }
 

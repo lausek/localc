@@ -18,7 +18,7 @@ mod tests {
     fn exec_str_pre(script: &'static str)
         -> Result<Num, String> 
     {
-        // FIXME: execute optimized version of code here to
+        // FIXME: execute optimized version of code here too
         //        and compare; panic if unequal
         execute(&parse_str(script).unwrap())
     }

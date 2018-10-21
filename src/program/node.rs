@@ -14,7 +14,6 @@ pub enum Node {
     // assignment
     Equ(NodeBox, NodeBox),
 
-    // FIXME: rename this to `Val`
     Val(Num),
     
     // identifier

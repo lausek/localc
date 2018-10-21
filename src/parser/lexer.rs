@@ -46,7 +46,6 @@ pub fn take_till_match(iter: &mut Peekable<IntoIter<Token>>, tillc: char)
 
     stack.push(tillc);
 
-    //while let Some(t) = iter.next() {
     for t in iter {
         match t {
             Paren(paren) => if paren == '(' || paren == '[' {

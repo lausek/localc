@@ -19,6 +19,7 @@ pub fn main()
     let mut arg_iter = env::args();
     let mut executed = 0;
     let mut vcompile = false;
+    let mut vparse   = false;
 
     while let Some(arg) = arg_iter.next() {
         match arg.as_str() {
@@ -31,8 +32,12 @@ pub fn main()
                 executed += 1;
             },
             // `vad` does this compile to?
-            "-v" => {
+            "-vc" => {
                 vcompile = true;
+            },
+            // `vad` does this parse as?
+            "-vp" => {
+                vparse = true;
             },
             _ => {},
         }
@@ -44,17 +49,22 @@ pub fn main()
 
         for line in stdin.lock().lines() {
             if let Ok(script) = line {
-                match treecalc::parser::parse(script.as_str()) {
-                    Ok(program) => {
-                        if vcompile {
-                            println!("{:?}", program);
-                        }
-                        else {
-                            println!("{:?}", treecalc::program::execute_with_ctx(&program, &mut ctx));
-                            println!("\nContext:\n{}", ctx);
-                        }
-                    },
-                    Err(msg) => println!("{:?}", msg),
+                if vparse {
+                    println!("{:?}", treecalc::parser::lexer::tokenize(script.as_str()));
+                }
+                else {
+                    match treecalc::parser::parse(script.as_str()) {
+                        Ok(program) => {
+                            if vcompile {
+                                println!("{:?}", program);
+                            }
+                            else {
+                                println!("{:?}", treecalc::program::execute_with_ctx(&program, &mut ctx));
+                                println!("\nContext:\n{}", ctx);
+                            }
+                        },
+                        Err(msg) => println!("{:?}", msg),
+                    }
                 }
             }
         }

@@ -31,6 +31,9 @@ pub fn validate(tokens: Tokens)
                 (Number(_), Number(_)) => {
                     return Err("two numbers with no operator");
                 },
+                (Operator(_), Operator(_)) => {
+                    return Err("two operators without numbers");
+                },
                 (_, _) => continue,
             }
         }

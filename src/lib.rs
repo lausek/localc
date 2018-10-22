@@ -88,6 +88,9 @@ mod tests {
         // two numbers
         assert!(parse_str("10 10").is_err(), "two numbers not allowed without operator");
 
+        // two operators
+        assert!(parse_str("* /").is_err(), "two operators not allowed without numbers");
+
         // paren nesting incorrect
         assert!(parse_str("10*((2*(2+1)-1)-1").is_err(), "nesting is not valid");
         assert!(parse_str("10*[(2*(2+1)-1]]-1").is_err(), "nesting is not valid");

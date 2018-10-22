@@ -86,8 +86,6 @@ fn parse_func_args(iter: &mut Peekable<IntoIter<Token>>)
                         .map(|s| parse_list(s.into_iter().peekable()))
                         .collect::<Vec<Result<Node, String>>>();
 
-    println!("{:?}", arguments);
-
     if arguments.iter().any(|arg| arg.is_err()) {
         return Err(arguments
                    .iter()

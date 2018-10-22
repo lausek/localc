@@ -13,12 +13,12 @@ enum TempToken {
 }
 
 pub fn parse(script: &str)
-    -> Result<Node, &'static str> 
+    -> Result<Node, String> 
 {
     let tokens = lexer::tokenize(script)?;
 
     if tokens.is_empty() {
-        return Err("no expression given");
+        return Err("no expression given".to_string());
     }
 
     let valid_tokens = lexer::validate(tokens)?;
@@ -26,7 +26,7 @@ pub fn parse(script: &str)
 }
 
 fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
-    -> Result<Node, &'static str>
+    -> Result<Node, String>
 {
     let mut subcomps: Vec<TempToken> = Vec::new();
 
@@ -41,7 +41,7 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
                 subcomps.push(Done(Val(num)));
             }
             else {
-                return Err("could not parse number")
+                return Err("could not parse number".to_string())
             },
             Ident(ref name) => {
                 if let Some(Paren('(')) = tokens.peek() {
@@ -58,7 +58,7 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
     }
     
     if subcomps.is_empty() {
-        return Err("no expression given");
+        return Err("no expression given".to_string());
     }
     
     reduce(&mut subcomps, &['^']);
@@ -78,21 +78,29 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
 }
 
 fn parse_func_args(iter: &mut Peekable<IntoIter<Token>>)
-    -> Result<Vec<NodeBox>, &'static str>
+    -> Result<Vec<NodeBox>, String>
 {
     let subquery = lexer::take_till_match(iter, '(');
     let arguments = split_arguments(subquery)
                         .into_iter()
                         .map(|s| parse_list(s.into_iter().peekable()))
-                        .collect::<Vec<Result<Node, &'static str>>>();
+                        .collect::<Vec<Result<Node, String>>>();
+
+    println!("{:?}", arguments);
 
     if arguments.iter().any(|arg| arg.is_err()) {
-        // FIXME: this should be translated into a more efficient approach
-        for arg in arguments.iter() {
-            if let Err(msg) = arg {
-                return Err(msg);
-            }
-        }
+        return Err(arguments
+                   .iter()
+                   .filter(|item| item.is_err())
+                   .enumerate()
+                   .fold(
+                       String::from("error in function arguments:\n"),
+                       |mut acc, (i, res)| {
+                           acc.push_str(format!("Err {}: {}\n", i+1, 
+                                                res.as_ref().err().unwrap()).as_str());
+                           acc
+                       })
+                   .clone());
     }
 
     Ok(arguments

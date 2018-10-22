@@ -10,7 +10,7 @@ mod tests {
     use parser::*;
 
     fn parse_str(script: &'static str)
-        -> Result<Node, &'static str> 
+        -> Result<Node, String> 
     {
         parse(script)
     }

@@ -11,8 +11,8 @@ pub enum Node {
     Div(NodeBox, NodeBox),
     Pow(NodeBox, NodeBox),
 
-    // assignment
-    Equ(NodeBox, NodeBox),
+    // assignment `:=`
+    Mov(NodeBox, NodeBox),
 
     Val(Num),
     
@@ -33,7 +33,7 @@ impl std::fmt::Display for Node
             Mul(x, y) => write!(f, "{} * {}", x, y),
             Div(x, y) => write!(f, "{} / {}", x, y),
             Pow(x, y) => write!(f, "{}^({})", x, y),
-            Equ(x, y) => write!(f, "{} = {}", x, y),
+            Mov(x, y) => write!(f, "{} = {}", x, y),
             Val(x)    => write!(f, "{}", x),
             Var(x)    => write!(f, "{}", x),
             Func(x, y) => {

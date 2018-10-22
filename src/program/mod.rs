@@ -33,7 +33,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
                 _ => unreachable!(),
             }
         },
-        Equ(x, y) => {
+        Mov(x, y) => {
             // FIXME: find alternative for `box`
             if let box Var(ref name) = x {
                 ctx.set(name.clone(), y.clone());

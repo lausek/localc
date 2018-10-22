@@ -188,7 +188,7 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
                     '*' => Mul(Box::new(n1), Box::new(n2)), 
                     '/' => Div(Box::new(n1), Box::new(n2)), 
                     '^' => Pow(Box::new(n1), Box::new(n2)), 
-                    '=' => Equ(Box::new(n1), Box::new(n2)), 
+                    '=' => Mov(Box::new(n1), Box::new(n2)), 
                     _   => unreachable!(), 
                 },
                 _ => panic!("neeeej"),

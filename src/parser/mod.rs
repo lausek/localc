@@ -61,13 +61,13 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>)
         return Err("no expression given".to_string());
     }
     
-    reduce(&mut subcomps, &['^']);
+    reduce(&mut subcomps, &["^"]);
 
-    reduce(&mut subcomps, &['*', '/']);
+    reduce(&mut subcomps, &["*", "/"]);
 
-    reduce(&mut subcomps, &['+', '-']);
+    reduce(&mut subcomps, &["+", "-"]);
 
-    reduce(&mut subcomps, &['=']);
+    reduce(&mut subcomps, &["="]);
 
     if let Some(Done(node)) = subcomps.into_iter().next() {
         Ok(node)
@@ -150,7 +150,7 @@ fn split_arguments(subquery: Vec<Token>)
     args
 }
 
-fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
+fn reduce(tokens: &mut Vec<TempToken>, group: &[&str])
 {
     // if we change the order of the tokens vec by removing 3 items, we
     // have to normalize the index access in the next cycle
@@ -161,7 +161,7 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
     let indices: Vec<usize> = tokens.iter()
                         .enumerate()
                         .filter(|t| {
-                            if let Wait(Operator(op)) = t.1 {group.contains(op)} else {false}
+                            if let Wait(Operator(op)) = t.1 {group.contains(&op.as_str())} else {false}
                         })
                         .map(|t| {
                             t.0 as usize
@@ -182,13 +182,13 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[char])
 
         let done = match (prev, curr, next) {
             (Done(n1), Wait(op), Done(n2)) => Done(match op {
-                Operator(c) => match c {
-                    '+' => Add(Box::new(n1), Box::new(n2)), 
-                    '-' => Sub(Box::new(n1), Box::new(n2)), 
-                    '*' => Mul(Box::new(n1), Box::new(n2)), 
-                    '/' => Div(Box::new(n1), Box::new(n2)), 
-                    '^' => Pow(Box::new(n1), Box::new(n2)), 
-                    '=' => Mov(Box::new(n1), Box::new(n2)), 
+                Operator(c) => match c.as_str() {
+                    "+" => Add(Box::new(n1), Box::new(n2)), 
+                    "-" => Sub(Box::new(n1), Box::new(n2)), 
+                    "*" => Mul(Box::new(n1), Box::new(n2)), 
+                    "/" => Div(Box::new(n1), Box::new(n2)), 
+                    "^" => Pow(Box::new(n1), Box::new(n2)), 
+                    "=" => Mov(Box::new(n1), Box::new(n2)), 
                     _   => unreachable!(), 
                 },
                 _ => panic!("neeeej"),

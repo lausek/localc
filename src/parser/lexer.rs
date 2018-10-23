@@ -7,7 +7,7 @@ pub type Tokens = Vec<Token>;
 
 #[derive(Clone, Debug)]
 pub enum Token {
-    Operator(char),
+    Operator(String),
     Number(String),
     Paren(char),
     Ident(String),
@@ -120,7 +120,11 @@ pub fn tokenize(script: &str)
                     },
                     op @ '+' | op @ '-' |
                     op @ '*' | op @ '/' |
-                    op @ '^' | op @ '=' => tokens.push(Operator(op)),
+                    op @ '^' | op @ '=' => {
+                        let mut raw = String::new();
+                        raw.push(op);
+                        tokens.push(Operator(raw));
+                    },
                     op @ ',' | op @ ';' => tokens.push(Sep(op)),
                     _ => unreachable!(),
                 }

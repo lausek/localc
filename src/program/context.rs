@@ -81,6 +81,18 @@ impl<K, V> Context<K, V>
     {
         self.funcs.insert(key, value);
     }
+
+    pub fn variables(&self)
+        -> std::collections::hash_map::Iter<K, V>
+    {
+        self.vars.iter()
+    }
+
+    pub fn functions(&self)
+        -> std::collections::hash_map::Iter<K, (Vec<V>, ContextFunction<K, V>)>
+    {
+        self.funcs.iter()
+    }
 }
 
 impl std::fmt::Display for Context<String, NodeBox>

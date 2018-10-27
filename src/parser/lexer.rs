@@ -95,14 +95,7 @@ pub fn tokenize(script: &str)
                 }
 
                 // FIXME: this doesn't look good
-
-                let op = c;
-
-                if op == ' ' {
-                    continue;
-                }
-
-                match op {
+                match c {
                     op @ '(' | op @ '[' => {
                         paren_stack.push(op);
                         tokens.push(Paren(op));
@@ -126,12 +119,10 @@ pub fn tokenize(script: &str)
                         tokens.push(Operator(raw));
                     },
                     op @ ',' | op @ ';' => tokens.push(Sep(op)),
-                    _ => unreachable!(),
+                    _ => continue,
                 }
             },
-            c => {
-                buffer.push(c);
-            }
+            _ => buffer.push(c),
         }
     }
 

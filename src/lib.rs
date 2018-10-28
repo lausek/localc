@@ -16,15 +16,15 @@ mod tests {
     }
 
     fn exec_str_pre(script: &'static str)
-        -> Result<Num, String> 
+        -> Result<f64, String> 
     {
         // FIXME: execute optimized version of code here too
         //        and compare; panic if unequal
-        execute(&parse_str(script).unwrap())
+        execute(&parse_str(script).unwrap()).and_then(|n: Num| Ok(n.into()))
     }
 
     fn exec_str(script: &'static str)
-        -> Num
+        -> f64
     {
         exec_str_pre(script).unwrap()
     }

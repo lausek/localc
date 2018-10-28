@@ -1,10 +1,12 @@
+pub mod num;
 pub mod node;
 pub mod context;
+
+pub use self::num::Num;
 
 use self::node::{Node, Node::*};
 use self::context::GenericContext;
 
-pub type Num = f64;
 pub type ComputationResult<V> = Result<V, String>;
 
 pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
@@ -23,7 +25,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
                 Mul(_, _) => Ok(arg1 * arg2),
                 Pow(_, _) => Ok(arg1.powf(arg2)),
                 Div(_, _) => {
-                    if arg2 == 0.0 as Num {
+                    if arg2 == Num::new(0.0) {
                         Err("division with 0".to_string())
                     }
                     else {
@@ -55,7 +57,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
             let var = ctx.get(name).unwrap().clone();
             Ok(execute_with_ctx(&var, ctx)?)
         },
-        Val(n) => Ok(*n),
+        Val(ref n) => Ok(*n),
         Func(ref name, args) => {
             if ctx.getf(name).is_none() {
                 return Err(format!("function `{}` not declared", name));
@@ -64,7 +66,6 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
             let (def, algo) = ctx.getf(name).unwrap().clone();
             let mut temp_ctx = ctx.clone();
     
-            // FIXME: supply senseful `expected n got m params` message
             if def.len() != args.len() {
                 return Err(format!("invalid function call. expected `{}` got `{}` arguments.", 
                                    def.len(), args.len()));

@@ -129,8 +129,8 @@ impl Default for Context<String, NodeBox>
             funcs: HashMap::new(),
         };
 
-        new.set("pi".to_string(), Box::new(Val(std::f64::consts::PI)));
-        new.set("e".to_string(), Box::new(Val(std::f64::consts::E)));
+        new.set("pi".to_string(), Box::new(Val(Num::pi())));
+        new.set("e".to_string(), Box::new(Val(Num::e())));
 
         let ident1 = Box::new(Var("x".to_string()));
         let _ident2 = Box::new(Var("y".to_string()));
@@ -146,13 +146,13 @@ impl Default for Context<String, NodeBox>
         }
 
         {
-            let args = vec![Box::new(Val(2.0)), ident1.clone()];
+            let args = vec![Box::new(Val(2.0.into())), ident1.clone()];
             let log2 = ContextFunction::Virtual(Box::new(Func("log".to_string(), args)));
             new.setf("log2".to_string(), (vec![ident1.clone()], log2));
         }
 
         {
-            let sqrt = ContextFunction::Virtual(Box::new(Pow(ident1.clone(), Box::new(Val(0.5)))));
+            let sqrt = ContextFunction::Virtual(Box::new(Pow(ident1.clone(), Box::new(Val(0.5.into())))));
             new.setf("sqrt".to_string(), (vec![ident1.clone()], sqrt));
         }
 

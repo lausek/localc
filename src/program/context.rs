@@ -124,19 +124,18 @@ impl Default for Context<String, NodeBox>
 {
     fn default() -> Self
     {
+        use program::execute_with_ctx;
+        use parser::parse;
+
         let mut new = Self {
             vars: HashMap::new(),
             funcs: HashMap::new(),
         };
 
-        new.set("pi".to_string(), Box::new(Val(Num::pi())));
-        new.set("e".to_string(), Box::new(Val(Num::e())));
-
-        let ident1 = Box::new(Var("x".to_string()));
-        let _ident2 = Box::new(Var("y".to_string()));
-        let ident3 = Box::new(Var("base".to_string()));
-
+        // native functions
         {
+            let ident1 = Box::new(Var("x".to_string()));
+            let ident3 = Box::new(Var("base".to_string()));
             let closure = ContextFunction::Native(|ctx: &mut Self, args: &Vec<NodeBox>| {
                 let base = super::execute_with_ctx(&args[0], ctx)?;
                 let x    = super::execute_with_ctx(&args[1], ctx)?;
@@ -145,15 +144,17 @@ impl Default for Context<String, NodeBox>
             new.setf("log".to_string(), (vec![ident3.clone(), ident1.clone()], closure));
         }
 
+        // virtual functions
         {
-            let args = vec![Box::new(Val(2.0.into())), ident1.clone()];
-            let log2 = ContextFunction::Virtual(Box::new(Func("log".to_string(), args)));
-            new.setf("log2".to_string(), (vec![ident1.clone()], log2));
-        }
+            let mut extend_ctx = |expr: &str| {
+                execute_with_ctx(&parse(expr).unwrap(), &mut new);
+            };
 
-        {
-            let sqrt = ContextFunction::Virtual(Box::new(Pow(ident1.clone(), Box::new(Val(0.5.into())))));
-            new.setf("sqrt".to_string(), (vec![ident1.clone()], sqrt));
+            extend_ctx(format!("pi={}", std::f64::consts::PI).as_str());
+            extend_ctx(format!("e={}", std::f64::consts::E).as_str());
+
+            extend_ctx("log2(x)=log(2,x)");
+            extend_ctx("sqrt(x)=x^(1/2)");
         }
 
         new

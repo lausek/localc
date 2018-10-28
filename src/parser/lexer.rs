@@ -102,7 +102,6 @@ pub fn tokenize(script: &str)
                 push_buffer(&mut tokens, &mut buffer)?;
             }
 
-            // FIXME: this doesn't look good
             match c {
                 '(' | '[' => {
                     paren_stack.push(c);

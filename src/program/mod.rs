@@ -82,7 +82,6 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext)
                 context::ContextFunction::Native(func)  => func(ctx, args),
             }
         },
-        _ => unreachable!(),
     }
 }
 

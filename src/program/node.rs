@@ -48,7 +48,6 @@ impl std::fmt::Display for Node
                     });
                 write!(f, "{}({})", x, args)
             },
-            _ => unimplemented!(), 
         }
     }
 }

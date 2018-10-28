@@ -5,6 +5,8 @@ use self::Token::*;
 
 pub type Tokens = Vec<Token>;
 
+const SPECIAL_CHARS: &[char] = &['+', '-', '*', '/', '^', '(', ')', ' ', '[', ']', ',', ';', '='];
+
 #[derive(Clone, Debug)]
 pub enum Token {
     Operator(String),
@@ -79,54 +81,9 @@ pub fn tokenize(script: &str)
 
     let mut paren_stack: Vec<char> = Vec::new();
 
-    for c in script.chars() {
-        match c {
-            '+' | '-' | '*' | '/' | '^' | '(' | ')' | ' ' | '[' | ']' | ',' | ';' | '=' => {
-                if !buffer.is_empty() {
-                    tokens.push(
-                        if buffer.parse::<f64>().is_err() {
-                            Ident(buffer.clone())
-                        }
-                        else {
-                            Number(buffer.clone())
-                        }
-                    );
-                    buffer.clear();
-                }
-
-                // FIXME: this doesn't look good
-                match c {
-                    op @ '(' | op @ '[' => {
-                        paren_stack.push(op);
-                        tokens.push(Paren(op));
-                    },
-                    op @ ')' | op @ ']' => {
-                        if let Some(popd) = paren_stack.pop() {
-                            if (popd == '(' && op != ')') || (popd == '[' && op != ']') {
-                                return Err("nesting is not correct");
-                            }
-                        }
-                        else {
-                            return Err("nesting is not correct");
-                        }
-                        tokens.push(Paren(op));
-                    },
-                    op @ '+' | op @ '-' |
-                    op @ '*' | op @ '/' |
-                    op @ '^' | op @ '=' => {
-                        let mut raw = String::new();
-                        raw.push(op);
-                        tokens.push(Operator(raw));
-                    },
-                    op @ ',' | op @ ';' => tokens.push(Sep(op)),
-                    _ => continue,
-                }
-            },
-            _ => buffer.push(c),
-        }
-    }
-
-    if !buffer.is_empty() {
+    let push_buffer = |tokens: &mut Tokens, buffer: &mut String| {
+        // FIXME: validate buffer here; filter variable names
+        //      return Err("message") if buffer is incorrect
         tokens.push(
             if buffer.parse::<f64>().is_err() {
                 Ident(buffer.clone())
@@ -135,6 +92,51 @@ pub fn tokenize(script: &str)
                 Number(buffer.clone())
             }
         );
+        buffer.clear();
+        Ok(())
+    };
+
+    for c in script.chars() {
+        if SPECIAL_CHARS.contains(&c) {
+            if !buffer.is_empty() {
+                push_buffer(&mut tokens, &mut buffer)?;
+            }
+
+            // FIXME: this doesn't look good
+            match c {
+                '(' | '[' => {
+                    paren_stack.push(c);
+                    tokens.push(Paren(c));
+                },
+                ')' | ']' => {
+                    if let Some(popd) = paren_stack.pop() {
+                        if (popd == '(' && c != ')') || (popd == '[' && c != ']') {
+                            return Err("nesting is not correct");
+                        }
+                    }
+                    else {
+                        return Err("nesting is not correct");
+                    }
+                    tokens.push(Paren(c));
+                },
+                '+' | '-' |
+                '*' | '/' |
+                '^' | '=' => {
+                    let mut raw = String::new();
+                    raw.push(c);
+                    tokens.push(Operator(raw));
+                },
+                ',' | ';' => tokens.push(Sep(c)),
+                _ => continue,
+            }
+        }
+        else {
+            buffer.push(c);
+        }
+    }
+
+    if !buffer.is_empty() {
+        push_buffer(&mut tokens, &mut buffer)?;
     }
 
     if !paren_stack.is_empty() {

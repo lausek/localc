@@ -1,6 +1,8 @@
 #![feature(box_patterns)]
 #![feature(box_syntax)]
 
+extern crate regex;
+
 pub mod parser;
 pub mod program;
 

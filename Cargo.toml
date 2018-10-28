@@ -16,5 +16,4 @@ name = "tree-calc-repl"
 path = "src/bin.rs"
 
 [dependencies]
-nalgebra = "*"
-ncollide2d = "*"
+regex = "*"

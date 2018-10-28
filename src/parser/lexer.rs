@@ -1,11 +1,14 @@
 use std::vec::IntoIter;
 use std::iter::Peekable;
 
+use regex::Regex;
+
 use self::Token::*;
 
 pub type Tokens = Vec<Token>;
 
 const SPECIAL_CHARS: &[char] = &['+', '-', '*', '/', '^', '(', ')', ' ', '[', ']', ',', ';', '='];
+const VALID_IDENT_REGEX: &'static str = r#"^[a-zA-Z][\w]*$"#;
 
 #[derive(Clone, Debug)]
 pub enum Token {
@@ -81,20 +84,21 @@ pub fn tokenize(script: &str)
 
     let mut paren_stack: Vec<char> = Vec::new();
 
-    let push_buffer = |tokens: &mut Tokens, buffer: &mut String| {
-        // FIXME: validate buffer here; filter variable names
-        //      return Err("message") if buffer is incorrect
-        tokens.push(
+    let push_buffer: fn(&mut Tokens, &mut String) -> Result<(), &'static str> 
+        = |tokens: &mut Tokens, buffer: &mut String| {
             if buffer.parse::<f64>().is_err() {
-                Ident(buffer.clone())
+                // FIXME: don't create Regex again every time; maybe use lazy_static?
+                if !Regex::new(VALID_IDENT_REGEX).unwrap().is_match(buffer) {
+                    return Err("not a valid identifier");
+                }
+                tokens.push(Ident(buffer.clone()))
             }
             else {
-                Number(buffer.clone())
+                tokens.push(Number(buffer.clone()))
             }
-        );
-        buffer.clear();
-        Ok(())
-    };
+            buffer.clear();
+            Ok(())
+        };
 
     for c in script.chars() {
         if SPECIAL_CHARS.contains(&c) {

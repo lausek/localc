@@ -108,6 +108,14 @@ mod tests {
         assert!(exec_str_pre("unknown()").is_err(), "unknown function called");
         assert!(exec_str_pre("sqrt()").is_err(), "too few arguments");
         assert!(exec_str_pre("sqrt(16,16)").is_err(), "too many arguments");
+
+        // valid identifiers 
+        assert!(parse_str("x").is_ok(), "invalid identifier");
+        assert!(parse_str("test").is_ok(), "invalid identifier");
+        assert!(parse_str("test1").is_ok(), "invalid identifier");
+        assert!(parse_str("1test").is_err(), "invalid identifier");
+        assert!(parse_str("f'").is_ok(), "invalid identifier");
+        assert!(parse_str("10").is_ok(), "number is treated as identifier");
     }
 
     #[test]

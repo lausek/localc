@@ -8,7 +8,7 @@ use self::Token::*;
 pub type Tokens = Vec<Token>;
 
 const SPECIAL_CHARS: &[char] = &['+', '-', '*', '/', '^', '(', ')', ' ', '[', ']', ',', ';', '='];
-const VALID_IDENT_REGEX: &'static str = r#"^[a-zA-Z][\w]*$"#;
+const VALID_IDENT_REGEX: &'static str = r#"^[a-zA-Z][\w']*$"#;
 
 #[derive(Clone, Debug)]
 pub enum Token {

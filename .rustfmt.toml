@@ -1,0 +1,4 @@
+brace_style = "AlwaysNextLine"
+reorder_impl_items = true
+
+wrap_comments = true

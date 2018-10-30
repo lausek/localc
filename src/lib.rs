@@ -7,32 +7,30 @@ pub mod parser;
 pub mod program;
 
 #[cfg(test)]
-mod tests {
-    use program::{*, node::Node};
+mod tests
+{
     use parser::*;
+    use program::{node::Node, *};
 
-    fn parse_str(script: &'static str)
-        -> Result<Node, String> 
+    fn parse_str(script: &'static str) -> Result<Node, String>
     {
         parse(script)
     }
 
-    fn exec_str_pre(script: &'static str)
-        -> Result<f64, String> 
+    fn exec_str_pre(script: &'static str) -> Result<f64, String>
     {
         // FIXME: execute optimized version of code here too
         //        and compare; panic if unequal
         execute(&parse_str(script).unwrap()).and_then(|n: Num| Ok(n.into()))
     }
 
-    fn exec_str(script: &'static str)
-        -> f64
+    fn exec_str(script: &'static str) -> f64
     {
         exec_str_pre(script).unwrap()
     }
 
     #[test]
-    fn parse_simple() 
+    fn parse_simple()
     {
         // addition
         assert_eq!(exec_str("1+1"), 2.0);
@@ -51,7 +49,10 @@ mod tests {
         assert_eq!(exec_str("10^3"), 1000.0);
 
         // division with zero
-        assert!(exec_str_pre("18/0").is_err(), "division with zero is not possible");
+        assert!(
+            exec_str_pre("18/0").is_err(),
+            "division with zero is not possible"
+        );
     }
 
     #[test]
@@ -60,7 +61,7 @@ mod tests {
         // addition & subtraction
         assert_eq!(exec_str("1+1-1+1-1+1-1+1-1"), 1.0);
 
-        // multiplication & division 
+        // multiplication & division
         assert_eq!(exec_str("2*5/2*5/2*5"), 62.5);
 
         // mixed
@@ -88,28 +89,46 @@ mod tests {
     fn parse_errors()
     {
         // two numbers
-        assert!(parse_str("10 10").is_err(), "two numbers not allowed without operator");
+        assert!(
+            parse_str("10 10").is_err(),
+            "two numbers not allowed without operator"
+        );
 
         // two operators
-        assert!(parse_str("* /").is_err(), "two operators not allowed without numbers");
+        assert!(
+            parse_str("* /").is_err(),
+            "two operators not allowed without numbers"
+        );
 
         // paren nesting incorrect
-        assert!(parse_str("10*((2*(2+1)-1)-1").is_err(), "nesting is not valid");
-        assert!(parse_str("10*[(2*(2+1)-1]]-1").is_err(), "nesting is not valid");
+        assert!(
+            parse_str("10*((2*(2+1)-1)-1").is_err(),
+            "nesting is not valid"
+        );
+        assert!(
+            parse_str("10*[(2*(2+1)-1]]-1").is_err(),
+            "nesting is not valid"
+        );
 
         // empty expression
         assert!(parse_str("[]").is_err(), "empty expression is an error");
         assert!(parse_str("(())").is_err(), "empty expression is an error");
 
         // assignments
-        assert!(exec_str_pre("2=10").is_err(), "assignment to number is not allowed");
+        assert!(
+            exec_str_pre("2=10").is_err(),
+            "assignment to number is not allowed"
+        );
 
         // function calls
-        assert!(exec_str_pre("unknown()").is_err(), "unknown function called");
+        assert!(
+            exec_str_pre("unknown()").is_err(),
+            "unknown function called"
+        );
         assert!(exec_str_pre("sqrt()").is_err(), "too few arguments");
         assert!(exec_str_pre("sqrt(16,16)").is_err(), "too many arguments");
 
-        // valid identifiers 
+        // valid identifiers
         assert!(parse_str("x").is_ok(), "invalid identifier");
         assert!(parse_str("test").is_ok(), "invalid identifier");
         assert!(parse_str("test1").is_ok(), "invalid identifier");
@@ -141,9 +160,12 @@ mod tests {
         // FIXME: extend this test by following scenario
         //          x = y * 3
         //          y = x - 1
-        
+
         // self assignment
-        assert!(exec_str_pre("x=x+1").is_err(), "self assignment is an invalid operation");
+        assert!(
+            exec_str_pre("x=x+1").is_err(),
+            "self assignment is an invalid operation"
+        );
 
         // reducing prefixes
         assert_eq!(exec_str("--1"), 1.0);

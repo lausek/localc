@@ -159,6 +159,7 @@ impl Default for Context<String, NodeBox>
             extend_ctx(format!("e={}", std::f64::consts::E).as_str());
 
             extend_ctx("log2(x)=log(2,x)");
+            extend_ctx("ln(x)=log(e,x)");
             extend_ctx("sqrt(x)=x^(1/2)");
         }
 

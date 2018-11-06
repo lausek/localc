@@ -9,6 +9,12 @@ use self::node::{Node, Node::*};
 
 pub type ComputationResult<V> = Result<V, String>;
 
+pub fn execute(program: &Node) -> ComputationResult<Num>
+{
+    let mut ctx = Default::default();
+    execute_with_ctx(program, &mut ctx)
+}
+
 pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext) -> ComputationResult<Num>
 {
     match program {
@@ -41,7 +47,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext) -> Computation
                     name.clone(),
                     (args.clone(), context::ContextFunction::Virtual(y.clone())),
                 );
-                Ok(execute_with_ctx(y, ctx)?)
+                Err(format!("`{:?}` now declared", x))
             } else {
                 Err(format!("cannot assign to `{:?}`", x))
             }
@@ -61,7 +67,6 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext) -> Computation
             }
             // FIXME: `clone` should be avoided here
             let (def, algo) = ctx.getf(name).unwrap().clone();
-            let mut temp_ctx = ctx.clone();
 
             if def.len() != args.len() {
                 return Err(format!(
@@ -70,26 +75,34 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext) -> Computation
                     args.len()
                 ));
             }
-
-            for (i, d) in def.iter().enumerate() {
-                match d {
-                    box Var(name) => temp_ctx.set(name.clone(), args[i].clone()),
-                    _ => return Err(format!("`{:?}` is not allowed in a function definition", d)),
-                }
-            }
+            
+            let mut temp_ctx = ctx.clone(); 
+            build_new_ctx(&mut temp_ctx, &def, &args)?;
 
             match algo {
-                context::ContextFunction::Virtual(node) => {
-                    Ok(execute_with_ctx(&node, &mut temp_ctx)?)
-                }
+                context::ContextFunction::Virtual(node) => Ok(execute_with_ctx(&node, &mut temp_ctx)?),
                 context::ContextFunction::Native(func) => func(ctx, args),
             }
         }
     }
 }
 
-pub fn execute(program: &Node) -> ComputationResult<Num>
+fn build_new_ctx(ctx: &mut GenericContext, def: &[Box<Node>], args: &[Box<Node>])
+    -> ComputationResult<()>
 {
-    let mut ctx = Default::default();
-    execute_with_ctx(program, &mut ctx)
+    for (i, d) in def.iter().enumerate() {
+        match d {
+            box Var(name) => {
+                let var = if let box Var(ref x) = args[i] {
+                    ctx.get(x).unwrap().clone()
+                } else {
+                    args[i].clone()
+                };
+                ctx.set(name.clone(), var);
+            }, 
+            _ => return Err(format!("`{:?}` is not allowed in a function definition", d)),
+        }
+    }
+    Ok(())
 }
+

@@ -144,6 +144,10 @@ mod tests
         assert_eq!(exec_str("sqrt(16)"), 4.0);
         assert_eq!(exec_str("sqrt(64)"), 8.0);
 
+        // sqrtn
+        assert_eq!(f64::round(exec_str("sqrtn(3,64)")), 4.0);
+        assert_eq!(f64::round(exec_str("sqrtn(5,3125)")), 5.0);
+
         // log
         assert_eq!(exec_str("log(2, 8)"), 3.0);
         assert_eq!(exec_str("log(10, 100)"), 2.0);

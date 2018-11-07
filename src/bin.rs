@@ -40,7 +40,7 @@ pub fn main()
             "-vp" => {
                 vparse = true;
             }
-            // print identifiers 
+            // print identifiers
             "-pi" => {
                 pidents = true;
             }

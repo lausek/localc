@@ -51,31 +51,34 @@ impl std::fmt::Display for Node
     }
 }
 
-impl Node {
-
-    pub fn idents(&self) -> Vec<Identifier>
+impl Node
+{
+    pub fn idents(&self) -> Option<Vec<Identifier>>
     {
-        let mut ils: Vec<Identifier> = vec![];
         match self {
-            Var(x) => ils.push(x.clone()),
+            Var(x) => Some(vec![x.clone()]),
             Func(x, args) => {
+                let mut ils = vec![];
                 ils.push(x.clone());
                 for arg in args {
-                    ils.extend(arg.idents());
+                    if let Some(deps) = arg.idents() {
+                        ils.extend(deps);
+                    }
                 }
-            }, 
-            Add(lhs, rhs) | Sub(lhs, rhs) |
-            Mul(lhs, rhs) | Div(lhs, rhs) |
-            Pow(lhs, rhs) => {
-                ils.extend(lhs.idents());
-                ils.extend(rhs.idents());
-            },
-            Mov(_, rhs) => {
-                ils.extend(rhs.idents());
-            },
-            _ => {},
+                Some(ils)
+            }
+            Add(lhs, rhs) | Sub(lhs, rhs) | Mul(lhs, rhs) | Div(lhs, rhs) | Pow(lhs, rhs) => {
+                let mut ils = vec![];
+                if let Some(lhs_deps) = lhs.idents() {
+                    ils.extend(lhs_deps);
+                } 
+                if let Some(rhs_deps) = rhs.idents() {
+                    ils.extend(rhs_deps);
+                } 
+                Some(ils)
+            }
+            Mov(_, rhs) => rhs.idents(),
+            _ => None 
         }
-        ils
     }
-
 }

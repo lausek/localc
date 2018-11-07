@@ -163,7 +163,7 @@ mod tests
         assert_eq!(exec_str("log2(8)"), 3.0);
         assert_eq!(exec_str("log2(16)"), 4.0);
 
-        // ln 
+        // ln
         assert_eq!(exec_str("ln(10)"), 2.302585092994046);
         assert_eq!(exec_str("ln(1)"), 0.0);
         assert_eq!(exec_str("ln(e)"), 1.0);

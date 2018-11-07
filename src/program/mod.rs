@@ -76,12 +76,14 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
                     args.len()
                 ));
             }
-            
-            let mut temp_ctx = ctx.clone(); 
+
+            let mut temp_ctx = ctx.clone();
             build_new_ctx(&mut temp_ctx, &def, &args)?;
 
             match algo {
-                context::ContextFunction::Virtual(node) => Ok(execute_with_ctx(&node, &mut temp_ctx)?),
+                context::ContextFunction::Virtual(node) => {
+                    Ok(execute_with_ctx(&node, &mut temp_ctx)?)
+                }
                 context::ContextFunction::Native(func) => func(ctx, args),
             }
         }
@@ -100,10 +102,9 @@ fn build_new_ctx(ctx: &mut Context, def: &[Box<Node>], args: &[Box<Node>])
                     args[i].clone()
                 };
                 ctx.set(name.clone(), var)?;
-            }, 
+            }
             _ => return Err(format!("`{:?}` is not allowed in a function definition", d)),
         }
     }
     Ok(())
 }
-

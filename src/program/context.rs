@@ -1,5 +1,5 @@
 use super::node::{Node::*, NodeBox};
-use program::{ComputationResult, Num, node::Identifier};
+use program::{node::Identifier, ComputationResult, Num};
 use std::collections::HashMap;
 
 pub type Closure = fn(&mut Context, &Vec<NodeBox>) -> ComputationResult<Num>;
@@ -9,17 +9,6 @@ pub enum ContextFunction
 {
     Virtual(NodeBox),
     Native(Closure),
-}
-
-impl ContextFunction
-{
-    pub fn idents(&self) -> Vec<Identifier>
-    {
-        match self {
-            ContextFunction::Virtual(node) => node.idents(),
-            _ => vec![],
-        }
-    }
 }
 
 impl std::fmt::Debug for ContextFunction
@@ -70,20 +59,22 @@ impl Context
         self.funcs.get(key)
     }
 
-    pub fn set(&mut self, key: Identifier, value: NodeBox)
-        -> ComputationResult<()> 
+    pub fn set(&mut self, key: Identifier, value: NodeBox) -> ComputationResult<()>
     {
         self.update_depdendencies(&key, &value)?;
         self.vars.insert(key, value);
         Ok(())
     }
 
-    pub fn setf(&mut self, key: Identifier, value: (Vec<NodeBox>, ContextFunction))
-        -> ComputationResult<()> 
+    pub fn setf(
+        &mut self,
+        key: Identifier,
+        value: (Vec<NodeBox>, ContextFunction),
+    ) -> ComputationResult<()>
     {
         match value.1 {
             ContextFunction::Virtual(ref node) => self.update_depdendencies(&key, node)?,
-            _ => {},
+            _ => {}
         }
         self.funcs.insert(key, value);
         Ok(())
@@ -94,41 +85,41 @@ impl Context
         self.vars.iter()
     }
 
-    pub fn functions(&self)
-        -> std::collections::hash_map::Iter<Identifier, (Vec<NodeBox>, ContextFunction)>
+    pub fn functions(
+        &self,
+    ) -> std::collections::hash_map::Iter<Identifier, (Vec<NodeBox>, ContextFunction)>
     {
         self.funcs.iter()
     }
 
-    fn update_depdendencies(&mut self, key: &Identifier, node: &NodeBox)
-        -> ComputationResult<()> 
+    fn update_depdendencies(&mut self, key: &Identifier, node: &NodeBox) -> ComputationResult<()>
     {
         let dependencies = node.idents();
-        if !self.resolve_dependencies(&key, &dependencies) {
-            return Err(format!("`{}` is already referenced in `{}`", key, node));
+
+        if let Some(ref deps) = dependencies {
+            if !self.resolve_dependencies(&key, deps) {
+                return Err(format!("`{}` is already referenced in `{}`", key, node));
+            }
         }
 
-        if dependencies.is_empty() {
-            self.deps.insert(key.clone(), None);
-        } else {
-            self.deps.insert(key.clone(), Some(dependencies));
-        }
+        self.deps.insert(key.clone(), dependencies);
 
         Ok(())
     }
 
-    fn resolve_dependencies(&self, key: &Identifier, dependencies: &Vec<Identifier>)
-        -> bool
+    fn resolve_dependencies(&self, key: &Identifier, dependencies: &Vec<Identifier>) -> bool
     {
         for dname in dependencies {
             if dname == key {
                 return false;
             }
             match self.deps.get(dname).clone() {
-                Some(Some(dlist)) => if dlist.contains(&key) || !self.resolve_dependencies(&dname, &dlist) {
-                    return false;
+                Some(Some(dlist)) => {
+                    if dlist.contains(&key) || !self.resolve_dependencies(&dname, &dlist) {
+                        return false;
+                    }
                 }
-                _ => {},
+                _ => {}
             }
         }
         true

@@ -47,7 +47,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext) -> Computation
                     name.clone(),
                     (args.clone(), context::ContextFunction::Virtual(y.clone())),
                 );
-                Err(format!("`{:?}` now declared", x))
+                Err(format!("declared"))
             } else {
                 Err(format!("cannot assign to `{:?}`", x))
             }

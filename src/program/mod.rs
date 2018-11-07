@@ -4,7 +4,7 @@ pub mod num;
 
 pub use self::num::Num;
 
-use self::context::GenericContext;
+use self::context::Context;
 use self::node::{Node, Node::*};
 
 pub type ComputationResult<V> = Result<V, String>;
@@ -15,7 +15,7 @@ pub fn execute(program: &Node) -> ComputationResult<Num>
     execute_with_ctx(program, &mut ctx)
 }
 
-pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext) -> ComputationResult<Num>
+pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<Num>
 {
     match program {
         Add(x, y) | Sub(x, y) | Mul(x, y) | Div(x, y) | Pow(x, y) => {
@@ -40,14 +40,15 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext) -> Computation
         Mov(x, y) => {
             // FIXME: find alternative for `box`
             if let box Var(ref name) = x {
-                ctx.set(name.clone(), y.clone());
+                ctx.set(name.clone(), y.clone())?;
                 Ok(execute_with_ctx(y, ctx)?)
             } else if let box Func(ref name, args) = x {
                 ctx.setf(
                     name.clone(),
                     (args.clone(), context::ContextFunction::Virtual(y.clone())),
-                );
-                Err(format!("declared"))
+                )?;
+                // FIXME this should become `true`
+                Ok(Num::new(0.0))
             } else {
                 Err(format!("cannot assign to `{:?}`", x))
             }
@@ -87,7 +88,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut GenericContext) -> Computation
     }
 }
 
-fn build_new_ctx(ctx: &mut GenericContext, def: &[Box<Node>], args: &[Box<Node>])
+fn build_new_ctx(ctx: &mut Context, def: &[Box<Node>], args: &[Box<Node>])
     -> ComputationResult<()>
 {
     for (i, d) in def.iter().enumerate() {
@@ -98,7 +99,7 @@ fn build_new_ctx(ctx: &mut GenericContext, def: &[Box<Node>], args: &[Box<Node>]
                 } else {
                     args[i].clone()
                 };
-                ctx.set(name.clone(), var);
+                ctx.set(name.clone(), var)?;
             }, 
             _ => return Err(format!("`{:?}` is not allowed in a function definition", d)),
         }

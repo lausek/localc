@@ -10,7 +10,7 @@ pub mod program;
 mod tests
 {
     use parser::*;
-    use program::{node::Node, *};
+    use program::{context::Context, node::Node, *};
 
     fn parse_str(script: &'static str) -> Result<Node, String>
     {
@@ -22,6 +22,13 @@ mod tests
         // FIXME: execute optimized version of code here too
         //        and compare; panic if unequal
         execute(&parse_str(script).unwrap()).and_then(|n: Num| Ok(n.into()))
+    }
+
+    fn exec_str_pre_with_ctx(script: &'static str, ctx: &mut Context) -> Result<f64, String>
+    {
+        // FIXME: execute optimized version of code here too
+        //        and compare; panic if unequal
+        execute_with_ctx(&parse_str(script).unwrap(), ctx).and_then(|n: Num| Ok(n.into()))
     }
 
     fn exec_str(script: &'static str) -> f64
@@ -166,20 +173,50 @@ mod tests
     #[test]
     fn test_version1()
     {
-        // FIXME: extend this test by following scenario
-        //          x = y * 3
-        //          y = x - 1
-
-        // self assignment
-        assert!(
-            exec_str_pre("x=x+1").is_err(),
-            "self assignment is an invalid operation"
-        );
-
         // reducing prefixes
         assert_eq!(exec_str("--1"), 1.0);
 
         // multiplication without parens
         assert_eq!(exec_str("3*-1"), -3.0);
+    }
+
+    #[cfg(feature = "v1-0")]
+    #[test]
+    fn test_dependencies()
+    {
+        assert!(
+            exec_str_pre("x=1").is_ok(),
+            "assignment from constant failed"
+        );
+
+        assert!(
+            exec_str_pre("x=x").is_err(),
+            "self assignment is an invalid operation"
+        );
+
+        assert!(
+            exec_str_pre("x=x+1").is_err(),
+            "self assignment is an invalid operation"
+        );
+
+        let mut ctx = Context::default();
+        exec_str_pre_with_ctx("x=y*3", &mut ctx);
+        exec_str_pre_with_ctx("f(x)=x*3", &mut ctx);
+        exec_str_pre_with_ctx("bar()=f(x)", &mut ctx);
+
+        assert!(
+            exec_str_pre("y=x-1").is_err(),
+            "self assignment is an invalid operation"
+        );
+
+        assert!(
+            exec_str_pre("f(x)=f(x)").is_err(),
+            "self assignment is an invalid operation"
+        );
+
+        assert!(
+            exec_str_pre("f(x)=1+f(x)").is_err(),
+            "self assignment is an invalid operation"
+        );
     }
 }

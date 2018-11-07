@@ -1,6 +1,7 @@
 use self::Node::*;
 use super::Num;
 
+pub type Identifier = String;
 pub type NodeBox = Box<Node>;
 
 #[derive(Clone, Debug)]
@@ -18,9 +19,9 @@ pub enum Node
     Val(Num),
 
     // identifier
-    Var(String),
+    Var(Identifier),
     // identifier, arguments
-    Func(String, Vec<NodeBox>),
+    Func(Identifier, Vec<NodeBox>),
 }
 
 impl std::fmt::Display for Node
@@ -48,4 +49,33 @@ impl std::fmt::Display for Node
             }
         }
     }
+}
+
+impl Node {
+
+    pub fn idents(&self) -> Vec<Identifier>
+    {
+        let mut ils: Vec<Identifier> = vec![];
+        match self {
+            Var(x) => ils.push(x.clone()),
+            Func(x, args) => {
+                ils.push(x.clone());
+                for arg in args {
+                    ils.extend(arg.idents());
+                }
+            }, 
+            Add(lhs, rhs) | Sub(lhs, rhs) |
+            Mul(lhs, rhs) | Div(lhs, rhs) |
+            Pow(lhs, rhs) => {
+                ils.extend(lhs.idents());
+                ils.extend(rhs.idents());
+            },
+            Mov(_, rhs) => {
+                ils.extend(rhs.idents());
+            },
+            _ => {},
+        }
+        ils
+    }
+
 }

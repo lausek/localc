@@ -1,25 +1,28 @@
 use super::node::{Node::*, NodeBox};
-use program::{ComputationResult, Num};
+use program::{ComputationResult, Num, node::Identifier};
 use std::collections::HashMap;
 
-pub type Identifier = String;
-pub type GenericContext = Context<Identifier, NodeBox>;
-pub type Closure<K, V> = fn(&mut Context<K, V>, &Vec<V>) -> ComputationResult<Num>;
+pub type Closure = fn(&mut Context, &Vec<NodeBox>) -> ComputationResult<Num>;
 
 #[derive(Clone)]
-pub enum ContextFunction<K, V>
-where
-    K: Eq + std::hash::Hash,
-    V: std::fmt::Display,
+pub enum ContextFunction
 {
-    Virtual(V),
-    Native(Closure<K, V>),
+    Virtual(NodeBox),
+    Native(Closure),
 }
 
-impl<K, V> std::fmt::Debug for ContextFunction<K, V>
-where
-    K: Eq + std::hash::Hash,
-    V: std::fmt::Display,
+impl ContextFunction
+{
+    pub fn idents(&self) -> Vec<Identifier>
+    {
+        match self {
+            ContextFunction::Virtual(node) => node.idents(),
+            _ => vec![],
+        }
+    }
+}
+
+impl std::fmt::Debug for ContextFunction
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
     {
@@ -33,10 +36,7 @@ where
     }
 }
 
-impl<K, V> std::fmt::Display for ContextFunction<K, V>
-where
-    K: Eq + std::hash::Hash,
-    V: std::fmt::Display,
+impl std::fmt::Display for ContextFunction
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
     {
@@ -50,54 +50,92 @@ where
     }
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct Context<K, V>
-where
-    K: Eq + std::hash::Hash,
-    V: std::fmt::Display,
+#[derive(Clone, Debug)]
+pub struct Context
 {
-    vars: HashMap<K, V>,
-    funcs: HashMap<K, (Vec<V>, ContextFunction<K, V>)>,
+    vars: HashMap<Identifier, NodeBox>,
+    funcs: HashMap<Identifier, (Vec<NodeBox>, ContextFunction)>,
+    deps: HashMap<Identifier, Option<Vec<Identifier>>>,
 }
 
-impl<K, V> Context<K, V>
-where
-    K: Eq + std::hash::Hash,
-    V: std::fmt::Display,
+impl Context
 {
-    pub fn get(&self, key: &K) -> Option<&V>
+    pub fn get(&self, key: &Identifier) -> Option<&NodeBox>
     {
         self.vars.get(key)
     }
 
-    pub fn getf(&self, key: &K) -> Option<&(Vec<V>, ContextFunction<K, V>)>
+    pub fn getf(&self, key: &Identifier) -> Option<&(Vec<NodeBox>, ContextFunction)>
     {
         self.funcs.get(key)
     }
 
-    pub fn set(&mut self, key: K, value: V)
+    pub fn set(&mut self, key: Identifier, value: NodeBox)
+        -> ComputationResult<()> 
     {
+        self.update_depdendencies(&key, &value)?;
         self.vars.insert(key, value);
+        Ok(())
     }
 
-    pub fn setf(&mut self, key: K, value: (Vec<V>, ContextFunction<K, V>))
+    pub fn setf(&mut self, key: Identifier, value: (Vec<NodeBox>, ContextFunction))
+        -> ComputationResult<()> 
     {
+        match value.1 {
+            ContextFunction::Virtual(ref node) => self.update_depdendencies(&key, node)?,
+            _ => {},
+        }
         self.funcs.insert(key, value);
+        Ok(())
     }
 
-    pub fn variables(&self) -> std::collections::hash_map::Iter<K, V>
+    pub fn variables(&self) -> std::collections::hash_map::Iter<Identifier, NodeBox>
     {
         self.vars.iter()
     }
 
     pub fn functions(&self)
-        -> std::collections::hash_map::Iter<K, (Vec<V>, ContextFunction<K, V>)>
+        -> std::collections::hash_map::Iter<Identifier, (Vec<NodeBox>, ContextFunction)>
     {
         self.funcs.iter()
     }
+
+    fn update_depdendencies(&mut self, key: &Identifier, node: &NodeBox)
+        -> ComputationResult<()> 
+    {
+        let dependencies = node.idents();
+        if !self.resolve_dependencies(&key, &dependencies) {
+            return Err(format!("`{}` is already referenced in `{}`", key, node));
+        }
+
+        if dependencies.is_empty() {
+            self.deps.insert(key.clone(), None);
+        } else {
+            self.deps.insert(key.clone(), Some(dependencies));
+        }
+
+        Ok(())
+    }
+
+    fn resolve_dependencies(&self, key: &Identifier, dependencies: &Vec<Identifier>)
+        -> bool
+    {
+        for dname in dependencies {
+            if dname == key {
+                return false;
+            }
+            match self.deps.get(dname).clone() {
+                Some(Some(dlist)) => if dlist.contains(&key) || !self.resolve_dependencies(&dname, &dlist) {
+                    return false;
+                }
+                _ => {},
+            }
+        }
+        true
+    }
 }
 
-impl std::fmt::Display for Context<String, NodeBox>
+impl std::fmt::Display for Context
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
     {
@@ -122,7 +160,7 @@ impl std::fmt::Display for Context<String, NodeBox>
     }
 }
 
-impl Default for Context<String, NodeBox>
+impl Default for Context
 {
     fn default() -> Self
     {
@@ -132,6 +170,7 @@ impl Default for Context<String, NodeBox>
         let mut new = Self {
             vars: HashMap::new(),
             funcs: HashMap::new(),
+            deps: HashMap::new(),
         };
 
         // native functions

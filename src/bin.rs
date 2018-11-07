@@ -14,12 +14,13 @@ pub fn main()
 {
     use std::env;
     use std::io::{self, BufRead};
-    use treecalc::program::context::GenericContext;
+    use treecalc::program::context::Context;
 
     let mut arg_iter = env::args();
     let mut executed = 0;
     let mut vcompile = false;
     let mut vparse = false;
+    let mut pidents = false;
 
     while let Some(arg) = arg_iter.next() {
         match arg.as_str() {
@@ -39,13 +40,17 @@ pub fn main()
             "-vp" => {
                 vparse = true;
             }
+            // print identifiers 
+            "-pi" => {
+                pidents = true;
+            }
             _ => {}
         }
     }
 
     if executed == 0 {
         let stdin = io::stdin();
-        let mut ctx: GenericContext = Default::default();
+        let mut ctx = Context::default();
 
         for line in stdin.lock().lines() {
             if let Ok(script) = line {
@@ -62,6 +67,9 @@ pub fn main()
                                     treecalc::program::execute_with_ctx(&program, &mut ctx)
                                 );
                                 println!("\nContext:\n{}", ctx);
+                            }
+                            if pidents {
+                                println!("{:?}", program.idents());
                             }
                         }
                         Err(msg) => println!("{:?}", msg),

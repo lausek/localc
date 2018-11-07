@@ -71,14 +71,14 @@ impl Node
                 let mut ils = vec![];
                 if let Some(lhs_deps) = lhs.idents() {
                     ils.extend(lhs_deps);
-                } 
+                }
                 if let Some(rhs_deps) = rhs.idents() {
                     ils.extend(rhs_deps);
-                } 
+                }
                 Some(ils)
             }
             Mov(_, rhs) => rhs.idents(),
-            _ => None 
+            _ => None,
         }
     }
 }

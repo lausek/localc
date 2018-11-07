@@ -113,7 +113,7 @@ impl Context
             if dname == key {
                 return false;
             }
-            match self.deps.get(dname).clone() {
+            match self.deps.get(dname) {
                 Some(Some(dlist)) => {
                     if dlist.contains(&key) || !self.resolve_dependencies(&dname, &dlist) {
                         return false;
@@ -182,7 +182,10 @@ impl Default for Context
         // virtual functions
         {
             let mut extend_ctx = |expr: &str| {
-                execute_with_ctx(&parse(expr).unwrap(), &mut new);
+                assert!(
+                    execute_with_ctx(&parse(expr).unwrap(), &mut new).is_ok(),
+                    "preparing default context failed"
+                );
             };
 
             extend_ctx(format!("pi={}", std::f64::consts::PI).as_str());

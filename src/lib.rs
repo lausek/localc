@@ -218,5 +218,10 @@ mod tests
             exec_str_pre("f(x)=1+f(x)").is_err(),
             "self assignment is an invalid operation"
         );
+
+        assert!(
+            exec_str_pre("sqrt(x=x+1)").is_err(),
+            "self assignment is an invalid operation"
+        );
     }
 }

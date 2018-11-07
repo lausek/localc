@@ -1,5 +1,6 @@
 #![feature(box_patterns)]
 #![feature(box_syntax)]
+#![feature(self_struct_ctor)]
 
 extern crate regex;
 

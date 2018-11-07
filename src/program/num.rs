@@ -3,46 +3,35 @@ use std::num::ParseFloatError;
 type InternalNumType = f64;
 
 #[derive(Clone, Copy, Debug)]
-pub struct Num
-{
-    value: InternalNumType,
-}
+pub struct Num(InternalNumType);
 
 impl Num
 {
     pub const fn new(init: InternalNumType) -> Self
     {
-        Num { value: init }
+        Num(init)
     }
 
     pub const fn pi() -> Self
     {
-        Num {
-            value: std::f64::consts::PI,
-        }
+        Self::new(std::f64::consts::PI)
     }
 
     pub const fn e() -> Self
     {
-        Num {
-            value: std::f64::consts::E,
-        }
+        Self::new(std::f64::consts::E)
     }
 
     // FIXME: replace this with trait impl?
     pub fn powf(self, other: Self) -> Self
     {
-        Self {
-            value: self.value.powf(other.value),
-        }
+        Self(self.0.powf(other.0))
     }
 
     // FIXME: replace this with trait impl?
     pub fn log(self, other: Self) -> Self
     {
-        Self {
-            value: self.value.log(other.value),
-        }
+        Self(self.0.log(other.0))
     }
 }
 
@@ -52,7 +41,7 @@ impl std::ops::Add for Num
 
     fn add(mut self, other: Self) -> Self
     {
-        self.value += other.value;
+        self.0 += other.0;
         self
     }
 }
@@ -63,7 +52,7 @@ impl std::ops::Sub for Num
 
     fn sub(mut self, other: Self) -> Self
     {
-        self.value -= other.value;
+        self.0 -= other.0;
         self
     }
 }
@@ -74,7 +63,7 @@ impl std::ops::Mul for Num
 
     fn mul(mut self, other: Self) -> Self
     {
-        self.value *= other.value;
+        self.0 *= other.0;
         self
     }
 }
@@ -85,7 +74,7 @@ impl std::ops::Div for Num
 
     fn div(mut self, other: Self) -> Self
     {
-        self.value /= other.value;
+        self.0 /= other.0;
         self
     }
 }
@@ -94,7 +83,7 @@ impl std::cmp::PartialEq for Num
 {
     fn eq(&self, other: &Self) -> bool
     {
-        self.value == other.value
+        self.0 == other.0
     }
 }
 
@@ -102,7 +91,7 @@ impl std::convert::From<InternalNumType> for Num
 {
     fn from(from: InternalNumType) -> Self
     {
-        Self { value: from }
+        Self(from)
     }
 }
 
@@ -110,7 +99,7 @@ impl std::convert::From<Num> for InternalNumType
 {
     fn from(from: Num) -> Self
     {
-        from.value
+        from.0
     }
 }
 
@@ -121,7 +110,7 @@ impl std::str::FromStr for Num
     fn from_str(from: &str) -> Result<Self, Self::Err>
     {
         let value = from.parse::<InternalNumType>()?;
-        Ok(Self { value })
+        Ok(Self(value))
     }
 }
 
@@ -129,9 +118,7 @@ impl Default for Num
 {
     fn default() -> Self
     {
-        Num {
-            value: InternalNumType::from(0),
-        }
+        Num(InternalNumType::from(0))
     }
 }
 
@@ -139,7 +126,7 @@ impl std::fmt::Display for Num
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
     {
-        write!(f, "{}", self.value);
+        write!(f, "{}", self.0);
         Ok(())
     }
 }

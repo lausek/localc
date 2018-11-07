@@ -22,6 +22,11 @@ pub enum Token
     Sep(char),
 }
 
+pub fn is_valid_ident(seq: &String) -> bool
+{
+    !Regex::new(VALID_IDENT_REGEX).unwrap().is_match(seq)
+}
+
 // TODO: rename to optimize1 and merge +,- while validating
 //       - other optimizations too?
 pub fn validate(tokens: Tokens) -> Result<Tokens, &'static str>
@@ -90,7 +95,7 @@ pub fn tokenize(script: &str) -> Result<Tokens, &'static str>
         |tokens: &mut Tokens, buffer: &mut String| {
             if buffer.parse::<f64>().is_err() {
                 // FIXME: don't create Regex again every time; maybe use lazy_static?
-                if !Regex::new(VALID_IDENT_REGEX).unwrap().is_match(buffer) {
+                if is_valid_ident(buffer) {
                     return Err("not a valid identifier");
                 }
                 tokens.push(Ident(buffer.clone()))

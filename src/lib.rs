@@ -127,6 +127,21 @@ mod tests
             "assignment to number is not allowed"
         );
 
+        assert!(
+            exec_str_pre("f(2)=1").is_err(),
+            "only identifiers allowed in function assignment position"
+        );
+
+        assert!(
+            exec_str_pre("f(y,2)=1").is_err(),
+            "only identifiers allowed in function assignment position"
+        );
+
+        assert!(
+            exec_str_pre("f(2)=x(1)").is_err(),
+            "only identifiers allowed in function assignment position"
+        );
+
         // function calls
         assert!(
             exec_str_pre("unknown()").is_err(),

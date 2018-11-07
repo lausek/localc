@@ -1,6 +1,6 @@
 use super::node::{Node::*, NodeBox};
 use program::{node::Identifier, ComputationResult, Num};
-use std::collections::HashMap;
+use std::collections::{hash_map::Iter, HashMap};
 
 pub type Closure = fn(&mut Context, &Vec<NodeBox>) -> ComputationResult<Num>;
 
@@ -9,6 +9,18 @@ pub enum ContextFunction
 {
     Virtual(NodeBox),
     Native(Closure),
+}
+
+pub fn is_node_assignable(node: &NodeBox) -> bool
+{
+    match node {
+        box Func(_, args) => args.iter().all(|arg| match arg {
+            box Var(_) => true,
+            _ => false,
+        }),
+        box Var(_) => true,
+        _ => false,
+    }
 }
 
 impl std::fmt::Debug for ContextFunction
@@ -72,22 +84,19 @@ impl Context
         value: (Vec<NodeBox>, ContextFunction),
     ) -> ComputationResult<()>
     {
-        match value.1 {
-            ContextFunction::Virtual(ref node) => self.update_depdendencies(&key, node)?,
-            _ => {}
+        if let ContextFunction::Virtual(ref node) = value.1 {
+            self.update_depdendencies(&key, node)?;
         }
         self.funcs.insert(key, value);
         Ok(())
     }
 
-    pub fn variables(&self) -> std::collections::hash_map::Iter<Identifier, NodeBox>
+    pub fn variables(&self) -> Iter<Identifier, NodeBox>
     {
         self.vars.iter()
     }
 
-    pub fn functions(
-        &self,
-    ) -> std::collections::hash_map::Iter<Identifier, (Vec<NodeBox>, ContextFunction)>
+    pub fn functions(&self) -> Iter<Identifier, (Vec<NodeBox>, ContextFunction)>
     {
         self.funcs.iter()
     }

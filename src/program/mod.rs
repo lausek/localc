@@ -4,7 +4,7 @@ pub mod num;
 
 pub use self::num::Num;
 
-use self::context::Context;
+use self::context::{is_node_assignable, Context};
 use self::node::{Node, Node::*};
 
 pub type ComputationResult<V> = Result<V, String>;
@@ -43,6 +43,9 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
                 ctx.set(name.clone(), y.clone())?;
                 Ok(execute_with_ctx(y, ctx)?)
             } else if let box Func(ref name, args) = x {
+                if !is_node_assignable(&x) {
+                    return Err(format!("cannot assign to `{}`", x));
+                }
                 ctx.setf(
                     name.clone(),
                     (args.clone(), context::ContextFunction::Virtual(y.clone())),

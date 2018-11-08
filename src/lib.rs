@@ -11,30 +11,43 @@ pub mod program;
 mod tests
 {
     use parser::*;
-    use program::{context::Context, node::Node, *};
+    use program::{context::Context, node::Node, *, Computation, Computation::*};
 
     fn parse_str(script: &'static str) -> Result<Node, String>
     {
         parse(script)
     }
 
-    fn exec_str_pre(script: &'static str) -> Result<f64, String>
+    fn exec_str_pre_num(script: &'static str) -> Result<f64, String>
     {
         // FIXME: execute optimized version of code here too
         //        and compare; panic if unequal
-        execute(&parse_str(script).unwrap()).and_then(|n: Num| Ok(n.into()))
+        execute(&parse_str(script).unwrap()).and_then(|c: Computation| match c {
+            Numeric(v) => Ok(v.into()),
+            _ => Err(format!("invalid return type. got {:?}", c))
+        })
     }
 
-    fn exec_str_pre_with_ctx(script: &'static str, ctx: &mut Context) -> Result<f64, String>
+    fn exec_str_pre_truth(script: &'static str) -> Result<bool, String>
     {
         // FIXME: execute optimized version of code here too
         //        and compare; panic if unequal
-        execute_with_ctx(&parse_str(script).unwrap(), ctx).and_then(|n: Num| Ok(n.into()))
+        execute(&parse_str(script).unwrap()).and_then(|c: Computation| match c {
+            Logical(v) => Ok(v),
+            _ => Err(format!("invalid return type. got {:?}", c))
+        })
+    }
+
+    fn exec_str_pre_with_ctx(script: &'static str, ctx: &mut Context) -> Result<Computation, String>
+    {
+        // FIXME: execute optimized version of code here too
+        //        and compare; panic if unequal
+        execute_with_ctx(&parse_str(script).unwrap(), ctx)
     }
 
     fn exec_str(script: &'static str) -> f64
     {
-        exec_str_pre(script).unwrap()
+        exec_str_pre_num(script).unwrap()
     }
 
     #[test]
@@ -58,7 +71,7 @@ mod tests
 
         // division with zero
         assert!(
-            exec_str_pre("18/0").is_err(),
+            exec_str_pre_num("18/0").is_err(),
             "division with zero is not possible"
         );
     }
@@ -124,32 +137,32 @@ mod tests
 
         // assignments
         assert!(
-            exec_str_pre("2=10").is_err(),
+            exec_str_pre_num("2=10").is_err(),
             "assignment to number is not allowed"
         );
 
         assert!(
-            exec_str_pre("f(2)=1").is_err(),
+            exec_str_pre_num("f(2)=1").is_err(),
             "only identifiers allowed in function assignment position"
         );
 
         assert!(
-            exec_str_pre("f(y,2)=1").is_err(),
+            exec_str_pre_num("f(y,2)=1").is_err(),
             "only identifiers allowed in function assignment position"
         );
 
         assert!(
-            exec_str_pre("f(2)=x(1)").is_err(),
+            exec_str_pre_num("f(2)=x(1)").is_err(),
             "only identifiers allowed in function assignment position"
         );
 
         // function calls
         assert!(
-            exec_str_pre("unknown()").is_err(),
+            exec_str_pre_num("unknown()").is_err(),
             "unknown function called"
         );
-        assert!(exec_str_pre("sqrt()").is_err(), "too few arguments");
-        assert!(exec_str_pre("sqrt(16,16)").is_err(), "too many arguments");
+        assert!(exec_str_pre_num("sqrt()").is_err(), "too few arguments");
+        assert!(exec_str_pre_num("sqrt(16,16)").is_err(), "too many arguments");
 
         // valid identifiers
         assert!(parse_str("x").is_ok(), "invalid identifier");
@@ -201,17 +214,17 @@ mod tests
     fn test_dependencies()
     {
         assert!(
-            exec_str_pre("x=1").is_ok(),
+            exec_str_pre_num("x=1").is_ok(),
             "assignment from constant failed"
         );
 
         assert!(
-            exec_str_pre("x=x").is_err(),
+            exec_str_pre_num("x=x").is_err(),
             "self assignment is an invalid operation"
         );
 
         assert!(
-            exec_str_pre("x=x+1").is_err(),
+            exec_str_pre_num("x=x+1").is_err(),
             "self assignment is an invalid operation"
         );
 
@@ -221,22 +234,22 @@ mod tests
         exec_str_pre_with_ctx("bar()=f(x)", &mut ctx);
 
         assert!(
-            exec_str_pre("y=x-1").is_err(),
+            exec_str_pre_num("y=x-1").is_err(),
             "self assignment is an invalid operation"
         );
 
         assert!(
-            exec_str_pre("f(x)=f(x)").is_err(),
+            exec_str_pre_num("f(x)=f(x)").is_err(),
             "self assignment is an invalid operation"
         );
 
         assert!(
-            exec_str_pre("f(x)=1+f(x)").is_err(),
+            exec_str_pre_num("f(x)=1+f(x)").is_err(),
             "self assignment is an invalid operation"
         );
 
         assert!(
-            exec_str_pre("sqrt(x=x+1)").is_err(),
+            exec_str_pre_num("sqrt(x=x+1)").is_err(),
             "self assignment is an invalid operation"
         );
     }

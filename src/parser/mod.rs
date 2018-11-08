@@ -46,7 +46,7 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>) -> Result<Node, String>
             }
             Number(raw) => {
                 if let Ok(num) = raw.parse::<Num>() {
-                    subcomps.push(Done(Val(num)));
+                    subcomps.push(Done(NVal(num)));
                 } else {
                     return Err("could not parse number".to_string());
                 }

@@ -38,7 +38,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
             // FIXME: find alternative for `box`
             if let box Var(ref name) = x {
                 ctx.set(name.clone(), y.clone())?;
-                Ok(execute_with_ctx(y, ctx)?)
+                Ok(Logical(true))
             } else if let box Func(ref name, args) = x {
                 if !is_node_assignable(&x) {
                     return Err(format!("cannot assign to `{}`", x));
@@ -48,7 +48,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
                     (args.clone(), context::ContextFunction::Virtual(y.clone())),
                 )?;
                 // FIXME this should become `true`
-                Ok(Numeric(Num::new(0.0)))
+                Ok(Logical(true))
             } else {
                 Err(format!("cannot assign to `{:?}`", x))
             }

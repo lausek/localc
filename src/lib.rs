@@ -102,8 +102,8 @@ mod tests
         assert_eq!(exec_str("2*pi"), 6.283185307179586);
 
         // assignments
-        assert_eq!(exec_str("x=10"), 10.0);
-        assert_eq!(exec_str("x=[(10*19)+10]*2"), 400.0);
+        assert_eq!(exec_str_pre_truth("x=10").unwrap(), true);
+        assert_eq!(exec_str_pre_truth("x=[(10*19)+10]*2").unwrap(), true);
     }
 
     #[test]
@@ -214,17 +214,17 @@ mod tests
     fn test_dependencies()
     {
         assert!(
-            exec_str_pre_num("x=1").is_ok(),
+            exec_str_pre_truth("x=1").is_ok(),
             "assignment from constant failed"
         );
 
         assert!(
-            exec_str_pre_num("x=x").is_err(),
+            exec_str_pre_truth("x=x").is_err(),
             "self assignment is an invalid operation"
         );
 
         assert!(
-            exec_str_pre_num("x=x+1").is_err(),
+            exec_str_pre_truth("x=x+1").is_err(),
             "self assignment is an invalid operation"
         );
 
@@ -234,22 +234,22 @@ mod tests
         exec_str_pre_with_ctx("bar()=f(x)", &mut ctx);
 
         assert!(
-            exec_str_pre_num("y=x-1").is_err(),
+            exec_str_pre_with_ctx("y=x-1", &mut ctx).is_err(),
             "self assignment is an invalid operation"
         );
 
         assert!(
-            exec_str_pre_num("f(x)=f(x)").is_err(),
+            exec_str_pre_with_ctx("f(x)=f(x)", &mut ctx).is_err(),
             "self assignment is an invalid operation"
         );
 
         assert!(
-            exec_str_pre_num("f(x)=1+f(x)").is_err(),
+            exec_str_pre_with_ctx("f(x)=1+f(x)", &mut ctx).is_err(),
             "self assignment is an invalid operation"
         );
 
         assert!(
-            exec_str_pre_num("sqrt(x=x+1)").is_err(),
+            exec_str_pre_with_ctx("sqrt(x=x+1)", &mut ctx).is_err(),
             "self assignment is an invalid operation"
         );
     }

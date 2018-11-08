@@ -1,6 +1,7 @@
 use self::Node::*;
 use super::Num;
 
+pub type Truth = bool;
 pub type Identifier = String;
 pub type NodeBox = Box<Node>;
 
@@ -16,7 +17,8 @@ pub enum Node
     // assignment `=`
     Mov(NodeBox, NodeBox),
 
-    Val(Num),
+    NVal(Num),
+    TVal(Truth),
 
     // identifier
     Var(Identifier),
@@ -35,7 +37,8 @@ impl std::fmt::Display for Node
             Div(x, y) => write!(f, "{} / {}", x, y),
             Pow(x, y) => write!(f, "{}^({})", x, y),
             Mov(x, y) => write!(f, "{} = {}", x, y),
-            Val(x) => write!(f, "{}", x),
+            NVal(x) => write!(f, "{}", x),
+            TVal(x) => write!(f, "{}", x),
             Var(x) => write!(f, "{}", x),
             Func(x, y) => {
                 let args = y.iter().enumerate().fold(String::new(), |mut acc, (i, x)| {

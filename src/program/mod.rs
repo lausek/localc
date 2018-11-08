@@ -5,43 +5,41 @@ pub mod num;
 pub use self::num::Num;
 
 use self::context::{is_node_assignable, Context};
-use self::node::{Node, Node::*};
+use self::node::{Node, Node::*, Truth};
+
+#[derive(Debug)]
+pub enum Computation
+{
+    Numeric(Num),
+    Logical(Truth),
+}
 
 pub type ComputationResult<V> = Result<V, String>;
 
-pub fn execute(program: &Node) -> ComputationResult<Num>
+pub fn execute(program: &Node) -> ComputationResult<Computation>
 {
     let mut ctx = Default::default();
     execute_with_ctx(program, &mut ctx)
 }
 
-pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<Num>
+pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<Computation>
 {
+    use self::Computation::*;
     match program {
         Add(x, y) | Sub(x, y) | Mul(x, y) | Div(x, y) | Pow(x, y) => {
             let arg1 = execute_with_ctx(x, ctx)?;
             let arg2 = execute_with_ctx(y, ctx)?;
 
-            match program {
-                Add(_, _) => Ok(arg1 + arg2),
-                Sub(_, _) => Ok(arg1 - arg2),
-                Mul(_, _) => Ok(arg1 * arg2),
-                Pow(_, _) => Ok(arg1.powf(arg2)),
-                Div(_, _) => {
-                    if arg2 == Num::new(0.0) {
-                        Err("division with 0".to_string())
-                    } else {
-                        Ok(arg1 / arg2)
-                    }
-                }
-                _ => unreachable!(),
+            match (arg1, arg2) {
+                (Numeric(arg1), Numeric(arg2)) => compute_numeric(&program, arg1, arg2),
+                _ => unimplemented!(),
             }
         }
         Mov(x, y) => {
             // FIXME: find alternative for `box`
             if let box Var(ref name) = x {
                 ctx.set(name.clone(), y.clone())?;
-                Ok(execute_with_ctx(y, ctx)?)
+                Ok(Logical(true))
             } else if let box Func(ref name, args) = x {
                 if !is_node_assignable(&x) {
                     return Err(format!("cannot assign to `{}`", x));
@@ -51,7 +49,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
                     (args.clone(), context::ContextFunction::Virtual(y.clone())),
                 )?;
                 // FIXME this should become `true`
-                Ok(Num::new(0.0))
+                Ok(Logical(true))
             } else {
                 Err(format!("cannot assign to `{:?}`", x))
             }
@@ -64,7 +62,8 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
             let var = ctx.get(name).unwrap().clone();
             Ok(execute_with_ctx(&var, ctx)?)
         }
-        Val(ref n) => Ok(*n),
+        NVal(ref n) => Ok(Numeric(*n)),
+        TVal(ref n) => Ok(Logical(*n)),
         Func(ref name, args) => {
             if ctx.getf(name).is_none() {
                 return Err(format!("function `{}` not declared", name));
@@ -90,6 +89,25 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
                 context::ContextFunction::Native(func) => func(ctx, args),
             }
         }
+    }
+}
+
+fn compute_numeric(op: &Node, arg1: Num, arg2: Num) -> ComputationResult<Computation>
+{
+    use self::Computation::*;
+    match op {
+        Add(_, _) => Ok(Numeric(arg1 + arg2)),
+        Sub(_, _) => Ok(Numeric(arg1 - arg2)),
+        Mul(_, _) => Ok(Numeric(arg1 * arg2)),
+        Pow(_, _) => Ok(Numeric(arg1.powf(arg2))),
+        Div(_, _) => {
+            if arg2 == Num::new(0.0) {
+                Err("division with 0".to_string())
+            } else {
+                Ok(Numeric(arg1 / arg2))
+            }
+        }
+        _ => unreachable!(),
     }
 }
 

@@ -1,8 +1,8 @@
 use super::node::{Node::*, NodeBox};
-use program::{node::Identifier, ComputationResult, Num};
+use program::{node::Identifier, Computation, ComputationResult};
 use std::collections::{hash_map::Iter, HashMap};
 
-pub type Closure = fn(&mut Context, &Vec<NodeBox>) -> ComputationResult<Num>;
+pub type Closure = fn(&mut Context, &Vec<NodeBox>) -> ComputationResult<Computation>;
 
 #[derive(Clone)]
 pub enum ContextFunction
@@ -178,9 +178,13 @@ impl Default for Context
             let ident1 = Box::new(Var("x".to_string()));
             let ident3 = Box::new(Var("base".to_string()));
             let closure = ContextFunction::Native(|ctx: &mut Self, args: &Vec<NodeBox>| {
+                use program::Computation::*;
                 let base = super::execute_with_ctx(&args[0], ctx)?;
                 let x = super::execute_with_ctx(&args[1], ctx)?;
-                Ok(x.log(base))
+                match (base, x) {
+                    (Numeric(base), Numeric(x)) => Ok(Numeric(x.log(base))),
+                    _ => panic!("native function got very dumb params!"),
+                }
             });
             new.setf(
                 "log".to_string(),

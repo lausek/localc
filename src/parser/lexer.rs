@@ -8,7 +8,7 @@ use self::Token::*;
 pub type Tokens = Vec<Token>;
 
 const VALID_IDENT_REGEX: &str = r#"^[a-zA-Z][\w']*$"#;
-const OPERATOR_CHARS: &[char] = &['+', '-', '*', '/', '^', '=', '<', '>'];
+const OPERATOR_CHARS: &[char] = &['+', '-', '*', '/', '^', '=', '<', '>', '!'];
 const GRAMMAR_CHARS: &[char] = &['(', ')', '[', ']', ',', ';', ' '];
 
 #[derive(Clone, Debug)]
@@ -117,30 +117,34 @@ pub fn tokenize(script: &str) -> Result<Tokens, &'static str>
                 push_buffer(&mut tokens, &mut buffer)?;
             }
 
-            match c {
-                '(' | '[' => {
-                    paren_stack.push(c);
-                    tokens.push(Paren(c));
-                }
-                ')' | ']' => {
-                    if let Some(popd) = paren_stack.pop() {
-                        if (popd == '(' && c != ')') || (popd == '[' && c != ']') {
+            if OPERATOR_CHARS.contains(&c) {
+                let mut raw = String::new();
+                raw.push(c);
+                take_operators(&mut raw, &mut iter);
+                tokens.push(Operator(raw));
+            } else {
+                match c {
+                    '(' | '[' => {
+                        paren_stack.push(c);
+                        tokens.push(Paren(c));
+                    }
+                    ')' | ']' => {
+                        if let Some(popd) = paren_stack.pop() {
+                            if (popd == '(' && c != ')') || (popd == '[' && c != ']') {
+                                return Err("nesting is not correct");
+                            }
+                        } else {
                             return Err("nesting is not correct");
                         }
-                    } else {
-                        return Err("nesting is not correct");
+                        tokens.push(Paren(c));
                     }
-                    tokens.push(Paren(c));
+                    '+' | '-' | '*' | '/' | '^' | '=' => {
+                    }
+                    ',' | ';' => tokens.push(Sep(c)),
+                    _ => continue,
                 }
-                '+' | '-' | '*' | '/' | '^' | '=' => {
-                    let mut raw = String::new();
-                    raw.push(c);
-                    take_operators(&mut raw, &mut iter);
-                    tokens.push(Operator(raw));
-                }
-                ',' | ';' => tokens.push(Sep(c)),
-                _ => continue,
             }
+
         } else {
             buffer.push(c);
         }

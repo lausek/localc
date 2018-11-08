@@ -35,6 +35,11 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
                 _ => unimplemented!(),
             }
         }
+        Eq(x, y) | Ne(x, y) | Gt(x, y) | Lt(x, y) | Ge(x, y) | Le(x, y) => {
+            let arg1 = execute_with_ctx(x, ctx)?;
+            let arg2 = execute_with_ctx(y, ctx)?;
+            compute_logical(&program, arg1, arg2)
+        }
         Mov(x, y) => {
             // FIXME: find alternative for `box`
             if let box Var(ref name) = x {
@@ -106,6 +111,28 @@ fn compute_numeric(op: &Node, arg1: Num, arg2: Num) -> ComputationResult<Computa
             } else {
                 Ok(Numeric(arg1 / arg2))
             }
+        }
+        _ => unreachable!(),
+    }
+}
+
+fn compute_logical(op: &Node, arg1: Computation, arg2: Computation) -> ComputationResult<Computation>
+{
+    use self::Computation::*;
+    match (arg1, arg2) {
+        (Numeric(arg1), Numeric(arg2)) => match op {
+            Eq(_, _) => Ok(Logical(arg1 == arg2)),
+            Ne(_, _) => Ok(Logical(arg1 != arg2)),
+            Gt(_, _) => Ok(Logical(arg1 > arg2)),
+            Lt(_, _) => Ok(Logical(arg1 < arg2)),
+            Ge(_, _) => Ok(Logical(arg1 >= arg2)),
+            Le(_, _) => Ok(Logical(arg1 <= arg2)),
+            _ => panic!("compute_logical called without appropriate NodeBox")
+        }
+        (Logical(arg1), Logical(arg2)) => match op {
+            Eq(_, _) => Ok(Logical(arg1 == arg2)),
+            Ne(_, _) => Ok(Logical(arg1 != arg2)),
+            _ => panic!("compute_logical called without appropriate NodeBox")
         }
         _ => unreachable!(),
     }

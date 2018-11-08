@@ -74,7 +74,7 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>) -> Result<Node, String>
 
     reduce(&mut subcomps, &["+", "-"]);
 
-    reduce(&mut subcomps, &["="]);
+    reduce(&mut subcomps, &["=", "==", "!=", ">", ">=", "<", "<="]);
 
     if let Some(Done(node)) = subcomps.into_iter().next() {
         Ok(node)
@@ -196,12 +196,21 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[&str])
         let done = match (prev, curr, next) {
             (Done(n1), Wait(op), Done(n2)) => Done(match op {
                 Operator(c) => match c.as_str() {
+                    // numerical
                     "+" => Add(Box::new(n1), Box::new(n2)),
                     "-" => Sub(Box::new(n1), Box::new(n2)),
                     "*" => Mul(Box::new(n1), Box::new(n2)),
                     "/" => Div(Box::new(n1), Box::new(n2)),
                     "^" => Pow(Box::new(n1), Box::new(n2)),
                     "=" => Mov(Box::new(n1), Box::new(n2)),
+
+                    // logical
+                    "==" => Eq(Box::new(n1), Box::new(n2)),
+                    "!=" => Ne(Box::new(n1), Box::new(n2)),
+                    ">=" => Ge(Box::new(n1), Box::new(n2)),
+                    ">"  => Gt(Box::new(n1), Box::new(n2)),
+                    "<=" => Le(Box::new(n1), Box::new(n2)),
+                    "<"  => Lt(Box::new(n1), Box::new(n2)),
                     _ => unreachable!(),
                 },
                 _ => panic!("neeeej"),

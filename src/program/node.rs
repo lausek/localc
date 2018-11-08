@@ -8,11 +8,20 @@ pub type NodeBox = Box<Node>;
 #[derive(Clone, Debug)]
 pub enum Node
 {
+    // numerical
     Add(NodeBox, NodeBox),
     Sub(NodeBox, NodeBox),
     Mul(NodeBox, NodeBox),
     Div(NodeBox, NodeBox),
     Pow(NodeBox, NodeBox),
+
+    // logical
+    Eq(NodeBox, NodeBox),
+    Ne(NodeBox, NodeBox),
+    Gt(NodeBox, NodeBox),
+    Lt(NodeBox, NodeBox),
+    Ge(NodeBox, NodeBox),
+    Le(NodeBox, NodeBox),
 
     // assignment `=`
     Mov(NodeBox, NodeBox),
@@ -31,12 +40,21 @@ impl std::fmt::Display for Node
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
     {
         match self {
+            // numerical
             Add(x, y) => write!(f, "{} + {}", x, y),
             Sub(x, y) => write!(f, "{} - {}", x, y),
             Mul(x, y) => write!(f, "{} * {}", x, y),
             Div(x, y) => write!(f, "{} / {}", x, y),
             Pow(x, y) => write!(f, "{}^({})", x, y),
             Mov(x, y) => write!(f, "{} = {}", x, y),
+            // logical
+            Eq(x, y) => write!(f, "{} == {}", x, y),
+            Ne(x, y) => write!(f, "{} != {}", x, y),
+            Gt(x, y) => write!(f, "{} > {}", x, y),
+            Lt(x, y) => write!(f, "{} < {}", x, y),
+            Ge(x, y) => write!(f, "{} >= {}", x, y),
+            Le(x, y) => write!(f, "{} <= {}", x, y),
+
             NVal(x) => write!(f, "{}", x),
             TVal(x) => write!(f, "{}", x),
             Var(x) => write!(f, "{}", x),

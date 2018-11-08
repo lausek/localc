@@ -2,7 +2,7 @@ use std::num::ParseFloatError;
 
 type InternalNumType = f64;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
 pub struct Num(InternalNumType);
 
 impl Num
@@ -76,14 +76,6 @@ impl std::ops::Div for Num
     {
         self.0 /= other.0;
         self
-    }
-}
-
-impl std::cmp::PartialEq for Num
-{
-    fn eq(&self, other: &Self) -> bool
-    {
-        self.0 == other.0
     }
 }
 

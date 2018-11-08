@@ -51,6 +51,11 @@ mod tests
         exec_str_pre_num(script).unwrap()
     }
 
+    fn exec_str_truth(script: &'static str) -> bool
+    {
+        exec_str_pre_truth(script).unwrap()
+    }
+
     #[test]
     fn parse_simple()
     {
@@ -211,6 +216,26 @@ mod tests
 
         // multiplication without parens
         assert_eq!(exec_str("3*-1"), -3.0);
+    }
+
+    #[cfg(feature = "v1-0")]
+    #[test]
+    fn test_truth()
+    {
+        // equal, not equal
+        assert_eq!(exec_str_truth("1==1"), true);
+        assert_eq!(exec_str_truth("1!=1"), false);
+        
+        // ordering
+        assert_eq!(exec_str_truth("20>10"), true);
+        assert_eq!(exec_str_truth("10<10"), false);
+        assert_eq!(exec_str_truth("10<1020"), true);
+        assert_eq!(exec_str_truth("10>1020"), false);
+
+        assert_eq!(exec_str_truth("10<=10"), true);
+        assert_eq!(exec_str_truth("10<=11"), true);
+        assert_eq!(exec_str_truth("10>=5"), true);
+        assert_eq!(exec_str_truth("10>=10"), true);
     }
 
     #[cfg(feature = "v1-0")]

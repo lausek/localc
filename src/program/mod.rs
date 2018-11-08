@@ -8,7 +8,8 @@ use self::context::{is_node_assignable, Context};
 use self::node::{Node, Node::*, Truth};
 
 #[derive(Debug)]
-pub enum Computation {
+pub enum Computation
+{
     Numeric(Num),
     Logical(Truth),
 }
@@ -91,8 +92,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
     }
 }
 
-fn compute_numeric(op: &Node, arg1: Num, arg2: Num)
-    -> ComputationResult<Computation>
+fn compute_numeric(op: &Node, arg1: Num, arg2: Num) -> ComputationResult<Computation>
 {
     use self::Computation::*;
     match op {

@@ -11,7 +11,7 @@ pub mod program;
 mod tests
 {
     use parser::*;
-    use program::{context::Context, node::Node, *, Computation, Computation::*};
+    use program::{context::Context, node::Node, Computation, Computation::*, *};
 
     fn parse_str(script: &'static str) -> Result<Node, String>
     {
@@ -24,7 +24,7 @@ mod tests
         //        and compare; panic if unequal
         execute(&parse_str(script).unwrap()).and_then(|c: Computation| match c {
             Numeric(v) => Ok(v.into()),
-            _ => Err(format!("invalid return type. got {:?}", c))
+            _ => Err(format!("invalid return type. got {:?}", c)),
         })
     }
 
@@ -34,11 +34,12 @@ mod tests
         //        and compare; panic if unequal
         execute(&parse_str(script).unwrap()).and_then(|c: Computation| match c {
             Logical(v) => Ok(v),
-            _ => Err(format!("invalid return type. got {:?}", c))
+            _ => Err(format!("invalid return type. got {:?}", c)),
         })
     }
 
-    fn exec_str_pre_with_ctx(script: &'static str, ctx: &mut Context) -> Result<Computation, String>
+    fn exec_str_pre_with_ctx(script: &'static str, ctx: &mut Context)
+        -> Result<Computation, String>
     {
         // FIXME: execute optimized version of code here too
         //        and compare; panic if unequal
@@ -162,7 +163,10 @@ mod tests
             "unknown function called"
         );
         assert!(exec_str_pre_num("sqrt()").is_err(), "too few arguments");
-        assert!(exec_str_pre_num("sqrt(16,16)").is_err(), "too many arguments");
+        assert!(
+            exec_str_pre_num("sqrt(16,16)").is_err(),
+            "too many arguments"
+        );
 
         // valid identifiers
         assert!(parse_str("x").is_ok(), "invalid identifier");

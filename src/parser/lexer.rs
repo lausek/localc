@@ -138,13 +138,11 @@ pub fn tokenize(script: &str) -> Result<Tokens, &'static str>
                         }
                         tokens.push(Paren(c));
                     }
-                    '+' | '-' | '*' | '/' | '^' | '=' => {
-                    }
+                    '+' | '-' | '*' | '/' | '^' | '=' => {}
                     ',' | ';' => tokens.push(Sep(c)),
                     _ => continue,
                 }
             }
-
         } else {
             buffer.push(c);
         }

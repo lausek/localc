@@ -116,7 +116,11 @@ fn compute_numeric(op: &Node, arg1: Num, arg2: Num) -> ComputationResult<Computa
     }
 }
 
-fn compute_logical(op: &Node, arg1: Computation, arg2: Computation) -> ComputationResult<Computation>
+fn compute_logical(
+    op: &Node,
+    arg1: Computation,
+    arg2: Computation,
+) -> ComputationResult<Computation>
 {
     use self::Computation::*;
     match (arg1, arg2) {
@@ -127,13 +131,13 @@ fn compute_logical(op: &Node, arg1: Computation, arg2: Computation) -> Computati
             Lt(_, _) => Ok(Logical(arg1 < arg2)),
             Ge(_, _) => Ok(Logical(arg1 >= arg2)),
             Le(_, _) => Ok(Logical(arg1 <= arg2)),
-            _ => panic!("compute_logical called without appropriate NodeBox")
-        }
+            _ => panic!("compute_logical called without appropriate NodeBox"),
+        },
         (Logical(arg1), Logical(arg2)) => match op {
             Eq(_, _) => Ok(Logical(arg1 == arg2)),
             Ne(_, _) => Ok(Logical(arg1 != arg2)),
-            _ => panic!("compute_logical called without appropriate NodeBox")
-        }
+            _ => panic!("compute_logical called without appropriate NodeBox"),
+        },
         _ => unreachable!(),
     }
 }

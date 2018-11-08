@@ -225,7 +225,7 @@ mod tests
         // equal, not equal
         assert_eq!(exec_str_truth("1==1"), true);
         assert_eq!(exec_str_truth("1!=1"), false);
-        
+
         // ordering
         assert_eq!(exec_str_truth("20>10"), true);
         assert_eq!(exec_str_truth("10<10"), false);

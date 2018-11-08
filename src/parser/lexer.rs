@@ -7,10 +7,9 @@ use self::Token::*;
 
 pub type Tokens = Vec<Token>;
 
-const SPECIAL_CHARS: &[char] = &[
-    '+', '-', '*', '/', '^', '(', ')', ' ', '[', ']', ',', ';', '=',
-];
 const VALID_IDENT_REGEX: &str = r#"^[a-zA-Z][\w']*$"#;
+const OPERATOR_CHARS: &[char] = &['+', '-', '*', '/', '^', '=', '<', '>'];
+const GRAMMAR_CHARS: &[char] = &['(', ')', '[', ']', ',', ';', ' '];
 
 #[derive(Clone, Debug)]
 pub enum Token
@@ -22,9 +21,15 @@ pub enum Token
     Sep(char),
 }
 
+// TODO: don't create Regex again every time; maybe use lazy_static?
 pub fn is_valid_ident(seq: &String) -> bool
 {
     !Regex::new(VALID_IDENT_REGEX).unwrap().is_match(seq)
+}
+
+pub fn is_special_char(c: &char) -> bool
+{
+    OPERATOR_CHARS.contains(c) || GRAMMAR_CHARS.contains(c)
 }
 
 // TODO: rename to optimize1 and merge +,- while validating
@@ -94,7 +99,6 @@ pub fn tokenize(script: &str) -> Result<Tokens, &'static str>
     let push_buffer: fn(&mut Tokens, &mut String) -> Result<(), &'static str> =
         |tokens: &mut Tokens, buffer: &mut String| {
             if buffer.parse::<f64>().is_err() {
-                // FIXME: don't create Regex again every time; maybe use lazy_static?
                 if is_valid_ident(buffer) {
                     return Err("not a valid identifier");
                 }
@@ -106,8 +110,9 @@ pub fn tokenize(script: &str) -> Result<Tokens, &'static str>
             Ok(())
         };
 
-    for c in script.chars() {
-        if SPECIAL_CHARS.contains(&c) {
+    let mut iter = script.chars().peekable();
+    while let Some(c) = iter.next() {
+        if is_special_char(&c) {
             if !buffer.is_empty() {
                 push_buffer(&mut tokens, &mut buffer)?;
             }
@@ -130,6 +135,7 @@ pub fn tokenize(script: &str) -> Result<Tokens, &'static str>
                 '+' | '-' | '*' | '/' | '^' | '=' => {
                     let mut raw = String::new();
                     raw.push(c);
+                    take_operators(&mut raw, &mut iter);
                     tokens.push(Operator(raw));
                 }
                 ',' | ';' => tokens.push(Sep(c)),
@@ -148,5 +154,19 @@ pub fn tokenize(script: &str) -> Result<Tokens, &'static str>
         Err("nesting is not correct")
     } else {
         Ok(tokens)
+    }
+}
+
+fn take_operators(into: &mut String, iter: &mut Peekable<std::str::Chars>)
+{
+    loop {
+        if iter.peek().is_none() {
+            return;
+        }
+        if OPERATOR_CHARS.contains(iter.peek().unwrap()) {
+            into.push(iter.next().unwrap());
+        } else {
+            break;
+        }
     }
 }

@@ -89,7 +89,7 @@ pub fn take_till_match(iter: &mut Peekable<IntoIter<Token>>, tillc: char) -> Tok
     buffer
 }
 
-pub fn tokenize(script: &str) -> Result<Tokens, &'static str>
+pub fn tokenize(script: String) -> Result<Tokens, &'static str>
 {
     let mut buffer = String::new();
     let mut tokens: Tokens = Vec::new();

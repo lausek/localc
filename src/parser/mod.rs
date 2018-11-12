@@ -19,7 +19,7 @@ enum TempToken
     Wait(Token),
 }
 
-pub fn parse(script: &str) -> Result<Node, String>
+pub fn parse(script: String) -> Result<Node, String>
 {
     let tokens = lexer::tokenize(script)?;
 

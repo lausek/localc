@@ -2,7 +2,7 @@ extern crate treecalc;
 
 fn exec(script: &str)
 {
-    match treecalc::parser::parse(script) {
+    match treecalc::parser::parse(script.to_string()) {
         Ok(program) => {
             println!("{:?}", treecalc::program::execute(&program));
         }
@@ -55,9 +55,9 @@ pub fn main()
         for line in stdin.lock().lines() {
             if let Ok(script) = line {
                 if vparse {
-                    println!("{:?}", treecalc::parser::lexer::tokenize(script.as_str()));
+                    println!("{:?}", treecalc::parser::lexer::tokenize(script));
                 } else {
-                    match treecalc::parser::parse(script.as_str()) {
+                    match treecalc::parser::parse(script.to_string()) {
                         Ok(program) => {
                             if vcompile {
                                 println!("{:?}", program);

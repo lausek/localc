@@ -15,7 +15,7 @@ mod tests
 
     fn parse_str(script: &'static str) -> Result<Node, String>
     {
-        parse(script)
+        parse(script.to_string())
     }
 
     fn exec_str_pre_num(script: &'static str) -> Result<f64, String>

@@ -196,7 +196,7 @@ impl Default for Context
         {
             let mut extend_ctx = |expr: &str| {
                 assert!(
-                    execute_with_ctx(&parse(expr).unwrap(), &mut new).is_ok(),
+                    execute_with_ctx(&parse(expr.to_string()).unwrap(), &mut new).is_ok(),
                     "preparing default context failed"
                 );
             };

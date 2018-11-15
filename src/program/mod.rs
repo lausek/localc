@@ -7,7 +7,7 @@ pub use self::num::Num;
 use self::context::{is_node_assignable, Context};
 use self::node::{Node, Node::*, Truth};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Computation
 {
     Numeric(Num),
@@ -21,19 +21,20 @@ impl std::fmt::Display for Computation
     {
         use self::Computation::*;
         match self {
-            Numeric(n) => write!(f, "{}", n),
-            Logical(t) => write!(f, "{}", t),
+            Numeric(n) => write!(f, "{}", n)?,
+            Logical(t) => write!(f, "{}", t)?,
             Set(vals) => {
-                write!(f, "{{");
+                write!(f, "{{")?;
                 if let Some(v) = vals.get(0) {
-                    write!(f, "{}", v);
+                    write!(f, "{}", v)?;
                 }
                 for v in vals.iter().skip(1) {
-                    write!(f, ",{}", v);
+                    write!(f, ",{}", v)?;
                 }
-                write!(f, "}}")
+                write!(f, "}}")?
             }
         }
+        Ok(())
     }
 }
 
@@ -49,12 +50,19 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
 {
     use self::Computation::*;
     match program {
-        Add(x, y) | Sub(x, y) | Mul(x, y) | Div(x, y) | Pow(x, y) => {
+        Add(x, y) | Sub(x, y) | Mul(x, y) | Div(x, y) | Pow(x, y) | Idx(x, y) => {
             let arg1 = execute_with_ctx(x, ctx)?;
             let arg2 = execute_with_ctx(y, ctx)?;
 
             match (arg1, arg2) {
                 (Numeric(arg1), Numeric(arg2)) => compute_numeric(&program, arg1, arg2),
+                (Set(arg1), index) => match index {
+                    Numeric(arg2) => match arg1.get(arg2.as_usize()) {
+                        Some(item) => Ok((*item).clone()),
+                        _ => Err(format!("cannot resolve index `{}` for `{:?}`", arg2, arg1)),
+                    },
+                    _ => Err(format!("invalid index `{}` for `{:?}`", index, arg1)),
+                },
                 _ => unimplemented!(),
             }
         }

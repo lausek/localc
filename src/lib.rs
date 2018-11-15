@@ -261,6 +261,14 @@ mod tests
         assert_eq!(exec_str_set("{1,2,3}"), vec!["1", "2", "3"]);
         assert_eq!(exec_str_set("{log(2, 4), 2}"), vec!["2", "2"]);
         assert_eq!(exec_str_set("{}"), Vec::<String>::new());
+
+        // indexing
+        assert_eq!(exec_str("{1,2,3}_2"), 3.0);
+        assert_eq!(exec_str("{1,2,3}_2^2"), 9.0);
+        assert!(
+            exec_str_pre_set("{1,2,3}_(1==2)^2").is_err(),
+            "bool is not a valid index"
+        );
     }
 
     #[cfg(feature = "v1-0")]
@@ -270,6 +278,11 @@ mod tests
         assert!(
             exec_str_pre_truth("x=1").is_ok(),
             "assignment from constant failed"
+        );
+
+        assert!(
+            exec_str_pre_truth("1=2").is_err(),
+            "assignment to constant is an invalid operation"
         );
 
         assert!(

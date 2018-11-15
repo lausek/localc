@@ -26,6 +26,9 @@ pub enum Node
     // assignment `=`
     Mov(NodeBox, NodeBox),
 
+    // indexing
+    Idx(NodeBox, NodeBox),
+
     NVal(Num),
     TVal(Truth),
     SVal(Vec<NodeBox>),
@@ -42,21 +45,23 @@ impl std::fmt::Display for Node
     {
         match self {
             // numerical
-            Add(x, y) => write!(f, "{} + {}", x, y),
-            Sub(x, y) => write!(f, "{} - {}", x, y),
-            Mul(x, y) => write!(f, "{} * {}", x, y),
-            Div(x, y) => write!(f, "{} / {}", x, y),
-            Pow(x, y) => write!(f, "{}^({})", x, y),
-            Mov(x, y) => write!(f, "{} = {}", x, y),
+            Add(x, y) => write!(f, "{} + {}", x, y)?,
+            Sub(x, y) => write!(f, "{} - {}", x, y)?,
+            Mul(x, y) => write!(f, "{} * {}", x, y)?,
+            Div(x, y) => write!(f, "{} / {}", x, y)?,
+            Pow(x, y) => write!(f, "{}^({})", x, y)?,
+            Mov(x, y) => write!(f, "{} = {}", x, y)?,
             // logical
-            Eq(x, y) => write!(f, "{} == {}", x, y),
-            Ne(x, y) => write!(f, "{} != {}", x, y),
-            Gt(x, y) => write!(f, "{} > {}", x, y),
-            Lt(x, y) => write!(f, "{} < {}", x, y),
-            Ge(x, y) => write!(f, "{} >= {}", x, y),
-            Le(x, y) => write!(f, "{} <= {}", x, y),
+            Eq(x, y) => write!(f, "{} == {}", x, y)?,
+            Ne(x, y) => write!(f, "{} != {}", x, y)?,
+            Gt(x, y) => write!(f, "{} > {}", x, y)?,
+            Lt(x, y) => write!(f, "{} < {}", x, y)?,
+            Ge(x, y) => write!(f, "{} >= {}", x, y)?,
+            Le(x, y) => write!(f, "{} <= {}", x, y)?,
 
-            Var(x) => write!(f, "{}", x),
+            Idx(x, y) => write!(f, "{}_{}", x, y)?,
+
+            Var(x) => write!(f, "{}", x)?,
             Func(x, y) => {
                 let args = y.iter().enumerate().fold(String::new(), |mut acc, (i, x)| {
                     if 0 < i {
@@ -65,21 +70,21 @@ impl std::fmt::Display for Node
                     acc.push_str(&format!("{}", x));
                     acc
                 });
-                write!(f, "{}({})", x, args)
+                write!(f, "{}({})", x, args)?
             }
 
-            NVal(x) => write!(f, "{}", x),
-            TVal(x) => write!(f, "{}", x),
+            NVal(x) => write!(f, "{}", x)?,
+            TVal(x) => write!(f, "{}", x)?,
             SVal(vals) => {
                 if let Some(v) = vals.get(0) {
-                    write!(f, "{}", v);
+                    write!(f, "{}", v)?;
                 }
                 for v in vals.iter().skip(1) {
-                    write!(f, ",{}", v);
+                    write!(f, ",{}", v)?;
                 }
-                Ok(())
             }
         }
+        Ok(())
     }
 }
 

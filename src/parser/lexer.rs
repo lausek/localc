@@ -8,7 +8,7 @@ use self::Token::*;
 pub type Tokens = Vec<Token>;
 
 const VALID_IDENT_REGEX: &str = r#"^[a-zA-Z][\w']*$"#;
-const OPERATOR_CHARS: &[char] = &['+', '-', '*', '/', '^', '=', '<', '>', '!'];
+const OPERATOR_CHARS: &[char] = &['+', '-', '*', '/', '^', '=', '<', '>', '_', '!'];
 const GRAMMAR_CHARS: &[char] = &['(', ')', '[', ']', '{', '}', ',', ';', ' '];
 
 #[derive(Clone, Debug)]

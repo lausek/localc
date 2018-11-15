@@ -74,6 +74,8 @@ fn parse_token_stream(mut tokens: Peekable<IntoIter<Token>>) -> Result<Node, Str
         return Err("no expression given".to_string());
     }
 
+    reduce(&mut subcomps, &["_"]);
+
     reduce(&mut subcomps, &["^"]);
 
     reduce(&mut subcomps, &["*", "/"]);
@@ -205,6 +207,9 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[&str])
         let done = match (prev, curr, next) {
             (Done(n1), Wait(op), Done(n2)) => Done(match op {
                 Operator(c) => match c.as_str() {
+                    // FIXME: only SVal or Var allowed here
+                    "_" => Idx(Box::new(n1), Box::new(n2)),
+
                     // numerical
                     "+" => Add(Box::new(n1), Box::new(n2)),
                     "-" => Sub(Box::new(n1), Box::new(n2)),

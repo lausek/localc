@@ -29,10 +29,9 @@ impl std::fmt::Debug for ContextFunction
     {
         use self::ContextFunction::*;
         match self {
-            Virtual(n) => write!(f, "{}", n),
-            _ => write!(f, "<native>"),
+            Virtual(n) => write!(f, "{}", n)?,
+            _ => write!(f, "<native>")?,
         }
-        .unwrap();
         Ok(())
     }
 }
@@ -43,10 +42,9 @@ impl std::fmt::Display for ContextFunction
     {
         use self::ContextFunction::*;
         match self {
-            Virtual(n) => write!(f, "{}", n),
-            _ => write!(f, "<native>"),
+            Virtual(n) => write!(f, "{}", n)?,
+            _ => write!(f, "<native>")?,
         }
-        .unwrap();
         Ok(())
     }
 }
@@ -140,7 +138,7 @@ impl std::fmt::Display for Context
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
     {
         for (k, v) in self.vars.iter() {
-            writeln!(f, "{}: {}", k, v);
+            writeln!(f, "{}: {}", k, v)?;
         }
         for (k, (arg, v)) in self.funcs.iter() {
             let params = arg
@@ -154,7 +152,7 @@ impl std::fmt::Display for Context
                     acc
                 });
 
-            writeln!(f, "{}({}): {}", k, params, v);
+            writeln!(f, "{}({}): {}", k, params, v)?;
         }
         Ok(())
     }
@@ -189,7 +187,8 @@ impl Default for Context
             new.setf(
                 "log".to_string(),
                 (vec![ident3.clone(), ident1.clone()], closure),
-            );
+            )
+            .expect("cannot declare default context function");
         }
 
         // virtual functions

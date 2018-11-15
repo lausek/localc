@@ -22,6 +22,11 @@ impl Num
         Self::new(std::f64::consts::E)
     }
 
+    pub fn as_usize(&self) -> usize
+    {
+        self.0 as usize
+    }
+
     // FIXME: replace this with trait impl?
     pub fn powf(self, other: Self) -> Self
     {
@@ -118,7 +123,7 @@ impl std::fmt::Display for Num
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
     {
-        write!(f, "{}", self.0);
+        write!(f, "{}", self.0)?;
         Ok(())
     }
 }

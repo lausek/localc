@@ -28,20 +28,25 @@ pub fn parse(script: String) -> Result<Node, String>
     }
 
     let valid_tokens = lexer::validate(tokens)?;
-    parse_list(valid_tokens.into_iter().peekable())
+    parse_token_stream(valid_tokens.into_iter().peekable())
 }
 
-fn parse_list(mut tokens: Peekable<IntoIter<Token>>) -> Result<Node, String>
+fn parse_token_stream(mut tokens: Peekable<IntoIter<Token>>) -> Result<Node, String>
 {
     let mut subcomps: Vec<TempToken> = Vec::new();
 
     while let Some(t) = tokens.next() {
         match t {
             Paren(paren) => {
-                if paren == '(' || paren == '[' {
+                if paren == '(' || paren == '[' || paren == '{' {
                     let subquery = lexer::take_till_match(&mut tokens, paren);
-                    let node = parse_list(subquery.into_iter().peekable())?;
-                    subcomps.push(Done(node));
+                    if paren == '{' {
+                        let node = parse_arg_list(&mut subquery.into_iter().peekable(), '{')?;
+                        subcomps.push(Done(SVal(node)));
+                    } else {
+                        let node = parse_token_stream(subquery.into_iter().peekable())?;
+                        subcomps.push(Done(node));
+                    }
                 }
             }
             Number(raw) => {
@@ -52,9 +57,10 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>) -> Result<Node, String>
                 }
             }
             Ident(ref name) => {
+                // is next Token a paren?
                 if let Some(Paren('(')) = tokens.peek() {
                     tokens.next();
-                    let args = parse_func_args(&mut tokens)?;
+                    let args = parse_arg_list(&mut tokens, '(')?;
                     subcomps.push(Done(Func(name.clone(), args)));
                 } else {
                     subcomps.push(Done(Var(name.to_string())));
@@ -85,12 +91,13 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>) -> Result<Node, String>
     }
 }
 
-fn parse_func_args(iter: &mut Peekable<IntoIter<Token>>) -> Result<Vec<NodeBox>, String>
+fn parse_arg_list(iter: &mut Peekable<IntoIter<Token>>, till: char)
+    -> Result<Vec<NodeBox>, String>
 {
-    let subquery = lexer::take_till_match(iter, '(');
+    let subquery = lexer::take_till_match(iter, till);
     let arguments = split_arguments(subquery)
         .into_iter()
-        .map(|s| parse_list(s.into_iter().peekable()))
+        .map(|s| parse_token_stream(s.into_iter().peekable()))
         .collect::<Vec<Result<Node, String>>>();
 
     if arguments.iter().any(|arg| arg.is_err()) {
@@ -99,7 +106,7 @@ fn parse_func_args(iter: &mut Peekable<IntoIter<Token>>) -> Result<Vec<NodeBox>,
             .filter(|item| item.is_err())
             .enumerate()
             .fold(
-                String::from("error in function arguments:\n"),
+                String::from("error in argument list:\n"),
                 |mut acc, (i, res)| {
                     acc.push_str(
                         format!("Err {}: {}\n", i + 1, res.as_ref().err().unwrap()).as_str(),

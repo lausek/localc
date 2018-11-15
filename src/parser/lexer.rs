@@ -9,7 +9,7 @@ pub type Tokens = Vec<Token>;
 
 const VALID_IDENT_REGEX: &str = r#"^[a-zA-Z][\w']*$"#;
 const OPERATOR_CHARS: &[char] = &['+', '-', '*', '/', '^', '=', '<', '>', '!'];
-const GRAMMAR_CHARS: &[char] = &['(', ')', '[', ']', ',', ';', ' '];
+const GRAMMAR_CHARS: &[char] = &['(', ')', '[', ']', '{', '}', ',', ';', ' '];
 
 #[derive(Clone, Debug)]
 pub enum Token
@@ -22,14 +22,14 @@ pub enum Token
 }
 
 // TODO: don't create Regex again every time; maybe use lazy_static?
-pub fn is_valid_ident(seq: &String) -> bool
+pub fn is_valid_ident(seq: &str) -> bool
 {
     !Regex::new(VALID_IDENT_REGEX).unwrap().is_match(seq)
 }
 
-pub fn is_special_char(c: &char) -> bool
+pub fn is_special_char(c: char) -> bool
 {
-    OPERATOR_CHARS.contains(c) || GRAMMAR_CHARS.contains(c)
+    OPERATOR_CHARS.contains(&c) || GRAMMAR_CHARS.contains(&c)
 }
 
 // TODO: rename to optimize1 and merge +,- while validating
@@ -70,7 +70,7 @@ pub fn take_till_match(iter: &mut Peekable<IntoIter<Token>>, tillc: char) -> Tok
     for t in iter {
         match t {
             Paren(paren) => {
-                if paren == '(' || paren == '[' {
+                if paren == '(' || paren == '[' || paren == '{' {
                     stack.push(paren);
                     buffer.push(Paren(paren));
                 } else if !stack.is_empty() {
@@ -112,7 +112,7 @@ pub fn tokenize(script: String) -> Result<Tokens, &'static str>
 
     let mut iter = script.chars().peekable();
     while let Some(c) = iter.next() {
-        if is_special_char(&c) {
+        if is_special_char(c) {
             if !buffer.is_empty() {
                 push_buffer(&mut tokens, &mut buffer)?;
             }
@@ -124,11 +124,11 @@ pub fn tokenize(script: String) -> Result<Tokens, &'static str>
                 tokens.push(Operator(raw));
             } else {
                 match c {
-                    '(' | '[' => {
+                    '(' | '[' | '{' => {
                         paren_stack.push(c);
                         tokens.push(Paren(c));
                     }
-                    ')' | ']' => {
+                    ')' | ']' | '}' => {
                         if let Some(popd) = paren_stack.pop() {
                             if (popd == '(' && c != ')') || (popd == '[' && c != ']') {
                                 return Err("nesting is not correct");

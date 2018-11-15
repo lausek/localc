@@ -12,6 +12,29 @@ pub enum Computation
 {
     Numeric(Num),
     Logical(Truth),
+    Set(Vec<Computation>),
+}
+
+impl std::fmt::Display for Computation
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
+    {
+        use self::Computation::*;
+        match self {
+            Numeric(n) => write!(f, "{}", n),
+            Logical(t) => write!(f, "{}", t),
+            Set(vals) => {
+                write!(f, "{{");
+                if let Some(v) = vals.get(0) {
+                    write!(f, "{}", v);
+                }
+                for v in vals.iter().skip(1) {
+                    write!(f, ",{}", v);
+                }
+                write!(f, "}}")
+            }
+        }
+    }
 }
 
 pub type ComputationResult<V> = Result<V, String>;
@@ -69,6 +92,15 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
         }
         NVal(ref n) => Ok(Numeric(*n)),
         TVal(ref n) => Ok(Logical(*n)),
+        SVal(ref vals) => {
+            let mut result = Vec::new();
+            for v in vals {
+                // FIXME: don't call execute if value is numeric or logical
+                let part = execute_with_ctx(&v, ctx)?;
+                result.push(part);
+            }
+            Ok(Set(result))
+        }
         Func(ref name, args) => {
             if ctx.getf(name).is_none() {
                 return Err(format!("function `{}` not declared", name));

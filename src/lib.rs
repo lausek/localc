@@ -38,6 +38,16 @@ mod tests
         })
     }
 
+    fn exec_str_pre_set(script: &'static str) -> Result<Vec<String>, String>
+    {
+        // FIXME: execute optimized version of code here too
+        //        and compare; panic if unequal
+        execute(&parse_str(script).unwrap()).and_then(|c: Computation| match c {
+            Set(v) => Ok(v.iter().map(|v| format!("{}", v)).collect()),
+            _ => Err(format!("invalid return type. got {:?}", c)),
+        })
+    }
+
     fn exec_str_pre_with_ctx(script: &'static str, ctx: &mut Context)
         -> Result<Computation, String>
     {
@@ -54,6 +64,11 @@ mod tests
     fn exec_str_truth(script: &'static str) -> bool
     {
         exec_str_pre_truth(script).unwrap()
+    }
+
+    fn exec_str_set(script: &'static str) -> Vec<String>
+    {
+        exec_str_pre_set(script).unwrap()
     }
 
     #[test]
@@ -236,6 +251,16 @@ mod tests
         assert_eq!(exec_str_truth("10<=11"), true);
         assert_eq!(exec_str_truth("10>=5"), true);
         assert_eq!(exec_str_truth("10>=10"), true);
+    }
+
+    #[cfg(feature = "v1-0")]
+    #[test]
+    fn test_set()
+    {
+        // parsing
+        assert_eq!(exec_str_set("{1,2,3}"), vec!["1", "2", "3"]);
+        assert_eq!(exec_str_set("{log(2, 4), 2}"), vec!["2", "2"]);
+        assert_eq!(exec_str_set("{}"), Vec::<String>::new());
     }
 
     #[cfg(feature = "v1-0")]

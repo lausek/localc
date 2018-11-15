@@ -28,6 +28,7 @@ pub enum Node
 
     NVal(Num),
     TVal(Truth),
+    SVal(Vec<NodeBox>),
 
     // identifier
     Var(Identifier),
@@ -55,8 +56,6 @@ impl std::fmt::Display for Node
             Ge(x, y) => write!(f, "{} >= {}", x, y),
             Le(x, y) => write!(f, "{} <= {}", x, y),
 
-            NVal(x) => write!(f, "{}", x),
-            TVal(x) => write!(f, "{}", x),
             Var(x) => write!(f, "{}", x),
             Func(x, y) => {
                 let args = y.iter().enumerate().fold(String::new(), |mut acc, (i, x)| {
@@ -67,6 +66,18 @@ impl std::fmt::Display for Node
                     acc
                 });
                 write!(f, "{}({})", x, args)
+            }
+
+            NVal(x) => write!(f, "{}", x),
+            TVal(x) => write!(f, "{}", x),
+            SVal(vals) => {
+                if let Some(v) = vals.get(0) {
+                    write!(f, "{}", v);
+                }
+                for v in vals.iter().skip(1) {
+                    write!(f, ",{}", v);
+                }
+                Ok(())
             }
         }
     }

@@ -74,7 +74,9 @@ fn parse_list(mut tokens: Peekable<IntoIter<Token>>) -> Result<Node, String>
 
     reduce(&mut subcomps, &["+", "-"]);
 
-    reduce(&mut subcomps, &["=", "==", "!=", ">", ">=", "<", "<="]);
+    reduce(&mut subcomps, &["==", "!=", ">", ">=", "<", "<="]);
+
+    reduce(&mut subcomps, &["="]);
 
     if let Some(Done(node)) = subcomps.into_iter().next() {
         Ok(node)

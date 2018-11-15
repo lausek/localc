@@ -138,7 +138,6 @@ pub fn tokenize(script: String) -> Result<Tokens, &'static str>
                         }
                         tokens.push(Paren(c));
                     }
-                    '+' | '-' | '*' | '/' | '^' | '=' => {}
                     ',' | ';' => tokens.push(Sep(c)),
                     _ => continue,
                 }

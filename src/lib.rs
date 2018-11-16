@@ -231,6 +231,8 @@ mod tests
 
         // multiplication without parens
         assert_eq!(exec_str("3*-1"), -3.0);
+
+        assert_eq!(exec_str("-(1+2)"), -3.0);
     }
 
     #[cfg(feature = "v1-0")]

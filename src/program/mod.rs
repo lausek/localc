@@ -68,7 +68,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
                 _ => unimplemented!(),
             }
         }
-        Eq(x, y) | Ne(x, y) | Gt(x, y) | Lt(x, y) | Ge(x, y) | Le(x, y) => {
+        Eq(x, y) | Ne(x, y) | Gt(x, y) | Lt(x, y) | Ge(x, y) | Le(x, y) | Or(x, y) | And(x, y) => {
             let arg1 = execute_with_ctx(x, ctx)?;
             let arg2 = execute_with_ctx(y, ctx)?;
             compute_logical(&program, arg1, arg2)
@@ -178,6 +178,8 @@ fn compute_logical(
         (Logical(arg1), Logical(arg2)) => match op {
             Eq(_, _) => Ok(Logical(arg1 == arg2)),
             Ne(_, _) => Ok(Logical(arg1 != arg2)),
+            Or(_, _) => Ok(Logical(arg1 || arg2)),
+            And(_, _) => Ok(Logical(arg1 && arg2)),
             _ => panic!("compute_logical called without appropriate NodeBox"),
         },
         _ => unreachable!(),

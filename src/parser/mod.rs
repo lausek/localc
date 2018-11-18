@@ -84,6 +84,8 @@ fn parse_token_stream(mut tokens: Peekable<IntoIter<Token>>) -> Result<Node, Str
 
     reduce(&mut subcomps, &["==", "!=", ">", ">=", "<", "<="]);
 
+    reduce(&mut subcomps, &["&&", "||"]);
+
     reduce(&mut subcomps, &["="]);
 
     if let Some(Done(node)) = subcomps.into_iter().next() {
@@ -225,6 +227,8 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[&str])
                     ">" => Gt(Box::new(n1), Box::new(n2)),
                     "<=" => Le(Box::new(n1), Box::new(n2)),
                     "<" => Lt(Box::new(n1), Box::new(n2)),
+                    "||" => Or(Box::new(n1), Box::new(n2)),
+                    "&&" => And(Box::new(n1), Box::new(n2)),
                     _ => unreachable!(),
                 },
                 _ => panic!("neeeej"),

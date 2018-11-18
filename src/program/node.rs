@@ -22,6 +22,8 @@ pub enum Node
     Lt(NodeBox, NodeBox),
     Ge(NodeBox, NodeBox),
     Le(NodeBox, NodeBox),
+    Or(NodeBox, NodeBox),
+    And(NodeBox, NodeBox),
 
     // assignment `=`
     Mov(NodeBox, NodeBox),
@@ -58,6 +60,8 @@ impl std::fmt::Display for Node
             Lt(x, y) => write!(f, "{} < {}", x, y)?,
             Ge(x, y) => write!(f, "{} >= {}", x, y)?,
             Le(x, y) => write!(f, "{} <= {}", x, y)?,
+            Or(x, y) => write!(f, "{} || {}", x, y)?,
+            And(x, y) => write!(f, "{} && {}", x, y)?,
 
             Idx(x, y) => write!(f, "{}_{}", x, y)?,
 

@@ -254,6 +254,18 @@ mod tests
         assert_eq!(exec_str_truth("10>=5"), true);
         assert_eq!(exec_str_truth("10>=10"), true);
 
+        // or
+        assert_eq!(exec_str_truth("1==1 || 2==2"), true);
+        assert_eq!(exec_str_truth("1==1 || 2!=2"), true);
+        assert_eq!(exec_str_truth("1!=1 || 2==2"), true);
+        assert_eq!(exec_str_truth("1!=1 || 2!=2"), false);
+
+        // and
+        assert_eq!(exec_str_truth("1==1 && 2==2"), true);
+        assert_eq!(exec_str_truth("1==1 && 2!=2"), false);
+        assert_eq!(exec_str_truth("1!=1 && 2==2"), false);
+        assert_eq!(exec_str_truth("1!=1 && 2!=2"), false);
+
         // if
         assert_eq!(exec_str("if(1==1,1,2)"), 1.0);
         assert_eq!(exec_str("if(1!=1,1,2)"), 2.0);

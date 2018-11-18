@@ -195,6 +195,8 @@ mod tests
         assert!(parse_str("1test").is_err(), "invalid identifier");
         assert!(parse_str("f'").is_ok(), "invalid identifier");
         assert!(parse_str("10").is_ok(), "number is treated as identifier");
+        assert!(parse_str("empty?").is_ok(), "invalid identifier");
+        assert!(parse_str("empt?y").is_err(), "invalid identifier");
     }
 
     #[test]
@@ -220,6 +222,18 @@ mod tests
         assert_eq!(exec_str("ln(10)"), 2.302585092994046);
         assert_eq!(exec_str("ln(1)"), 0.0);
         assert_eq!(exec_str("ln(e)"), 1.0);
+
+        // if
+        assert_eq!(exec_str("if(1==1,1,2)"), 1.0);
+        assert_eq!(exec_str("if(1!=1,1,2)"), 2.0);
+        assert!(
+            exec_str_pre_num("if(1,1,2)").is_err(),
+            "only logical values allowed in `if` condition"
+        );
+
+        // empty?
+        assert_eq!(exec_str_truth("empty?({})"), true);
+        assert_eq!(exec_str_truth("empty?({1})"), false);
     }
 
     #[cfg(feature = "v1-0")]
@@ -265,14 +279,6 @@ mod tests
         assert_eq!(exec_str_truth("1==1 && 2!=2"), false);
         assert_eq!(exec_str_truth("1!=1 && 2==2"), false);
         assert_eq!(exec_str_truth("1!=1 && 2!=2"), false);
-
-        // if
-        assert_eq!(exec_str("if(1==1,1,2)"), 1.0);
-        assert_eq!(exec_str("if(1!=1,1,2)"), 2.0);
-        assert!(
-            exec_str_pre_num("if(1,1,2)").is_err(),
-            "only logical values allowed in `if` condition"
-        );
     }
 
     #[cfg(feature = "v1-0")]

@@ -202,6 +202,9 @@ impl Default for Context
             "if" => (cond: Logical, t: Numeric, f: Numeric) {
                 Ok(if cond {Numeric(t)} else {Numeric(f)})
             }
+            "empty?" => (set: Set) {
+                Ok(Logical(set.is_empty()))
+            }
         };
 
         // virtual functions

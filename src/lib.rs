@@ -253,6 +253,14 @@ mod tests
         assert_eq!(exec_str_truth("10<=11"), true);
         assert_eq!(exec_str_truth("10>=5"), true);
         assert_eq!(exec_str_truth("10>=10"), true);
+
+        // if
+        assert_eq!(exec_str("if(1==1,1,2)"), 1.0);
+        assert_eq!(exec_str("if(1!=1,1,2)"), 2.0);
+        assert!(
+            exec_str_pre_num("if(1,1,2)").is_err(),
+            "only logical values allowed in `if` condition"
+        );
     }
 
     #[cfg(feature = "v1-0")]

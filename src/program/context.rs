@@ -2,6 +2,27 @@ use super::node::{Node::*, NodeBox};
 use program::{node::Identifier, Computation, ComputationResult};
 use std::collections::{hash_map::Iter, HashMap};
 
+macro_rules! add_native_func {
+    { $ctx:expr, $($name:expr => ($($arg:ident: $type:path),*) $body:block )* } => {
+        $(
+            let closure = ContextFunction::Native(|ctx: &mut Context, args: &Vec<NodeBox>| {
+                let mut iter = args.iter();
+                $(
+                    let $arg = super::execute_with_ctx(&iter.next().unwrap(), ctx)?;
+                )*
+                match ($($arg),*) {
+                    ($($type($arg)),*) => $body,
+                    _ => Err("invalid argument types for native function".to_string()),
+                }
+            });
+            $ctx.setf($name.to_string(), (vec![
+                $(Box::new(Var(stringify!($arg).to_string()))),*
+            ], closure))
+                .expect("cannot declare native context function");
+        )*
+    };
+}
+
 pub type Closure = fn(&mut Context, &Vec<NodeBox>) -> ComputationResult<Computation>;
 
 #[derive(Clone)]
@@ -164,6 +185,7 @@ impl Default for Context
     {
         use parser::parse;
         use program::execute_with_ctx;
+        use program::Computation::*;
 
         let mut new = Self {
             vars: HashMap::new(),
@@ -172,24 +194,15 @@ impl Default for Context
         };
 
         // native functions
-        {
-            let ident1 = Box::new(Var("x".to_string()));
-            let ident3 = Box::new(Var("base".to_string()));
-            let closure = ContextFunction::Native(|ctx: &mut Self, args: &Vec<NodeBox>| {
-                use program::Computation::*;
-                let base = super::execute_with_ctx(&args[0], ctx)?;
-                let x = super::execute_with_ctx(&args[1], ctx)?;
-                match (base, x) {
-                    (Numeric(base), Numeric(x)) => Ok(Numeric(x.log(base))),
-                    _ => panic!("native function got very dumb params!"),
-                }
-            });
-            new.setf(
-                "log".to_string(),
-                (vec![ident3.clone(), ident1.clone()], closure),
-            )
-            .expect("cannot declare default context function");
-        }
+        add_native_func! {
+            new,
+            "log" => (base: Numeric, x: Numeric) {
+                Ok(Numeric(x.log(base)))
+            }
+            "if" => (cond: Logical, t: Numeric, f: Numeric) {
+                Ok(if cond {Numeric(t)} else {Numeric(f)})
+            }
+        };
 
         // virtual functions
         {

@@ -2,10 +2,12 @@ pub mod context;
 pub mod node;
 pub mod num;
 
+pub use self::context::Context;
+pub use self::node::Node;
 pub use self::num::Num;
 
-use self::context::{is_node_assignable, Context};
-use self::node::{Node, Node::*, Truth};
+use self::context::is_node_assignable;
+use self::node::{Node::*, Truth};
 
 #[derive(Clone, Debug)]
 pub enum Computation

@@ -14,6 +14,7 @@ pub enum Node
     Mul(NodeBox, NodeBox),
     Div(NodeBox, NodeBox),
     Pow(NodeBox, NodeBox),
+    Mod(NodeBox, NodeBox),
 
     // logical
     Eq(NodeBox, NodeBox),
@@ -53,6 +54,8 @@ impl std::fmt::Display for Node
             Div(x, y) => write!(f, "{} / {}", x, y)?,
             Pow(x, y) => write!(f, "{}^({})", x, y)?,
             Mov(x, y) => write!(f, "{} = {}", x, y)?,
+            Mod(x, y) => write!(f, "{} % {}", x, y)?,
+
             // logical
             Eq(x, y) => write!(f, "{} == {}", x, y)?,
             Ne(x, y) => write!(f, "{} != {}", x, y)?,
@@ -119,6 +122,7 @@ impl Node
                 Some(ils)
             }
             Mov(_, rhs) => rhs.idents(),
+            // FIXME: logical operators and SVal are not considered here. BUG!!!
             _ => None,
         }
     }

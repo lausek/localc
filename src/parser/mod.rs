@@ -78,7 +78,7 @@ fn parse_token_stream(mut tokens: Peekable<IntoIter<Token>>) -> Result<Node, Str
 
     reduce(&mut subcomps, &["^"]);
 
-    reduce(&mut subcomps, &["*", "/"]);
+    reduce(&mut subcomps, &["*", "/", "%"]);
 
     reduce(&mut subcomps, &["+", "-"]);
 
@@ -218,6 +218,7 @@ fn reduce(tokens: &mut Vec<TempToken>, group: &[&str])
                     "*" => Mul(Box::new(n1), Box::new(n2)),
                     "/" => Div(Box::new(n1), Box::new(n2)),
                     "^" => Pow(Box::new(n1), Box::new(n2)),
+                    "%" => Mod(Box::new(n1), Box::new(n2)),
                     "=" => Mov(Box::new(n1), Box::new(n2)),
 
                     // logical

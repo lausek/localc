@@ -52,7 +52,7 @@ pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<
 {
     use self::Computation::*;
     match program {
-        Add(x, y) | Sub(x, y) | Mul(x, y) | Div(x, y) | Pow(x, y) | Idx(x, y) => {
+        Add(x, y) | Sub(x, y) | Mul(x, y) | Div(x, y) | Pow(x, y) | Mod(x, y) | Idx(x, y) => {
             let arg1 = execute_with_ctx(x, ctx)?;
             let arg2 = execute_with_ctx(y, ctx)?;
 
@@ -147,6 +147,7 @@ fn compute_numeric(op: &Node, arg1: Num, arg2: Num) -> ComputationResult<Computa
         Sub(_, _) => Ok(Numeric(arg1 - arg2)),
         Mul(_, _) => Ok(Numeric(arg1 * arg2)),
         Pow(_, _) => Ok(Numeric(arg1.powf(arg2))),
+        Mod(_, _) => Ok(Numeric(arg1 % arg2)),
         Div(_, _) => {
             if arg2 == Num::new(0.0) {
                 Err("division with 0".to_string())

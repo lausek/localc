@@ -84,6 +84,17 @@ impl std::ops::Div for Num
     }
 }
 
+impl std::ops::Rem for Num
+{
+    type Output = Self;
+
+    fn rem(mut self, other: Self) -> Self
+    {
+        self.0 %= other.0;
+        self
+    }
+}
+
 impl std::convert::From<InternalNumType> for Num
 {
     fn from(from: InternalNumType) -> Self

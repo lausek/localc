@@ -90,6 +90,10 @@ mod tests
         // power
         assert_eq!(exec_str("10^3"), 1000.0);
 
+        // modulo
+        assert_eq!(exec_str("8%2"), 0.0);
+        assert_eq!(exec_str("9%2"), 1.0);
+
         // division with zero
         assert!(
             exec_str_pre_num("18/0").is_err(),

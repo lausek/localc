@@ -3,6 +3,7 @@
 #![feature(self_struct_ctor)]
 
 extern crate regex;
+extern crate rand;
 
 pub mod parser;
 pub mod program;

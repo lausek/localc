@@ -1,5 +1,5 @@
 use super::node::{Node::*, NodeBox};
-use program::{node::Identifier, Computation, ComputationResult};
+use program::{node::Identifier, Computation, ComputationResult, Num};
 use std::collections::{hash_map::Iter, HashMap};
 
 macro_rules! add_native_func {
@@ -201,6 +201,9 @@ impl Default for Context
             }
             "if" => (cond: Logical, t: Numeric, f: Numeric) {
                 Ok(if cond {Numeric(t)} else {Numeric(f)})
+            }
+            "rnd" => () {
+                Ok(Numeric(Num::random()))
             }
             "empty?" => (set: Set) {
                 Ok(Logical(set.is_empty()))

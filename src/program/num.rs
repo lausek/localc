@@ -38,6 +38,10 @@ impl Num
     {
         Self(self.0.log(other.0))
     }
+
+    pub fn random() -> Self {
+        Num::new(rand::random::<f64>())
+    }
 }
 
 impl std::ops::Add for Num

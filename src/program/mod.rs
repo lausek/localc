@@ -60,7 +60,13 @@ pub fn execute_script(script: std::fs::File) -> ComputationResult<Computation>
         if line.is_err() {
             return Err("line could not be read from script".to_string());
         }
-        let program = parse(line.unwrap())?;
+
+        let line = line.unwrap();
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        let program = parse(line)?;
         match execute_with_ctx(&program, &mut ctx) {
             res @ Ok(_) => if let None = iter.peek() {
                 return res;

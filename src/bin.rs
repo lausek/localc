@@ -1,5 +1,7 @@
 extern crate treecalc;
 
+use std::fs::File;
+
 fn exec(script: &str)
 {
     match treecalc::parser::parse(script.to_string()) {
@@ -15,6 +17,8 @@ pub fn main()
     use std::env;
     use std::io::{self, BufRead};
     use treecalc::program::context::Context;
+    
+    let mut ctx = Context::default();
 
     let mut arg_iter = env::args();
     let mut executed = 0;
@@ -22,14 +26,27 @@ pub fn main()
     let mut vparse = false;
     let mut pidents = false;
 
+    let next_arg = |it: &mut std::env::Args| {
+        let expression = it.next();
+        if expression.is_none() {
+            panic!("parameter expected, got nothing");
+        }
+        expression.unwrap()
+    };
+
     while let Some(arg) = arg_iter.next() {
         match arg.as_str() {
             "-e" => {
-                let expression = arg_iter.next();
-                if expression.is_none() {
-                    break;
+                exec(&next_arg(&mut arg_iter));
+                executed += 1;
+            }
+            "-s" => {
+                let path = next_arg(&mut arg_iter);
+                let file = File::open(path.clone());
+                if let Err(msg) = file {
+                    panic!(format!("{}: {}", msg, path));
                 }
-                exec(&expression.unwrap());
+                println!("{:?}", treecalc::program::execute_script(file.unwrap()));
                 executed += 1;
             }
             // `vad` does this compile to?
@@ -50,7 +67,6 @@ pub fn main()
 
     if executed == 0 {
         let stdin = io::stdin();
-        let mut ctx = Context::default();
 
         for line in stdin.lock().lines() {
             if let Ok(script) = line {

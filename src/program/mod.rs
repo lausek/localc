@@ -9,6 +9,8 @@ pub use self::num::Num;
 use self::context::is_node_assignable;
 use self::node::{Node::*, Truth};
 
+use parser::parse;
+
 #[derive(Clone, Debug)]
 pub enum Computation
 {
@@ -44,8 +46,30 @@ pub type ComputationResult<V> = Result<V, String>;
 
 pub fn execute(program: &Node) -> ComputationResult<Computation>
 {
-    let mut ctx = Default::default();
+    let mut ctx = Context::default();
     execute_with_ctx(program, &mut ctx)
+}
+
+pub fn execute_script(script: std::fs::File) -> ComputationResult<Computation>
+{
+    use std::io::{BufRead, BufReader};
+    let mut ctx = Context::default();
+    let mut iter = BufReader::new(script).lines().into_iter().peekable();
+
+    while let Some(line) = iter.next() {
+        if line.is_err() {
+            return Err("line could not be read from script".to_string());
+        }
+        let program = parse(line.unwrap())?;
+        match execute_with_ctx(&program, &mut ctx) {
+            res @ Ok(_) => if let None = iter.peek() {
+                return res;
+            },
+            e @ Err(_) => return e,
+        } 
+    } 
+
+    Err("script is empty".to_string())
 }
 
 pub fn execute_with_ctx(program: &Node, ctx: &mut Context) -> ComputationResult<Computation>

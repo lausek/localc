@@ -100,7 +100,6 @@ impl Node
     pub fn idents(&self) -> Option<Vec<Identifier>>
     {
         match self {
-            Var(x) => Some(vec![x.clone()]),
             Func(x, args) => {
                 let mut ils = vec![];
                 ils.push(x.clone());
@@ -111,7 +110,10 @@ impl Node
                 }
                 Some(ils)
             }
-            Add(lhs, rhs) | Sub(lhs, rhs) | Mul(lhs, rhs) | Div(lhs, rhs) | Pow(lhs, rhs) => {
+            Add(lhs, rhs) | Sub(lhs, rhs) | Mul(lhs, rhs) | Div(lhs, rhs) | Pow(lhs, rhs) | Mod(lhs, rhs) |
+            Idx(lhs, rhs) |
+            Eq(lhs, rhs)  | Ne(lhs, rhs)  | Gt(lhs, rhs)  | Lt(lhs, rhs)  | Ge(lhs, rhs)  | Le(lhs, rhs)  |
+            Or(lhs, rhs)  | And(lhs, rhs) => {
                 let mut ils = vec![];
                 if let Some(lhs_deps) = lhs.idents() {
                     ils.extend(lhs_deps);
@@ -122,7 +124,16 @@ impl Node
                 Some(ils)
             }
             Mov(_, rhs) => rhs.idents(),
-            // FIXME: logical operators and SVal are not considered here. BUG!!!
+            Var(x) => Some(vec![x.clone()]),
+            SVal(items) => {
+                let mut ils = vec![];
+                for item in items {
+                    if let Some(item_deps) = item.idents() {
+                        ils.extend(item_deps);
+                    }
+                }
+                Some(ils)
+            },
             _ => None,
         }
     }

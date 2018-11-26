@@ -110,10 +110,21 @@ impl Node
                 }
                 Some(ils)
             }
-            Add(lhs, rhs) | Sub(lhs, rhs) | Mul(lhs, rhs) | Div(lhs, rhs) | Pow(lhs, rhs) | Mod(lhs, rhs) |
-            Idx(lhs, rhs) |
-            Eq(lhs, rhs)  | Ne(lhs, rhs)  | Gt(lhs, rhs)  | Lt(lhs, rhs)  | Ge(lhs, rhs)  | Le(lhs, rhs)  |
-            Or(lhs, rhs)  | And(lhs, rhs) => {
+            Add(lhs, rhs)
+            | Sub(lhs, rhs)
+            | Mul(lhs, rhs)
+            | Div(lhs, rhs)
+            | Pow(lhs, rhs)
+            | Mod(lhs, rhs)
+            | Idx(lhs, rhs)
+            | Eq(lhs, rhs)
+            | Ne(lhs, rhs)
+            | Gt(lhs, rhs)
+            | Lt(lhs, rhs)
+            | Ge(lhs, rhs)
+            | Le(lhs, rhs)
+            | Or(lhs, rhs)
+            | And(lhs, rhs) => {
                 let mut ils = vec![];
                 if let Some(lhs_deps) = lhs.idents() {
                     ils.extend(lhs_deps);
@@ -133,7 +144,7 @@ impl Node
                     }
                 }
                 Some(ils)
-            },
+            }
             _ => None,
         }
     }

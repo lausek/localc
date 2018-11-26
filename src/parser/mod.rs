@@ -27,7 +27,7 @@ pub fn parse(script: String) -> Result<Node, String>
         return Err("no expression given".to_string());
     }
 
-    let valid_tokens = lexer::validate(tokens)?;
+    let valid_tokens = lexer::postprocess(tokens)?;
     parse_token_stream(valid_tokens.into_iter().peekable())
 }
 
@@ -41,6 +41,7 @@ fn parse_token_stream(mut tokens: Peekable<IntoIter<Token>>) -> Result<Node, Str
                 if paren == '(' || paren == '[' || paren == '{' {
                     let subquery = lexer::take_till_match(&mut tokens, paren);
                     if paren == '{' {
+                        // TODO: check if parens contain | here
                         let node = parse_arg_list(&mut subquery.into_iter().peekable(), '{')?;
                         subcomps.push(Done(SVal(node)));
                     } else {

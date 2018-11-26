@@ -39,7 +39,8 @@ impl Num
         Self(self.0.log(other.0))
     }
 
-    pub fn random() -> Self {
+    pub fn random() -> Self
+    {
         Num::new(rand::random::<f64>())
     }
 }

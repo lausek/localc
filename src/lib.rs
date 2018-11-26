@@ -2,8 +2,8 @@
 #![feature(box_syntax)]
 #![feature(self_struct_ctor)]
 
-extern crate regex;
 extern crate rand;
+extern crate regex;
 
 pub mod parser;
 pub mod program;
@@ -156,6 +156,10 @@ mod tests
             parse_str("10*[(2*(2+1)-1]]-1").is_err(),
             "nesting is not valid"
         );
+        assert!(
+            parse_str("10*{(2*(2+1)-1)-1").is_err(),
+            "nesting is not valid"
+        );
 
         // empty expression
         assert!(parse_str("[]").is_err(), "empty expression is an error");
@@ -302,6 +306,9 @@ mod tests
             exec_str_pre_set("{1,2,3}_(1==2)^2").is_err(),
             "bool is not a valid index"
         );
+
+        // generator
+        assert_eq!(exec_str_set("{x | 0 < x, x < 5}"), vec!["1", "2", "3", "4"]);
     }
 
     #[cfg(feature = "v1-0")]

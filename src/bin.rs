@@ -17,14 +17,13 @@ pub fn main()
     use std::env;
     use std::io::{self, BufRead};
     use treecalc::program::context::Context;
-    
-    let mut ctx = Context::default();
 
     let mut arg_iter = env::args();
     let mut executed = 0;
     let mut vcompile = false;
     let mut vparse = false;
     let mut pidents = false;
+    let mut nodefault = false;
 
     let next_arg = |it: &mut std::env::Args| {
         let expression = it.next();
@@ -49,6 +48,9 @@ pub fn main()
                 println!("{:?}", treecalc::program::execute_script(file.unwrap()));
                 executed += 1;
             }
+            "-no-default" => {
+                nodefault = true;
+            }
             // `vad` does this compile to?
             "-vc" => {
                 vcompile = true;
@@ -64,6 +66,12 @@ pub fn main()
             _ => {}
         }
     }
+
+    let mut ctx = if nodefault {
+        Context::new()
+    } else {
+        Context::default()
+    };
 
     if executed == 0 {
         let stdin = io::stdin();

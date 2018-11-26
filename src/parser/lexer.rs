@@ -36,7 +36,7 @@ pub fn is_special_char(c: char) -> bool
 
 // TODO: rename to optimize1 and merge +,- while validating
 //       - other optimizations too?
-pub fn validate(tokens: Tokens) -> Result<Tokens, &'static str>
+pub fn postprocess(tokens: Tokens) -> Result<Tokens, &'static str>
 {
     {
         let mut iter = tokens.iter().peekable();
@@ -132,7 +132,10 @@ pub fn tokenize(script: String) -> Result<Tokens, &'static str>
                     }
                     ')' | ']' | '}' => {
                         if let Some(popd) = paren_stack.pop() {
-                            if (popd == '(' && c != ')') || (popd == '[' && c != ']') {
+                            if (popd == '(' && c != ')')
+                                || (popd == '[' && c != ']')
+                                || (popd == '{' && c != '}')
+                            {
                                 return Err("nesting is not correct");
                             }
                         } else {

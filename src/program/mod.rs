@@ -68,12 +68,14 @@ pub fn execute_script(script: std::fs::File) -> ComputationResult<Computation>
 
         let program = parse(line)?;
         match execute_with_ctx(&program, &mut ctx) {
-            res @ Ok(_) => if let None = iter.peek() {
-                return res;
-            },
+            res @ Ok(_) => {
+                if let None = iter.peek() {
+                    return res;
+                }
+            }
             e @ Err(_) => return e,
-        } 
-    } 
+        }
+    }
 
     Err("script is empty".to_string())
 }

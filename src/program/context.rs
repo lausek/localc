@@ -80,6 +80,15 @@ pub struct Context
 
 impl Context
 {
+    pub fn new() -> Self
+    {
+        Self {
+            vars: HashMap::new(),
+            funcs: HashMap::new(),
+            deps: HashMap::new(),
+        }
+    }
+
     pub fn get(&self, key: &Identifier) -> Option<&NodeBox>
     {
         self.vars.get(key)
@@ -187,11 +196,7 @@ impl Default for Context
         use program::execute_with_ctx;
         use program::Computation::*;
 
-        let mut new = Self {
-            vars: HashMap::new(),
-            funcs: HashMap::new(),
-            deps: HashMap::new(),
-        };
+        let mut new = Self::new();
 
         // native functions
         add_native_func! {
@@ -199,6 +204,7 @@ impl Default for Context
             "log" => (base: Numeric, x: Numeric) {
                 Ok(Numeric(x.log(base)))
             }
+            // FIXME: should also work with Computation in general
             "if" => (cond: Logical, t: Numeric, f: Numeric) {
                 Ok(if cond {Numeric(t)} else {Numeric(f)})
             }

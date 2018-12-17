@@ -5,9 +5,10 @@ use std::fs::File;
 fn exec(script: &str)
 {
     match treecalc::parser::parse(script.to_string()) {
-        Ok(program) => {
-            println!("{:?}", treecalc::program::execute(&program));
-        }
+        Ok(program) => match treecalc::program::execute(&program) {
+            Ok(result) => println!("{}", result),
+            _ => {}
+        },
         Err(msg) => println!("{:?}", msg),
     }
 }

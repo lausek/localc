@@ -1,11 +1,11 @@
-extern crate treecalc;
+extern crate localc;
 
 use std::fs::File;
 
 fn exec(script: &str)
 {
-    match treecalc::parser::parse(script.to_string()) {
-        Ok(program) => match treecalc::program::execute(&program) {
+    match localc::parser::parse(script.to_string()) {
+        Ok(program) => match localc::program::execute(&program) {
             Ok(result) => println!("{}", result),
             _ => {}
         },
@@ -15,9 +15,9 @@ fn exec(script: &str)
 
 pub fn main()
 {
+    use localc::program::context::Context;
     use std::env;
     use std::io::{self, BufRead};
-    use treecalc::program::context::Context;
 
     let mut arg_iter = env::args();
     let mut executed = 0;
@@ -46,7 +46,7 @@ pub fn main()
                 if let Err(msg) = file {
                     panic!(format!("{}: {}", msg, path));
                 }
-                println!("{:?}", treecalc::program::execute_script(file.unwrap()));
+                println!("{:?}", localc::program::execute_script(file.unwrap()));
                 executed += 1;
             }
             "-no-default" => {
@@ -80,16 +80,16 @@ pub fn main()
         for line in stdin.lock().lines() {
             if let Ok(script) = line {
                 if vparse {
-                    println!("{:?}", treecalc::parser::lexer::tokenize(script));
+                    println!("{:?}", localc::parser::lexer::tokenize(script));
                 } else {
-                    match treecalc::parser::parse(script.to_string()) {
+                    match localc::parser::parse(script.to_string()) {
                         Ok(program) => {
                             if vcompile {
                                 println!("{:?}", program);
                             } else {
                                 println!(
                                     "{:?}",
-                                    treecalc::program::execute_with_ctx(&program, &mut ctx)
+                                    localc::program::execute_with_ctx(&program, &mut ctx)
                                 );
                                 println!("\nContext:\n{}", ctx);
                             }

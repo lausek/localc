@@ -2,6 +2,7 @@
 #![feature(box_syntax)]
 #![feature(self_struct_ctor)]
 
+extern crate lazy_static;
 extern crate rand;
 extern crate regex;
 

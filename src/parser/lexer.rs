@@ -1,6 +1,7 @@
 use std::iter::Peekable;
 use std::vec::IntoIter;
 
+use lazy_static::lazy_static;
 use regex::Regex;
 
 use self::Token::*;
@@ -26,7 +27,10 @@ pub enum Token
 // TODO: don't create Regex again every time; maybe use lazy_static?
 pub fn is_valid_ident(seq: &str) -> bool
 {
-    !Regex::new(VALID_IDENT_REGEX).unwrap().is_match(seq)
+    lazy_static! {
+        static ref regex: Regex = Regex::new(VALID_IDENT_REGEX).expect("regex is invalid");
+    }
+    !regex.is_match(seq)
 }
 
 pub fn is_special_char(c: char) -> bool

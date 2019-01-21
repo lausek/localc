@@ -1,5 +1,5 @@
 [package]
-name = "tree-calc"
+name = "localc"
 version = "0.1.0"
 authors = ["lausek <root@lausek.eu>"]
 
@@ -8,11 +8,11 @@ v0-1 = []
 v1-0 = ["v0-1"]
 
 [lib]
-name = "treecalc"
+name = "localc"
 path = "src/lib.rs"
 
 [[bin]]
-name = "tree-calc-repl"
+name = "localc-repl"
 path = "src/bin.rs"
 
 [dependencies]

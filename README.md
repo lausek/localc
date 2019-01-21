@@ -1,4 +1,4 @@
-## tree-calc
+## localc
 
 Rust library that transforms mathematical expressions into an intermediate representation and executes it.
 

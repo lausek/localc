@@ -2,6 +2,7 @@
 name = "localc"
 version = "0.1.0"
 authors = ["lausek <root@lausek.eu>"]
+edition = "2018"
 build = "build.rs"
 
 [features]

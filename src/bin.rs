@@ -1,4 +1,4 @@
-extern crate localc;
+use localc::vm::Vm;
 
 use std::fs::File;
 
@@ -21,10 +21,14 @@ pub fn main()
 
     let stdin = io::stdin();
     let parser = localc::query::ExprParser::new();
+    let mut vm = Vm::new();
 
     for line in stdin.lock().lines() {
         let script = line.unwrap();
-        println!("{:?}", parser.parse(script.as_ref()));
+        let program = parser.parse(script.as_ref()).expect("parsing failed");
+        println!("program: {:?}", program);
+        let result = vm.run(&program);
+        println!("result: {:?}", result);
     }
 
     /*

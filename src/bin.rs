@@ -90,7 +90,6 @@ pub fn main()
     if executed == 0 {
         let stdin = io::stdin();
     
-        /*
         for line in stdin.lock().lines() {
             if let Ok(script) = line {
                 if vparse {
@@ -116,6 +115,6 @@ pub fn main()
                 }
             }
         }
-        */
     //}
+    */
 }

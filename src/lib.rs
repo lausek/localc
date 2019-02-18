@@ -6,13 +6,42 @@ extern crate lazy_static;
 extern crate rand;
 extern crate regex;
 
-pub mod parser;
-pub mod program;
+#[macro_use]
+extern crate lalrpop_util;
+
+pub mod ast;
+pub mod vm;
+
+lalrpop_mod!(pub query);
 
 #[cfg(test)]
 mod tests
 {
-    use parser::*;
+    #[test]
+    fn parsing()
+    {
+        use ast::{Expr::*, Value::*};
+
+        let parser = super::query::ExprParser::new();
+
+        match parser.parse("22") {
+            Ok(Flat(Numeric(22.0))) => {}
+            _ => assert!(false),
+        }
+
+        match parser.parse("-22") {
+            Ok(Flat(Numeric(-22.0))) => {}
+            _ => assert!(false),
+        }
+    }
+}
+
+//pub mod program;
+
+/*
+#[cfg(test)]
+mod tests
+{
     use program::{context::Context, node::Node, Computation, Computation::*, *};
 
     fn parse_str(script: &'static str) -> Result<Node, String>
@@ -362,3 +391,4 @@ mod tests
         );
     }
 }
+*/

@@ -4,6 +4,7 @@ use std::fs::File;
 
 fn exec(script: &str)
 {
+    /*
     match localc::parser::parse(script.to_string()) {
         Ok(program) => match localc::program::execute(&program) {
             Ok(result) => println!("{}", result),
@@ -11,21 +12,33 @@ fn exec(script: &str)
         },
         Err(msg) => println!("{:?}", msg),
     }
+    */
 }
 
 pub fn main()
 {
+    use std::io::{self, BufRead};
+
+    let stdin = io::stdin();
+    let parser = localc::query::ExprParser::new();
+
+    for line in stdin.lock().lines() {
+        let script = line.unwrap();
+        println!("{:?}", parser.parse(script.as_ref()));
+    }
+
+    /*
     use localc::program::context::Context;
     use std::env;
     use std::io::{self, BufRead};
-
+    
     let mut arg_iter = env::args();
     let mut executed = 0;
     let mut vcompile = false;
     let mut vparse = false;
     let mut pidents = false;
     let mut nodefault = false;
-
+    
     let next_arg = |it: &mut std::env::Args| {
         let expression = it.next();
         if expression.is_none() {
@@ -33,7 +46,7 @@ pub fn main()
         }
         expression.unwrap()
     };
-
+    
     while let Some(arg) = arg_iter.next() {
         match arg.as_str() {
             "-e" => {
@@ -67,16 +80,17 @@ pub fn main()
             _ => {}
         }
     }
-
+    
     let mut ctx = if nodefault {
         Context::new()
     } else {
         Context::default()
     };
-
+    
     if executed == 0 {
         let stdin = io::stdin();
-
+    
+        /*
         for line in stdin.lock().lines() {
             if let Ok(script) = line {
                 if vparse {
@@ -102,5 +116,6 @@ pub fn main()
                 }
             }
         }
-    }
+        */
+    //}
 }

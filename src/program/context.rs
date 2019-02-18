@@ -192,11 +192,12 @@ impl Default for Context
 {
     fn default() -> Self
     {
-        use parser::parse;
+        let mut new = Self::new();
+
+        /*
+        //use parser::parse;
         use program::execute_with_ctx;
         use program::Computation::*;
-
-        let mut new = Self::new();
 
         // native functions
         add_native_func! {
@@ -233,6 +234,7 @@ impl Default for Context
             extend_ctx("sqrtn(n,x)=x^(1/n)");
             extend_ctx("sqrt(x)=sqrtn(2,x)");
         }
+        */
 
         new
     }

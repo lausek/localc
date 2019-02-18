@@ -9,7 +9,7 @@ pub use self::num::Num;
 use self::context::is_node_assignable;
 use self::node::{Node::*, Truth};
 
-use parser::parse;
+//use parser::parse;
 
 #[derive(Clone, Debug)]
 pub enum Computation
@@ -66,6 +66,7 @@ pub fn execute_script(script: std::fs::File) -> ComputationResult<Computation>
             continue;
         }
 
+        /*
         let program = parse(line)?;
         match execute_with_ctx(&program, &mut ctx) {
             res @ Ok(_) => {
@@ -75,6 +76,7 @@ pub fn execute_script(script: std::fs::File) -> ComputationResult<Computation>
             }
             e @ Err(_) => return e,
         }
+        */
     }
 
     Err("script is empty".to_string())

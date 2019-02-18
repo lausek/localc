@@ -2,6 +2,7 @@
 name = "localc"
 version = "0.1.0"
 authors = ["lausek <root@lausek.eu>"]
+build = "build.rs"
 
 [features]
 v0-1 = []
@@ -19,3 +20,7 @@ path = "src/bin.rs"
 regex = "*"
 rand = "0.6.0"
 lazy_static = "*"
+lalrpop-util = "0.16.3"
+
+[build-dependencies]
+lalrpop = "0.16.3"

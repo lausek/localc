@@ -71,9 +71,6 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
 pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
 {
     if let Some(entry) = ctx.get(name) {
-        // TODO: execute all params before pushing them into a function
-        //let params = params.iter().map(|e| self.run_with_ctx(e,
-        // ctx).unwrap()).collect();
         match entry {
             // TODO: find a way around that clone
             VmFunction::Virtual((_args, n)) => run_with_ctx(&n.clone(), ctx),
@@ -87,24 +84,33 @@ pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
 
 pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut VmContext) -> VmResult
 {
+    let params = run_tuple_exprs(params, ctx)?;
     if let Some(entry) = ctx.get(name) {
         // TODO: execute all params before pushing them into a function
-        //let params = params.iter().map(|e| self.run_with_ctx(e,
-        // ctx).unwrap()).collect();
         match entry {
             // TODO: find a way around that clone
             VmFunction::Virtual((args, n)) => {
-                let mut local_ctx = remap_ctx_params(ctx, args, params);
+                let mut local_ctx = remap_ctx_params(ctx, args, &params);
                 run_with_ctx(&n.clone(), &mut local_ctx)
             }
-            VmFunction::Native(func) => func(params, ctx),
+            VmFunction::Native(func) => func(&params, ctx),
         }
     } else {
         Err(format!("function `{}` is unknown", name))
     }
 }
 
-pub fn remap_ctx_params(orig: &VmContext, names: &TupleType, vals: &TupleType) -> VmContext
+fn run_tuple_exprs(params: &TupleType, ctx: &mut VmContext) -> Result<TupleType, VmError>
+{
+    let mut list = vec![];
+    for param in params {
+        let result = run_with_ctx(&param, ctx)?;
+        list.push(Expr::Value(result));
+    }
+    Ok(list)
+}
+
+fn remap_ctx_params(orig: &VmContext, names: &TupleType, vals: &TupleType) -> VmContext
 {
     let mut copy = orig.clone();
     for (name, val) in names.iter().zip(vals) {

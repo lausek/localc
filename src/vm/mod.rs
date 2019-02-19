@@ -30,6 +30,9 @@ impl Vm
 pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
 {
     match expr {
+        Expr::Value(v) => Ok(v.clone()),
+        Expr::Ref(name) => run_lookup(name, ctx),
+        Expr::Func(name, params) => run_function(name, params, ctx),
         Expr::Comp(Operator::Equ, lhs, rhs) => match lhs {
             box Expr::Func(name, params) => {
                 let func = VmFunction::Virtual((params.clone(), rhs.clone()));
@@ -62,9 +65,6 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
 
             Ok(result.into())
         }
-        Expr::Value(v) => Ok(v.clone()),
-        Expr::Ref(name) => run_lookup(name, ctx),
-        Expr::Func(name, params) => run_function(name, params, ctx),
     }
 }
 
@@ -93,10 +93,26 @@ pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut VmContext) -> 
         // ctx).unwrap()).collect();
         match entry {
             // TODO: find a way around that clone
-            VmFunction::Virtual((_args, n)) => run_with_ctx(&n.clone(), ctx),
+            VmFunction::Virtual((args, n)) => {
+                let mut local_ctx = remap_ctx_params(ctx, args, params);
+                run_with_ctx(&n.clone(), &mut local_ctx)
+            }
             VmFunction::Native(func) => func(params, ctx),
         }
     } else {
         Err(format!("function `{}` is unknown", name))
     }
+}
+
+pub fn remap_ctx_params(orig: &VmContext, names: &TupleType, vals: &TupleType) -> VmContext
+{
+    let mut copy = orig.clone();
+    for (name, val) in names.iter().zip(vals) {
+        let expr = Box::new(val.clone());
+        match name {
+            Expr::Ref(name) => copy.set(name, VmFunction::Virtual((vec![], expr))),
+            _ => unimplemented!(),
+        }
+    }
+    copy
 }

@@ -1,10 +1,10 @@
 use localc::vm::Vm;
 
+/*
 use std::fs::File;
 
 fn exec(script: &str)
 {
-    /*
     match localc::parser::parse(script.to_string()) {
         Ok(program) => match localc::program::execute(&program) {
             Ok(result) => println!("{}", result),
@@ -12,8 +12,8 @@ fn exec(script: &str)
         },
         Err(msg) => println!("{:?}", msg),
     }
-    */
 }
+*/
 
 pub fn main()
 {

@@ -14,8 +14,13 @@ Tuple: Vec<Expr> = {
 };
 
 pub Expr: Expr = {
-    <l:Expr> "+" <r:ExprLevel1> => Expr::Comp(Operator::Add, Box::new(l), Box::new(r)),
-    <l:Expr> "-" <r:ExprLevel1> => Expr::Comp(Operator::Sub, Box::new(l), Box::new(r)),
+    <l:Expr> "=" <r:ExprLevel0> => Expr::Comp(Operator::Equ, Box::new(l), Box::new(r)),
+    ExprLevel0,
+}
+
+ExprLevel0: Expr = {
+    <l:ExprLevel0> "+" <r:ExprLevel1> => Expr::Comp(Operator::Add, Box::new(l), Box::new(r)),
+    <l:ExprLevel0> "-" <r:ExprLevel1> => Expr::Comp(Operator::Sub, Box::new(l), Box::new(r)),
     ExprLevel1,
 }
 

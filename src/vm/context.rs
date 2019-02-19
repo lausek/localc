@@ -3,12 +3,13 @@ use super::*;
 use std::collections::HashMap;
 
 pub type VmContextEntry = VmFunction;
+pub type VmFunctionVirtual = (TupleType, Box<Expr>);
 pub type VmFunctionNative = fn(&TupleType, &mut VmContext) -> VmResult;
 
 #[derive(Clone)]
 pub enum VmFunction
 {
-    Virtual(Box<Expr>),
+    Virtual(VmFunctionVirtual),
     Native(VmFunctionNative),
 }
 

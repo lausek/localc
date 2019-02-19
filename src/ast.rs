@@ -6,6 +6,7 @@ pub type TupleType = Vec<Expr>;
 #[derive(Clone, Debug)]
 pub enum Value
 {
+    Empty,
     Numeric(NumType),
     Logical(LogType),
     Tuple(TupleType),
@@ -50,4 +51,6 @@ pub enum Operator
     Div,
     Pow,
     Mod,
+
+    Equ,
 }

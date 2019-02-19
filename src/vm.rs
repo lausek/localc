@@ -41,7 +41,8 @@ impl Vm
                     Operator::Sub => arg1 - arg2,
                     Operator::Mul => arg1 * arg2,
                     Operator::Div => arg1 / arg2,
-                    _ => unimplemented!(),
+                    Operator::Pow => arg1.powf(arg2),
+                    Operator::Mod => arg1 % arg2,
                 };
 
                 Ok(result.into())

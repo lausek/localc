@@ -20,17 +20,17 @@ mod tests
     #[test]
     fn parsing()
     {
-        use ast::{Expr::*, Value::*};
+        use crate::ast::{Expr::*, Value::*};
 
         let parser = super::query::ExprParser::new();
 
         match parser.parse("22") {
-            Ok(Flat(Numeric(22.0))) => {}
+            Ok(Value(Numeric(22.0))) => {}
             _ => assert!(false),
         }
 
         match parser.parse("-22") {
-            Ok(Flat(Numeric(-22.0))) => {}
+            Ok(Value(Numeric(-22.0))) => {}
             _ => assert!(false),
         }
 
@@ -38,14 +38,10 @@ mod tests
     }
 }
 
-//pub mod program;
-
 /*
 #[cfg(test)]
 mod tests
 {
-    use program::{context::Context, node::Node, Computation, Computation::*, *};
-
     fn parse_str(script: &'static str) -> Result<Node, String>
     {
         parse(script.to_string())

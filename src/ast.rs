@@ -1,13 +1,14 @@
 pub type NumType = f64;
 pub type LogType = bool;
 pub type RefType = String;
-pub type SetType = Vec<Expr>;
+pub type TupleType = Vec<Expr>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum Value
 {
     Numeric(NumType),
     Logical(LogType),
+    Tuple(TupleType),
 }
 
 impl std::convert::From<NumType> for Value
@@ -29,21 +30,18 @@ impl std::convert::From<Value> for NumType
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum Expr
 {
     Value(Value),
-    Ref(RefType),
-    //Set(SetType),
     Comp(Operator, Box<Expr>, Box<Expr>),
-    // declaration or invocation
-    Func(RefType, SetType),
 
-    // TODO: is this needed?
-    Error(String),
+    Ref(RefType),
+    // declaration or invocation
+    Func(RefType, TupleType),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum Operator
 {
     Add,

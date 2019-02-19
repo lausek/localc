@@ -4,11 +4,14 @@ grammar;
 
 Num: f64 = r"[+-]?\d+(\.\d)?" => <>.parse::<f64>().unwrap();
 Ident: String = r"[a-zA-z][\w']*\??" => String::from(<>);
-
-//List: Vec<Expr> = {
-//    List "," Expr,
-//    Expr,
-//}
+Tuple: Vec<Expr> = {
+    <t:Tuple> "," <e:Expr> => {
+        let mut t = t;
+        t.push(e);
+        t
+    },
+    Expr => vec![<>],
+};
 
 pub Expr: Expr = {
     <l:Expr> "+" <r:ExprLevel1> => Expr::Comp(Operator::Add, Box::new(l), Box::new(r)),
@@ -24,10 +27,19 @@ ExprLevel1: Expr = {
     Value,
 }
 
-Value = {
+Value: Expr = {
     Num => Expr::Value(Value::Numeric(<>)),
     Ident => Expr::Ref(<>),
     "(" <Expr> ")",
-    //List => Expr::Set(<>),
-    //<i:Ident> "(" <l:ExprList> ")" => Expr::Func(i, l),
+    "(" <t:Tuple> "," <e:Expr> ")" => {
+        let mut t = t;
+        t.push(e);
+        Expr::Value(Value::Tuple(t))
+    },
+    <i:Ident> "(" <t:Tuple> ")" => {
+        Expr::Func(i, t)
+    },
+    <i:Ident> "(" ")" => {
+        Expr::Func(i, vec![])
+    },
 };

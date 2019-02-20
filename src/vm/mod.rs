@@ -57,7 +57,13 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
                 Operator::Add => arg1 + arg2,
                 Operator::Sub => arg1 - arg2,
                 Operator::Mul => arg1 * arg2,
-                Operator::Div => arg1 / arg2,
+                Operator::Div => {
+                    if arg2 != 0.0 {
+                        arg1 / arg2
+                    } else {
+                        return Err("division with 0".to_string());
+                    }
+                }
                 Operator::Pow => arg1.powf(arg2),
                 Operator::Mod => arg1 % arg2,
                 _ => unreachable!(),

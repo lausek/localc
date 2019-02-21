@@ -1,6 +1,5 @@
 #![feature(box_patterns)]
 #![feature(box_syntax)]
-#![feature(self_struct_ctor)]
 #![allow(illegal_floating_point_literal_pattern)]
 
 extern crate lazy_static;

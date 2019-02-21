@@ -21,6 +21,13 @@ impl Vm
         }
     }
 
+    pub fn with_stdlib() -> Self
+    {
+        Self {
+            ctx: VmContext::stdlib(),
+        }
+    }
+
     pub fn run(&mut self, expr: &Expr) -> VmResult
     {
         run_with_ctx(expr, &mut self.ctx)

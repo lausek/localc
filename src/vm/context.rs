@@ -8,6 +8,8 @@ use std::rc::Rc;
 pub type VmFrame = Vec<(RefType, VmContextEntryRef)>;
 pub type VmContextEntry = VmFunction;
 pub type VmContextEntryRef = Rc<RefCell<VmFunction>>;
+// TODO: this should be a Vec<_> to support
+// 		 function overloading (needs new type match algorithm)
 pub type VmFunctionVirtual = (TupleType, Box<Expr>);
 pub type VmFunctionNative = fn(&TupleType, &mut Box<dyn Lookable>) -> VmResult;
 

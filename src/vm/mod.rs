@@ -85,8 +85,7 @@ pub fn run_lookup(name: &RefType, ctx: &mut Box<dyn Lookable>) -> VmResult
 {
     if let Some(entry) = ctx.get(name) {
         match &*(entry.borrow()) {
-            // TODO: find a way around that clone
-            VmFunction::Virtual((_args, n)) => run_with_ctx(&n.clone(), ctx),
+            VmFunction::Virtual((_args, n)) => run_with_ctx(n, ctx),
             // TODO: there must be an easier way to specify empty params. Option<Vec<>> maybe?
             VmFunction::Native(func) => func(&vec![], ctx),
         }
@@ -99,9 +98,7 @@ pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut Box<dyn Lookab
 {
     let params = run_tuple_exprs(params, ctx)?;
     if let Some(entry) = ctx.get(name) {
-        // TODO: execute all params before pushing them into a function
         match &*(entry.borrow()) {
-            // TODO: find a way around that clone
             VmFunction::Virtual((args, expr)) => {
                 if args.len() != params.len() {
                     return Err(format!(
@@ -112,7 +109,7 @@ pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut Box<dyn Lookab
                     ));
                 }
                 push_ctx_params(ctx, &args, &params);
-                let result = run_with_ctx(&expr.clone(), ctx);
+                let result = run_with_ctx(&expr, ctx);
                 pop_ctx_params(ctx);
                 result
             }

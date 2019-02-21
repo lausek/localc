@@ -9,7 +9,7 @@ pub type VmResult = Result<VmValue, VmError>;
 
 pub struct Vm
 {
-    ctx: VmContext,
+    ctx: Box<dyn Lookable>,
 }
 
 impl Vm
@@ -17,14 +17,14 @@ impl Vm
     pub fn new() -> Self
     {
         Self {
-            ctx: VmContext::new(),
+            ctx: Box::new(VmContext::new()),
         }
     }
 
     pub fn with_stdlib() -> Self
     {
         Self {
-            ctx: VmContext::stdlib(),
+            ctx: Box::new(VmContext::stdlib()),
         }
     }
 
@@ -34,7 +34,7 @@ impl Vm
     }
 }
 
-pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
+pub fn run_with_ctx(expr: &Expr, ctx: &mut Box<dyn Lookable>) -> VmResult
 {
     match expr {
         Expr::Value(v) => Ok(v.clone()),
@@ -81,10 +81,10 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
     }
 }
 
-pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
+pub fn run_lookup(name: &RefType, ctx: &mut Box<dyn Lookable>) -> VmResult
 {
     if let Some(entry) = ctx.get(name) {
-        match entry {
+        match &*(entry.borrow()) {
             // TODO: find a way around that clone
             VmFunction::Virtual((_args, n)) => run_with_ctx(&n.clone(), ctx),
             // TODO: there must be an easier way to specify empty params. Option<Vec<>> maybe?
@@ -95,16 +95,26 @@ pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
     }
 }
 
-pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut VmContext) -> VmResult
+pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
 {
     let params = run_tuple_exprs(params, ctx)?;
     if let Some(entry) = ctx.get(name) {
         // TODO: execute all params before pushing them into a function
-        match entry {
+        match &*(entry.borrow()) {
             // TODO: find a way around that clone
-            VmFunction::Virtual((args, n)) => {
-                let mut local_ctx = remap_ctx_params(ctx, args, &params);
-                run_with_ctx(&n.clone(), &mut local_ctx)
+            VmFunction::Virtual((args, expr)) => {
+                if args.len() != params.len() {
+                    return Err(format!(
+                        "function `{}` expected {} argument, got {}",
+                        name,
+                        args.len(),
+                        params.len()
+                    ));
+                }
+                push_ctx_params(ctx, &args, &params);
+                let result = run_with_ctx(&expr.clone(), ctx);
+                pop_ctx_params(ctx);
+                result
             }
             VmFunction::Native(func) => func(&params, ctx),
         }
@@ -113,7 +123,7 @@ pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut VmContext) -> 
     }
 }
 
-fn run_tuple_exprs(params: &TupleType, ctx: &mut VmContext) -> Result<TupleType, VmError>
+fn run_tuple_exprs(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> Result<TupleType, VmError>
 {
     let mut list = vec![];
     for param in params {
@@ -123,15 +133,30 @@ fn run_tuple_exprs(params: &TupleType, ctx: &mut VmContext) -> Result<TupleType,
     Ok(list)
 }
 
-fn remap_ctx_params(orig: &VmContext, names: &TupleType, vals: &TupleType) -> VmContext
+fn push_ctx_params(ctx: &mut Box<dyn Lookable>, names: &TupleType, vals: &TupleType)
 {
-    let mut copy = orig.clone();
-    for (name, val) in names.iter().zip(vals) {
-        let expr = Box::new(val.clone());
-        match name {
-            Expr::Ref(name) => copy.set(name, VmFunction::Virtual((vec![], expr))),
-            _ => unimplemented!(),
-        }
-    }
-    copy
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    // TODO: probably not needed
+    assert_eq!(names.len(), vals.len());
+    let frame = names
+        .iter()
+        .zip(vals)
+        .map(|(name, val)| {
+            let expr = Box::new(val.clone());
+            match name {
+                Expr::Ref(name) => {
+                    let func = VmFunction::Virtual((vec![], expr));
+                    (name.clone(), Rc::new(RefCell::new(func)))
+                }
+                _ => unimplemented!(),
+            }
+        })
+        .collect::<VmFrame>();
+    ctx.push_frame(frame);
+}
+
+fn pop_ctx_params(ctx: &mut Box<dyn Lookable>)
+{
+    assert!(ctx.pop_frame());
 }

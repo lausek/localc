@@ -40,7 +40,6 @@ pub fn lookup_func_mut<'t>(
 {
     let plen = params.len();
     for entry in table.iter_mut().filter(|(args, _)| args.len() == plen) {
-        println!("checking {:?}", entry.0);
         if plen == 0 {
             return Some(entry);
         }

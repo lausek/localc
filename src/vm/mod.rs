@@ -7,6 +7,18 @@ pub type VmValue = Value;
 pub type VmError = String;
 pub type VmResult = Result<VmValue, VmError>;
 
+impl std::cmp::PartialEq for Value
+{
+    fn eq(&self, rhs: &Self) -> bool
+    {
+        match (self, rhs) {
+            (Value::Numeric(lhs), Value::Numeric(rhs)) => lhs == rhs,
+            (Value::Logical(lhs), Value::Logical(rhs)) => lhs == rhs,
+            _ => false,
+        }
+    }
+}
+
 pub struct Vm
 {
     ctx: Box<dyn Lookable>,
@@ -42,13 +54,11 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut Box<dyn Lookable>) -> VmResult
         Expr::Func(name, params) => run_function(name, params, ctx),
         Expr::Comp(Operator::Equ, lhs, rhs) => match lhs {
             box Expr::Func(name, params) => {
-                let func = VmFunction::Virtual((params.clone(), rhs.clone()));
-                ctx.set(name, func);
+                ctx.set_virtual(name, (params.clone(), rhs.clone()));
                 Ok(Value::Empty)
             }
             box Expr::Ref(name) => {
-                let val = VmFunction::Virtual((vec![], rhs.clone()));
-                ctx.set(name, val);
+                ctx.set_virtual(name, (vec![], rhs.clone()));
                 Ok(Value::Empty)
             }
             _ => Err(format!("`{:?}` is not assignable", lhs)),
@@ -85,12 +95,15 @@ pub fn run_lookup(name: &RefType, ctx: &mut Box<dyn Lookable>) -> VmResult
 {
     if let Some(entry) = ctx.get(name) {
         match &*(entry.borrow()) {
-            VmFunction::Virtual((_args, n)) => run_with_ctx(n, ctx),
+            VmFunction::Virtual(table) => {
+                let (_args, expr) = lookup_func(table, &vec![]).unwrap();
+                run_with_ctx(expr, ctx)
+            }
             // TODO: there must be an easier way to specify empty params. Option<Vec<>> maybe?
             VmFunction::Native(func) => func(&vec![], ctx),
         }
     } else {
-        Err(format!("variable `{}` is unknown", name))
+        Err(format!("function `{}` is unknown", name))
     }
 }
 
@@ -99,20 +112,25 @@ pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut Box<dyn Lookab
     let params = run_tuple_exprs(params, ctx)?;
     if let Some(entry) = ctx.get(name) {
         match &*(entry.borrow()) {
-            VmFunction::Virtual((args, expr)) => {
-                if args.len() != params.len() {
-                    return Err(format!(
-                        "function `{}` expected {} argument, got {}",
-                        name,
-                        args.len(),
-                        params.len()
-                    ));
+            VmFunction::Virtual(table) => match lookup_func(table, &params) {
+                Some((args, expr)) => {
+                    /*
+                                    if args.len() != params.len() {
+                                        return Err(format!(
+                                            "function `{}` expected {} argument, got {}",
+                                            name,
+                                            args.len(),
+                                            params.len()
+                                        ));
+                                    }
+                    */
+                    push_ctx_params(ctx, &args, &params);
+                    let result = run_with_ctx(&expr, ctx);
+                    pop_ctx_params(ctx);
+                    result
                 }
-                push_ctx_params(ctx, &args, &params);
-                let result = run_with_ctx(&expr, ctx);
-                pop_ctx_params(ctx);
-                result
-            }
+                _ => Err("unexpected arguments".to_string()),
+            },
             VmFunction::Native(func) => func(&params, ctx),
         }
     } else {
@@ -139,13 +157,15 @@ fn push_ctx_params(ctx: &mut Box<dyn Lookable>, names: &TupleType, vals: &TupleT
     let frame = names
         .iter()
         .zip(vals)
-        .map(|(name, val)| {
+        .filter_map(|(name, val)| {
             let expr = Box::new(val.clone());
             match name {
                 Expr::Ref(name) => {
-                    let func = VmFunction::Virtual((vec![], expr));
-                    (name.clone(), Rc::new(RefCell::new(func)))
+                    let table = vec![(vec![], expr)];
+                    let func = VmFunction::Virtual(table);
+                    Some((name.clone(), Rc::new(RefCell::new(func))))
                 }
+                Expr::Value(_) => None,
                 _ => unimplemented!(),
             }
         })

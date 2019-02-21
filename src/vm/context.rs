@@ -11,12 +11,13 @@ pub type VmContextEntryRef = Rc<RefCell<VmFunction>>;
 // TODO: this should be a Vec<_> to support
 // 		 function overloading (needs new type match algorithm)
 pub type VmFunctionVirtual = (TupleType, Box<Expr>);
+pub type VmFunctionVirtualTable = Vec<VmFunctionVirtual>;
 pub type VmFunctionNative = fn(&TupleType, &mut Box<dyn Lookable>) -> VmResult;
 
 #[derive(Clone)]
 pub enum VmFunction
 {
-    Virtual(VmFunctionVirtual),
+    Virtual(VmFunctionVirtualTable),
     Native(VmFunctionNative),
 }
 
@@ -31,10 +32,56 @@ macro_rules! insert_func {
     };
 }
 
+// search expression to be updated
+pub fn lookup_func_mut<'t>(
+    table: &'t mut VmFunctionVirtualTable,
+    params: &TupleType,
+) -> Option<&'t mut VmFunctionVirtual>
+{
+    let plen = params.len();
+    for entry in table.iter_mut().filter(|(args, _)| args.len() == plen) {
+        println!("checking {:?}", entry.0);
+        if plen == 0 {
+            return Some(entry);
+        }
+        if entry.0.iter().zip(params).all(|pair| match pair {
+            (Value(e), Value(g)) => e == g,
+            (Ref(_), Ref(_)) => true,
+            _ => false,
+        }) {
+            return Some(entry);
+        }
+    }
+    None
+}
+
+// search expression for execution
+pub fn lookup_func<'t>(
+    table: &'t VmFunctionVirtualTable,
+    params: &TupleType,
+) -> Option<&'t VmFunctionVirtual>
+{
+    let plen = params.len();
+    for entry in table.iter().filter(|(args, _)| args.len() == plen) {
+        if plen == 0 {
+            return Some(entry);
+        }
+        if entry.0.iter().zip(params).all(|pair| match pair {
+            (Value(e), Value(g)) => e == g,
+            (Ref(_), Value(_)) => true,
+            _ => unimplemented!(),
+        }) {
+            return Some(entry);
+        }
+    }
+    None
+}
+
 pub trait Lookable
 {
     fn get(&self, name: &RefType) -> Option<VmContextEntryRef>;
     fn set(&mut self, name: &RefType, entry: VmContextEntry);
+    fn set_virtual(&mut self, name: &RefType, entry: VmFunctionVirtual);
     fn push_frame(&mut self, frame: VmFrame);
     fn pop_frame(&mut self) -> bool;
 }
@@ -89,8 +136,7 @@ impl Lookable for VmContext
 
     fn pop_frame(&mut self) -> bool
     {
-        self.stack.pop();
-        true
+        self.stack.pop().is_some()
     }
 
     fn get(&self, name: &RefType) -> Option<VmContextEntryRef>
@@ -109,6 +155,25 @@ impl Lookable for VmContext
     fn set(&mut self, name: &RefType, entry: VmContextEntry)
     {
         self.map.insert(name.clone(), Rc::new(RefCell::new(entry)));
+    }
+
+    fn set_virtual(&mut self, name: &RefType, entry: VmFunctionVirtual)
+    {
+        if let Some(func) = self.map.get(name) {
+            match &mut *(func.borrow_mut()) {
+                Virtual(table) => {
+                    if let Some(bucket) = lookup_func_mut(table, &entry.0) {
+                        bucket.1 = entry.1;
+                    } else {
+                        table.push(entry);
+                    }
+                }
+                _ => unimplemented!(),
+            }
+        } else {
+            let table = Virtual(vec![entry]);
+            self.map.insert(name.clone(), Rc::new(RefCell::new(table)));
+        }
     }
 }
 

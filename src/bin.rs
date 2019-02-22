@@ -27,9 +27,13 @@ pub fn main()
 
     for line in stdin.lock().lines() {
         let script = line.unwrap();
-        let program = vm.parser.parse(script.as_ref()).expect("parsing failed");
-        println!("program: {:?}", program);
-        let result = vm.run(&program);
-        println!("result: {:?}", result);
+        match vm.parser.parse(script.as_ref()) {
+            Ok(program) => {
+                println!("program: {:?}", program);
+                let result = vm.run(&program);
+                println!("result: {:?}", result);
+            }
+            err => println!("{:?}", err),
+        }
     }
 }

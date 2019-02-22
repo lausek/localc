@@ -6,7 +6,7 @@ pub type TupleType = Vec<Expr>;
 #[derive(Clone, Debug)]
 pub enum Value
 {
-    Empty,
+    Nil,
     Numeric(NumType),
     Logical(LogType),
     Tuple(TupleType),
@@ -26,6 +26,18 @@ impl std::convert::From<Value> for NumType
     {
         match n {
             Value::Numeric(n) => n,
+            _ => unimplemented!(),
+        }
+    }
+}
+
+impl std::convert::From<Value> for LogType
+{
+    fn from(n: Value) -> Self
+    {
+        match n {
+            Value::Numeric(n) => n != 0.,
+            Value::Logical(l) => l,
             _ => unimplemented!(),
         }
     }

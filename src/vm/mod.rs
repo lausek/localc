@@ -7,27 +7,6 @@ pub type VmValue = Value;
 pub type VmError = String;
 pub type VmResult = Result<VmValue, VmError>;
 
-pub trait Conv<T>
-{
-    fn try_conv(&self) -> Result<T, String>;
-    fn conv(&self) -> T
-    {
-        self.try_conv().unwrap()
-    }
-}
-
-impl Conv<LogType> for Value
-{
-    fn try_conv(&self) -> Result<LogType, String>
-    {
-        match self {
-            Value::Numeric(n) => Ok(*n != 0.),
-            Value::Logical(l) => Ok(*l),
-            _ => unimplemented!(),
-        }
-    }
-}
-
 impl std::cmp::PartialEq for Value
 {
     fn eq(&self, rhs: &Self) -> bool
@@ -76,11 +55,11 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut Box<dyn Lookable>) -> VmResult
         Expr::Comp(Operator::Equ, lhs, rhs) => match lhs {
             box Expr::Func(name, params) => {
                 ctx.set_virtual(name, (params.clone(), rhs.clone()));
-                Ok(Value::Empty)
+                Ok(Value::Nil)
             }
             box Expr::Ref(name) => {
                 ctx.set_virtual(name, (vec![], rhs.clone()));
-                Ok(Value::Empty)
+                Ok(Value::Nil)
             }
             _ => Err(format!("`{:?}` is not assignable", lhs)),
         },

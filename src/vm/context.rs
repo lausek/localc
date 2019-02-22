@@ -217,7 +217,7 @@ fn vm_func_if(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
     assert_eq!(params.len(), 3);
     let mut params = params.iter();
     run_with_ctx(&params.next().unwrap(), ctx).and_then(|cond| {
-        if cond.conv() {
+        if cond.into() {
             run_with_ctx(&params.next().unwrap(), ctx)
         } else {
             params.next().unwrap();
@@ -231,5 +231,5 @@ fn vm_func_do(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
     for param in params {
         run_with_ctx(&param, ctx)?;
     }
-    Ok(Empty)
+    Ok(Nil)
 }

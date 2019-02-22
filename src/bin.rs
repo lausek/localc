@@ -1,8 +1,22 @@
+extern crate ansi_term;
+
+use ansi_term::Color::*;
 use localc::vm::*;
 
 use std::env;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
+
+macro_rules! present {
+    ($result:expr) => {
+        let s = format!("{:?}", $result);
+        if $result.is_ok() {
+            println!("{}", Green.paint(s));
+        } else {
+            println!("{}", Red.paint(s));
+        }
+    };
+}
 
 pub fn main()
 {
@@ -22,19 +36,18 @@ pub fn main()
                 vm.run_raw(line.as_ref()).expect("error in runtime script");
             }
         } else {
-            panic!("could not open file `{}`", path);
+            println!("could not open file `{}`", Red.paint(path));
         }
     }
 
     for line in stdin.lock().lines() {
         let script = line.unwrap();
-        match vm.parser.parse(script.as_ref()) {
-            Ok(program) => {
-                println!("program: {:?}", program);
-                let result = vm.run(&program);
-                println!("result: {:?}", result);
-            }
-            err => println!("{:?}", err),
+        let result = vm.parser.parse(script.as_ref());
+        if let Ok(program) = result {
+            println!("program: {:?}", program);
+            present!(vm.run(&program));
+        } else {
+            present!(result);
         }
     }
 }

@@ -12,33 +12,7 @@ extern crate lalrpop_util;
 pub mod ast;
 pub mod vm;
 
-lalrpop_mod!(pub query);
-
-/*
-#[cfg(test)]
-mod tests
-{
-    #[test]
-    fn parsing()
-    {
-        use crate::ast::{Expr::*, Value::*};
-
-        let parser = super::query::ExprParser::new();
-
-        match parser.parse("22") {
-            Ok(Value(Numeric(22.0))) => {}
-            _ => assert!(false),
-        }
-
-        match parser.parse("-22") {
-            Ok(Value(Numeric(-22.0))) => {}
-            _ => assert!(false),
-        }
-
-        // TODO: write more test
-    }
-}
-*/
+lalrpop_mod!(pub expr);
 
 #[cfg(test)]
 mod tests
@@ -122,8 +96,8 @@ mod tests
         matches!("pi * 2", Ok(Numeric(6.283185307179586)));
 
         // assignments
-        matches!("x = 10", Ok(Empty));
-        //matches!("x = [(10 * 19) + 10] * 2", Ok(Empty));
+        matches!("x = 10", Ok(Nil));
+        //matches!("x = [(10 * 19) + 10] * 2", Ok(Nil));
     }
 
     #[test]
@@ -326,9 +300,9 @@ mod tests
         );
 
         let mut vm = Vm::new();
-        matches!(vm, "x = y * 3", Ok(Empty));
-        matches!(vm, "f(x) = x * 3", Ok(Empty));
-        matches!(vm, "bar() = f(x)", Ok(Empty));
+        matches!(vm, "x = y * 3", Ok(Nil));
+        matches!(vm, "f(x) = x * 3", Ok(Nil));
+        matches!(vm, "bar() = f(x)", Ok(Nil));
 
         assert!(
             exec_str_pre_with_vm("y=x-1", &mut vm).is_err(),

@@ -5,6 +5,8 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+const MAX_STACK_SIZE: usize = 64;
+
 pub type VmFrame = Vec<(RefType, VmContextEntryRef)>;
 pub type VmContextEntry = VmFunction;
 pub type VmContextEntryRef = Rc<RefCell<VmFunction>>;
@@ -132,6 +134,7 @@ impl Lookable for VmContext
     fn push_frame(&mut self, frame: VmFrame)
     {
         self.stack.push(frame);
+        assert!(MAX_STACK_SIZE < self.stack.len(), "stack size exceeded");
     }
 
     fn pop_frame(&mut self) -> bool
@@ -178,8 +181,9 @@ impl Lookable for VmContext
     }
 }
 
-fn vm_func_print(params: &TupleType, _ctx: &mut Box<dyn Lookable>) -> VmResult
+fn vm_func_print(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
 {
+    let params = run_tuple_exprs(params, ctx)?;
     for param in params {
         print!("{:?}", param);
     }

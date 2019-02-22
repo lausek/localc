@@ -1,7 +1,7 @@
 pub mod context;
 
 use self::context::*;
-use crate::ast::*;
+use crate::{ast::*, expr::ExprParser};
 
 pub type VmValue = Value;
 pub type VmError = String;
@@ -21,6 +21,7 @@ impl std::cmp::PartialEq for Value
 
 pub struct Vm
 {
+    pub parser: ExprParser,
     ctx: Box<dyn Lookable>,
 }
 
@@ -29,6 +30,7 @@ impl Vm
     pub fn new() -> Self
     {
         Self {
+            parser: ExprParser::new(),
             ctx: Box::new(VmContext::new()),
         }
     }
@@ -36,8 +38,15 @@ impl Vm
     pub fn with_stdlib() -> Self
     {
         Self {
+            parser: ExprParser::new(),
             ctx: Box::new(VmContext::stdlib()),
         }
+    }
+
+    pub fn run_raw(&mut self, raw: &str) -> VmResult
+    {
+        let program = self.parser.parse(raw).unwrap();
+        run_with_ctx(&program, &mut self.ctx)
     }
 
     pub fn run(&mut self, expr: &Expr) -> VmResult

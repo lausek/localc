@@ -6,6 +6,7 @@ use std::io::{self, BufRead, BufReader};
 
 pub fn main()
 {
+    env_logger::init();
     let args = env::args();
     let mut vm = Vm::with_stdlib();
 

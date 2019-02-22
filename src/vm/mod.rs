@@ -14,6 +14,7 @@ impl std::cmp::PartialEq for Value
         match (self, rhs) {
             (Value::Numeric(lhs), Value::Numeric(rhs)) => lhs == rhs,
             (Value::Logical(lhs), Value::Logical(rhs)) => lhs == rhs,
+            (Value::Nil, Value::Nil) => true,
             _ => false,
         }
     }
@@ -103,36 +104,18 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut Box<dyn Lookable>) -> VmResult
                 Operator::And | Operator::Or => exec_log_op(&op, arg1, arg2),
                 _ => unimplemented!(),
             }
-            /*
-                        let arg1 = NumType::from(arg1);
-                        let arg2 = NumType::from(arg2);
-
-                        let result = match op {
-                            Operator::Add => arg1 + arg2,
-                            Operator::Sub => arg1 - arg2,
-                            Operator::Mul => arg1 * arg2,
-                            Operator::Div => {
-                                if arg2 != 0.0 {
-                                    arg1 / arg2
-                                } else {
-                                    return Err("division with 0".to_string());
-                                }
-                            }
-                            Operator::Pow => arg1.powf(arg2),
-                            Operator::Mod => arg1 % arg2,
-                            _ => unimplemented!(),
-                        };
-            */
         }
     }
 }
 
 pub fn run_lookup(name: &RefType, ctx: &mut Box<dyn Lookable>) -> VmResult
 {
+    info!("lookup: {}", name);
     if let Some(entry) = ctx.get(name) {
         match &*(entry.borrow()) {
             VmFunction::Virtual(table) => {
                 let (_args, expr) = lookup_func(table, &vec![]).unwrap();
+                info!("resulted in: {:?}", expr);
                 run_with_ctx(expr, ctx)
             }
             // TODO: there must be an easier way to specify empty params. Option<Vec<>> maybe?
@@ -145,12 +128,14 @@ pub fn run_lookup(name: &RefType, ctx: &mut Box<dyn Lookable>) -> VmResult
 
 pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
 {
+    info!("function: {} ({:?})", name, params);
     if let Some(entry) = ctx.get(name) {
         match &*(entry.borrow()) {
             VmFunction::Virtual(table) => {
                 let params = run_tuple_exprs(params, ctx)?;
                 match lookup_func(table, &params) {
                     Some((args, expr)) => {
+                        info!("resulted in: {:?}", expr);
                         push_ctx_params(ctx, &args, &params);
                         let result = run_with_ctx(&expr, ctx);
                         pop_ctx_params(ctx);

@@ -2,12 +2,14 @@
 #![feature(box_syntax)]
 #![allow(illegal_floating_point_literal_pattern)]
 
-extern crate lazy_static;
-extern crate rand;
-extern crate regex;
-
+extern crate env_logger;
 #[macro_use]
 extern crate lalrpop_util;
+extern crate lazy_static;
+#[macro_use]
+extern crate log;
+extern crate rand;
+extern crate regex;
 
 pub mod ast;
 pub mod vm;
@@ -23,15 +25,22 @@ mod tests
         vm::*,
     };
 
-    macro_rules! matches {
-        ($script:expr, $m:pat) => {
-            matches!(Vm::new(), $script, $m);
+    macro_rules! eq {
+        ($script:expr, $ex:expr) => {
+            eq!(Vm::new(), $script, $ex);
         };
-        ($vm:expr, $script:expr, $m:pat) => {
-            match $vm.run(&$vm.parser.parse($script).unwrap()) {
-                $m => assert!(true),
-                _ => assert!(false),
-            }
+        ($vm:expr, $script:expr, $ex:expr) => {
+            let result = $vm.run(&$vm.parser.parse($script).unwrap());
+            assert_eq!(result, $ex);
+        };
+    }
+
+    macro_rules! err {
+        ($script:expr, $msg:expr) => {
+            err!(Vm::new(), $script, $msg);
+        };
+        ($vm:expr, $script:expr, $msg:expr) => {
+            assert!($vm.run(&$vm.parser.parse($script).unwrap()).is_err(), $msg);
         };
     }
 
@@ -44,60 +53,55 @@ mod tests
     }
 
     #[test]
-    fn parse_simple()
+    fn test_numeric()
     {
         // addition
-        matches!("1 + 1", Ok(Numeric(2.0)));
-        matches!("18 + 18", Ok(Numeric(36.0)));
+        eq!("1 + 1", Ok(Numeric(2.)));
+        eq!("18 + 18", Ok(Numeric(36.)));
 
         // subtraction
-        matches!("18 - 18", Ok(Numeric(0.0)));
+        eq!("18 - 18", Ok(Numeric(0.)));
 
         // multiplication
-        matches!("18 * 18", Ok(Numeric(324.0)));
+        eq!("18 * 18", Ok(Numeric(324.)));
 
         // division
-        matches!("18 / 18", Ok(Numeric(1.0)));
+        eq!("18 / 18", Ok(Numeric(1.)));
 
         // power
-        matches!("10 ^ 3", Ok(Numeric(1000.0)));
+        eq!("10 ^ 3", Ok(Numeric(1000.)));
 
         // modulo
-        matches!("8 % 2", Ok(Numeric(0.0)));
-        matches!("9 % 2", Ok(Numeric(1.0)));
+        eq!("8 % 2", Ok(Numeric(0.)));
+        eq!("9 % 2", Ok(Numeric(1.)));
 
         // division with zero
-        matches!("18 / 0", Err(_));
-    }
+        err!("18 / 0", "division by zero not allowed");
 
-    #[test]
-    fn parse_long()
-    {
+        // different priority
+        eq!("1 + 4 * 5", Ok(Numeric(21.)));
+        eq!("(1 + 4) * 5", Ok(Numeric(25.)));
+        eq!("(1 + 4) * 5 / 2", Ok(Numeric(12.5)));
+
         // addition & subtraction
-        matches!("1+1-1+1-1+1-1+1-1", Ok(Numeric(1.0)));
+        eq!("1 + 1 - 1 + 1 - 1 + 1 - 1 + 1 - 1", Ok(Numeric(1.0)));
 
         // multiplication & division
-        matches!("2*5/2*5/2*5", Ok(Numeric(62.5)));
+        eq!("2 * 5 / 2 * 5 / 2 * 5", Ok(Numeric(62.5)));
 
         // mixed
-        matches!("2+10/2-2*1+1", Ok(Numeric(6.0)));
-        matches!("10*(2+1)", Ok(Numeric(30.0)));
-        matches!("10*(2*(2+1)-1)-1", Ok(Numeric(49.0)));
-        matches!("10*[2+1]", Ok(Numeric(30.0)));
-        matches!("10*[2*(2+1)-1]-1", Ok(Numeric(49.0)));
-    }
+        eq!("2 + 10 / 2 - 2 * 1 + 1", Ok(Numeric(6.0)));
+        eq!("10 * (2 + 1)", Ok(Numeric(30.0)));
+        eq!("10 * (2 * (2 + 1) - 1) - 1", Ok(Numeric(49.0)));
 
-    #[test]
-    fn parse_complex()
-    {
-        // FIXME: should round a little
-        // constants
-        matches!("pi", Ok(Numeric(3.141592653589793)));
-        matches!("pi * 2", Ok(Numeric(6.283185307179586)));
-
-        // assignments
-        matches!("x = 10", Ok(Nil));
-        //matches!("x = [(10 * 19) + 10] * 2", Ok(Nil));
+        // TODO:
+        //eq!("10 * [2 + 1]", Ok(Numeric(30.0)));
+        //eq!("10 * [2*(2 + 1) - 1] - 1", Ok(Numeric(49.0)));
+        // reducing prefixes
+        //eq!("--1", Ok(Numeric(1.0)));
+        // multiplication without parens
+        //eq!("3*-1", Ok(Numeric(-3.0)));
+        //eq!("-(1+2)", Ok(Numeric(-3.0)));
     }
 
     #[test]
@@ -134,7 +138,7 @@ mod tests
         assert!(parse_str("(())").is_err(), "empty expression is an error");
 
         // assignments
-        matches!("2 = 10", Err(_));
+        err!("2 = 10", "assignment to constant not allowed");
 
         /*
          * TODO: these won't be errors in near future
@@ -155,9 +159,9 @@ mod tests
         */
 
         // function calls
-        matches!("unknown()", Err(_));
-        matches!("sqrt()", Err(_));
-        matches!("sqrt(16, 16)", Err(_));
+        err!("unknown()", "invalid call");
+        err!("sqrt()", "invalid call");
+        err!("sqrt(16, 16)", "invalid call");
 
         // valid identifiers
         assert!(parse_str("x").is_ok(), "invalid identifier");
@@ -171,32 +175,38 @@ mod tests
     }
 
     #[test]
-    fn parse_default_functions()
+    fn test_stdlib()
     {
+        let mut vm = Vm::with_stdlib();
+
+        // constants
+        eq!(vm, "pi", Ok(Numeric(3.141592653589793)));
+
         // sqrt
-        matches!("sqrt(16)", Ok(Numeric(4.0)));
-        matches!("sqrt(64)", Ok(Numeric(8.0)));
+        eq!(vm, "sqrt(16)", Ok(Numeric(4.0)));
+        eq!(vm, "sqrt(64)", Ok(Numeric(8.0)));
 
         // sqrtn
-        // matches!(f64::round(exec_str("sqrtn(3,64)")), Ok(Numeric(4.0)));
-        // matches!(f64::round(exec_str("sqrtn(5,3125)")), Ok(Numeric(5.0)));
+        // eq!(f64::round(exec_str("sqrtn(3,64)")), Ok(Numeric(4.0)));
+        // eq!(f64::round(exec_str("sqrtn(5,3125)")), Ok(Numeric(5.0)));
 
         // log
-        matches!("log(2, 8)", Ok(Numeric(3.0)));
-        matches!("log(10, 100)", Ok(Numeric(2.0)));
+        eq!(vm, "log(8, 2)", Ok(Numeric(3.0)));
+        eq!(vm, "log(100, 10)", Ok(Numeric(2.0)));
+        eq!(vm, "log(100)", Ok(Numeric(2.0)));
 
         // log2
-        matches!("log2(8)", Ok(Numeric(3.0)));
-        matches!("log2(16)", Ok(Numeric(4.0)));
+        //eq!(vm, "log2(8)", Ok(Numeric(3.0)));
+        //eq!(vm, "log2(16)", Ok(Numeric(4.0)));
 
         // ln
-        matches!("ln(10)", Ok(Numeric(2.302585092994046)));
-        matches!("ln(1)", Ok(Numeric(0.0)));
-        matches!("ln(e)", Ok(Numeric(1.0)));
+        //eq!(vm, "ln(10)", Ok(Numeric(2.302585092994046)));
+        //eq!(vm, "ln(1)", Ok(Numeric(0.0)));
+        //eq!(vm, "ln(e)", Ok(Numeric(1.0)));
 
         // if
-        matches!("if(1==1,1,2)", Ok(Numeric(1.0)));
-        matches!("if(1!=1,1,2)", Ok(Numeric(2.0)));
+        eq!(vm, "if(1==1,1,2)", Ok(Numeric(1.0)));
+        eq!(vm, "if(1!=1,1,2)", Ok(Numeric(2.0)));
         /*
         assert!(
             exec_str_pre_num("if(1,1,2)").is_err(),
@@ -205,53 +215,55 @@ mod tests
         */
 
         // empty?
-        matches!("empty?({})", Ok(Logical(true)));
-        matches!("empty?({1})", Ok(Logical(false)));
+        //eq!(vm, "empty?({})", Ok(Logical(true)));
+        //eq!(vm, "empty?({1})", Ok(Logical(false)));
     }
 
     #[cfg(feature = "v1-0")]
     #[test]
-    fn test_version1()
-    {
-        // reducing prefixes
-        matches!("--1", Ok(Numeric(1.0)));
+    fn test_version1() {}
 
-        // multiplication without parens
-        matches!("3*-1", Ok(Numeric(-3.0)));
-
-        matches!("-(1+2)", Ok(Numeric(-3.0)));
-    }
-
-    #[cfg(feature = "v1-0")]
     #[test]
-    fn test_truth()
+    fn test_logical()
     {
         // equal, not equal
-        matches!("1==1", Ok(Logical(true)));
-        matches!("1!=1", Ok(Logical(false)));
+        eq!("1==1", Ok(Logical(true)));
+        eq!("1!=1", Ok(Logical(false)));
 
         // ordering
-        matches!("20>10", Ok(Logical(true)));
-        matches!("10<10", Ok(Logical(false)));
-        matches!("10<1020", Ok(Logical(true)));
-        matches!("10>1020", Ok(Logical(false)));
+        eq!("20>10", Ok(Logical(true)));
+        eq!("10<10", Ok(Logical(false)));
+        eq!("10<1020", Ok(Logical(true)));
+        eq!("10>1020", Ok(Logical(false)));
 
-        matches!("10<=10", Ok(Logical(true)));
-        matches!("10<=11", Ok(Logical(true)));
-        matches!("10>=5", Ok(Logical(true)));
-        matches!("10>=10", Ok(Logical(true)));
+        eq!("10<=10", Ok(Logical(true)));
+        eq!("10<=11", Ok(Logical(true)));
+        eq!("10>=5", Ok(Logical(true)));
+        eq!("10>=10", Ok(Logical(true)));
 
         // or
-        matches!("1==1 || 2==2", Ok(Logical(true)));
-        matches!("1==1 || 2!=2", Ok(Logical(true)));
-        matches!("1!=1 || 2==2", Ok(Logical(true)));
-        matches!("1!=1 || 2!=2", Ok(Logical(false)));
+        eq!("1==1 || 2==2", Ok(Logical(true)));
+        eq!("1==1 || 2!=2", Ok(Logical(true)));
+        eq!("1!=1 || 2==2", Ok(Logical(true)));
+        eq!("1!=1 || 2!=2", Ok(Logical(false)));
 
         // and
-        matches!("1==1 && 2==2", Ok(Logical(true)));
-        matches!("1==1 && 2!=2", Ok(Logical(false)));
-        matches!("1!=1 && 2==2", Ok(Logical(false)));
-        matches!("1!=1 && 2!=2", Ok(Logical(false)));
+        eq!("1==1 && 2==2", Ok(Logical(true)));
+        eq!("1==1 && 2!=2", Ok(Logical(false)));
+        eq!("1!=1 && 2==2", Ok(Logical(false)));
+        eq!("1!=1 && 2!=2", Ok(Logical(false)));
+    }
+
+    #[test]
+    fn context_example()
+    {
+        let mut vm = Vm::with_stdlib();
+        eq!(vm, "even(n) = n % 2 == 0", Ok(Nil));
+        eq!(vm, "even(1)", Ok(Logical(false)));
+        eq!(vm, "even(2)", Ok(Logical(true)));
+        eq!(vm, "odd(n) = even(n) == (1 != 1)", Ok(Nil));
+        eq!(vm, "odd(1)", Ok(Logical(true)));
+        eq!(vm, "odd(2)", Ok(Logical(false)));
     }
 
     /*
@@ -260,20 +272,20 @@ mod tests
         fn test_tuple()
         {
             // parsing
-            matches!(exec_str_set("{1,2,3}"), vec!["1", "2", "3"]);
-            matches!(exec_str_set("{log(2, 4), 2}"), vec!["2", "2"]);
-            matches!(exec_str_set("{}"), Vec::<String>::new());
+            eq!(exec_str_set("{1,2,3}"), vec!["1", "2", "3"]);
+            eq!(exec_str_set("{log(2, 4), 2}"), vec!["2", "2"]);
+            eq!(exec_str_set("{}"), Vec::<String>::new());
 
             // indexing
-            matches!(exec_str("{1,2,3}_2"), 3.0);
-            matches!(exec_str("{1,2,3}_2^2"), 9.0);
+            eq!(exec_str("{1,2,3}_2"), 3.0);
+            eq!(exec_str("{1,2,3}_2^2"), 9.0);
             assert!(
                 exec_str_pre_set("{1,2,3}_(1==2)^2").is_err(),
                 "bool is not a valid index"
             );
 
             // generator
-            matches!(exec_str_set("{x | 0 < x, x < 5}"), vec!["1", "2", "3", "4"]);
+            eq!(exec_str_set("{x | 0 < x, x < 5}"), vec!["1", "2", "3", "4"]);
         }
     */
 
@@ -303,9 +315,9 @@ mod tests
             );
 
             let mut vm = Vm::new();
-            matches!(vm, "x = y * 3", Ok(Nil));
-            matches!(vm, "f(x) = x * 3", Ok(Nil));
-            matches!(vm, "bar() = f(x)", Ok(Nil));
+            eq!(vm, "x = y * 3", Ok(Nil));
+            eq!(vm, "f(x) = x * 3", Ok(Nil));
+            eq!(vm, "bar() = f(x)", Ok(Nil));
 
             assert!(
                 exec_str_pre_with_vm("y=x-1", &mut vm).is_err(),

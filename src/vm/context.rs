@@ -134,7 +134,7 @@ impl Lookable for VmContext
     fn push_frame(&mut self, frame: VmFrame)
     {
         self.stack.push(frame);
-        assert!(MAX_STACK_SIZE < self.stack.len(), "stack size exceeded");
+        assert!(self.stack.len() < MAX_STACK_SIZE, "stack size exceeded");
     }
 
     fn pop_frame(&mut self) -> bool
@@ -148,7 +148,7 @@ impl Lookable for VmContext
         for frame in self.stack.iter().rev() {
             for (var, val) in frame.iter() {
                 if var == name {
-                    println!("found {:?} in stack", var);
+                    info!("stack lookup: {:?}", val);
                     return Some(val.clone());
                 }
             }

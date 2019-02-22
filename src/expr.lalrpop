@@ -40,7 +40,17 @@ Tuple: Vec<Expr> = {
 
 pub Expr: Expr = {
     <l:Expr> "=" <r:ExprLevel0> => Expr::Comp(Operator::Store, Box::new(l), Box::new(r)),
-    ExprLevel0,
+    ExprLevelX,
+}
+
+ExprLevelX: Expr = {
+    <l:ExprLevelX> "||" <r:ExprLevelY> => Expr::Comp(Operator::Or, Box::new(l), Box::new(r)),
+	ExprLevelY
+}
+
+ExprLevelY: Expr = {
+    <l:ExprLevelY> "&&" <r:ExprLevel0> => Expr::Comp(Operator::And, Box::new(l), Box::new(r)),
+	ExprLevel0
 }
 
 ExprLevel0: Expr = {

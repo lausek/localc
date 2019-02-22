@@ -22,20 +22,28 @@ impl std::convert::From<NumType> for Value
 
 impl std::convert::From<Value> for NumType
 {
-    fn from(n: Value) -> Self
+    fn from(v: Value) -> Self
     {
-        match n {
+        match v {
             Value::Numeric(n) => n,
             _ => unimplemented!(),
         }
     }
 }
 
+impl std::convert::From<LogType> for Value
+{
+    fn from(l: LogType) -> Self
+    {
+        Value::Logical(l)
+    }
+}
+
 impl std::convert::From<Value> for LogType
 {
-    fn from(n: Value) -> Self
+    fn from(v: Value) -> Self
     {
-        match n {
+        match v {
             Value::Numeric(n) => n != 0.,
             Value::Logical(l) => l,
             _ => unimplemented!(),
@@ -77,5 +85,15 @@ pub enum Operator
     Pow,
     Mod,
 
-    Equ,
+    Eq,
+    Ne,
+    Ge,
+    Gt,
+    Le,
+    Lt,
+
+    And,
+    Or,
+
+    Store,
 }

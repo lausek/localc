@@ -19,6 +19,17 @@ impl std::cmp::PartialEq for Value
     }
 }
 
+impl std::cmp::PartialOrd for Value
+{
+    fn partial_cmp(&self, rhs: &Self) -> Option<std::cmp::Ordering>
+    {
+        match (self, rhs) {
+            (Value::Numeric(lhs), Value::Numeric(rhs)) => lhs.partial_cmp(rhs),
+            _ => unimplemented!(),
+        }
+    }
+}
+
 pub struct Vm
 {
     pub parser: ExprParser,
@@ -61,7 +72,7 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut Box<dyn Lookable>) -> VmResult
         Expr::Value(v) => Ok(v.clone()),
         Expr::Ref(name) => run_lookup(name, ctx),
         Expr::Func(name, params) => run_function(name, params, ctx),
-        Expr::Comp(Operator::Equ, lhs, rhs) => match lhs {
+        Expr::Comp(Operator::Store, lhs, rhs) => match lhs {
             box Expr::Func(name, params) => {
                 ctx.set_virtual(name, (params.clone(), rhs.clone()));
                 Ok(Value::Nil)
@@ -76,26 +87,42 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut Box<dyn Lookable>) -> VmResult
             let arg1 = run_with_ctx(arg1, ctx)?;
             let arg2 = run_with_ctx(arg2, ctx)?;
 
-            let arg1 = NumType::from(arg1);
-            let arg2 = NumType::from(arg2);
-
-            let result = match op {
-                Operator::Add => arg1 + arg2,
-                Operator::Sub => arg1 - arg2,
-                Operator::Mul => arg1 * arg2,
-                Operator::Div => {
-                    if arg2 != 0.0 {
-                        arg1 / arg2
-                    } else {
-                        return Err("division with 0".to_string());
-                    }
-                }
-                Operator::Pow => arg1.powf(arg2),
-                Operator::Mod => arg1 % arg2,
+            match op {
+                Operator::Add
+                | Operator::Sub
+                | Operator::Mul
+                | Operator::Div
+                | Operator::Mod
+                | Operator::Pow => exec_num_op(&op, arg1, arg2),
+                Operator::Eq
+                | Operator::Ne
+                | Operator::Ge
+                | Operator::Gt
+                | Operator::Le
+                | Operator::Lt => exec_value_op(&op, arg1, arg2),
+                Operator::And | Operator::Or => exec_log_op(&op, arg1, arg2),
                 _ => unimplemented!(),
-            };
+            }
+            /*
+                        let arg1 = NumType::from(arg1);
+                        let arg2 = NumType::from(arg2);
 
-            Ok(result.into())
+                        let result = match op {
+                            Operator::Add => arg1 + arg2,
+                            Operator::Sub => arg1 - arg2,
+                            Operator::Mul => arg1 * arg2,
+                            Operator::Div => {
+                                if arg2 != 0.0 {
+                                    arg1 / arg2
+                                } else {
+                                    return Err("division with 0".to_string());
+                                }
+                            }
+                            Operator::Pow => arg1.powf(arg2),
+                            Operator::Mod => arg1 % arg2,
+                            _ => unimplemented!(),
+                        };
+            */
         }
     }
 }
@@ -177,4 +204,57 @@ fn push_ctx_params(ctx: &mut Box<dyn Lookable>, names: &TupleType, vals: &TupleT
 fn pop_ctx_params(ctx: &mut Box<dyn Lookable>)
 {
     assert!(ctx.pop_frame());
+}
+
+#[inline]
+fn exec_num_op(op: &Operator, arg1: Value, arg2: Value) -> VmResult
+{
+    let lhs = NumType::from(arg1);
+    let rhs = NumType::from(arg2);
+
+    Ok(match op {
+        Operator::Add => lhs + rhs,
+        Operator::Sub => lhs - rhs,
+        Operator::Mul => lhs * rhs,
+        Operator::Div => {
+            if rhs != 0. {
+                lhs / rhs
+            } else {
+                return Err("division with 0".to_string());
+            }
+        }
+        Operator::Pow => lhs.powf(rhs),
+        Operator::Mod => lhs % rhs,
+        _ => unimplemented!(),
+    }
+    .into())
+}
+
+#[inline]
+fn exec_log_op(op: &Operator, arg1: Value, arg2: Value) -> VmResult
+{
+    let lhs = LogType::from(arg1);
+    let rhs = LogType::from(arg2);
+
+    Ok(match op {
+        Operator::And => lhs && rhs,
+        Operator::Or => lhs || rhs,
+        _ => unimplemented!(),
+    }
+    .into())
+}
+
+#[inline]
+fn exec_value_op(op: &Operator, arg1: Value, arg2: Value) -> VmResult
+{
+    Ok(match op {
+        Operator::Eq => arg1 == arg2,
+        Operator::Ne => arg1 != arg2,
+        Operator::Ge => arg1 >= arg2,
+        Operator::Gt => arg1 > arg2,
+        Operator::Le => arg1 <= arg2,
+        Operator::Lt => arg1 < arg2,
+        _ => unimplemented!(),
+    }
+    .into())
 }

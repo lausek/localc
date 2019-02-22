@@ -13,22 +13,57 @@ Tuple: Vec<Expr> = {
     Expr => vec![<>],
 };
 
+//Tier<Op,NextTier>: Box<Expr> = {
+	//Tier<Op,NextTier> Op NextTier => Box::new(Expr::Comp(<>)),
+	//NextTier
+//};
+//
+//SumOps: Operator = {
+	//"+" => Operator::Add,
+	//"-" => Operator::Sub,
+//};
+//
+//FactorOps: Operator = {
+	//"*" => Operator::Mul,
+	//"/" => Operator::Div,
+	//"%" => Operator::Rem,
+	//"^" => Operator::Pow,
+//};
+//
+//VmOps: Operator = {
+	//"=" => Operator::Store,
+//};
+//
+//pub Expr = Tier<VmOps, Sums>;
+//Sums = Tier<SumOps, Factors>;
+//Factors = Tier<FactorOps, Value>;
+
 pub Expr: Expr = {
-    <l:Expr> "=" <r:ExprLevel0> => Expr::Comp(Operator::Equ, Box::new(l), Box::new(r)),
+    <l:Expr> "=" <r:ExprLevel0> => Expr::Comp(Operator::Store, Box::new(l), Box::new(r)),
     ExprLevel0,
 }
 
 ExprLevel0: Expr = {
-    <l:ExprLevel0> "+" <r:ExprLevel1> => Expr::Comp(Operator::Add, Box::new(l), Box::new(r)),
-    <l:ExprLevel0> "-" <r:ExprLevel1> => Expr::Comp(Operator::Sub, Box::new(l), Box::new(r)),
+    <l:ExprLevel0> "==" <r:ExprLevel1> => Expr::Comp(Operator::Eq, Box::new(l), Box::new(r)),
+    <l:ExprLevel0> "!=" <r:ExprLevel1> => Expr::Comp(Operator::Ne, Box::new(l), Box::new(r)),
+    <l:ExprLevel0> ">=" <r:ExprLevel1> => Expr::Comp(Operator::Ge, Box::new(l), Box::new(r)),
+    <l:ExprLevel0> ">" <r:ExprLevel1> => Expr::Comp(Operator::Gt, Box::new(l), Box::new(r)),
+    <l:ExprLevel0> "<=" <r:ExprLevel1> => Expr::Comp(Operator::Le, Box::new(l), Box::new(r)),
+    <l:ExprLevel0> "<" <r:ExprLevel1> => Expr::Comp(Operator::Lt, Box::new(l), Box::new(r)),
     ExprLevel1,
 }
 
 ExprLevel1: Expr = {
-    <l:ExprLevel1> "*" <r:Value> => Expr::Comp(Operator::Mul, Box::new(l), Box::new(r)),
-    <l:ExprLevel1> "/" <r:Value> => Expr::Comp(Operator::Div, Box::new(l), Box::new(r)),
-    <l:ExprLevel1> "%" <r:Value> => Expr::Comp(Operator::Mod, Box::new(l), Box::new(r)),
-    <l:ExprLevel1> "^" <r:Value> => Expr::Comp(Operator::Pow, Box::new(l), Box::new(r)),
+    <l:ExprLevel1> "+" <r:ExprLevel2> => Expr::Comp(Operator::Add, Box::new(l), Box::new(r)),
+    <l:ExprLevel1> "-" <r:ExprLevel2> => Expr::Comp(Operator::Sub, Box::new(l), Box::new(r)),
+    ExprLevel2,
+}
+
+ExprLevel2: Expr = {
+    <l:ExprLevel2> "*" <r:Value> => Expr::Comp(Operator::Mul, Box::new(l), Box::new(r)),
+    <l:ExprLevel2> "/" <r:Value> => Expr::Comp(Operator::Div, Box::new(l), Box::new(r)),
+    <l:ExprLevel2> "%" <r:Value> => Expr::Comp(Operator::Mod, Box::new(l), Box::new(r)),
+    <l:ExprLevel2> "^" <r:Value> => Expr::Comp(Operator::Pow, Box::new(l), Box::new(r)),
     Value,
 }
 

@@ -19,7 +19,7 @@ mod tests
 {
     use crate::{
         ast::{Value::*, *},
-        query::*,
+        expr::*,
         vm::*,
     };
 
@@ -28,7 +28,7 @@ mod tests
             matches!(Vm::new(), $script, $m);
         };
         ($vm:expr, $script:expr, $m:pat) => {
-            match $vm.run(&ExprParser::new().parse($script).unwrap()) {
+            match $vm.run(&$vm.parser.parse($script).unwrap()) {
                 $m => assert!(true),
                 _ => assert!(false),
             }
@@ -254,74 +254,78 @@ mod tests
         matches!("1!=1 && 2!=2", Ok(Logical(false)));
     }
 
-    #[cfg(feature = "v1-0")]
-    #[test]
-    fn test_tuple()
-    {
-        // parsing
-        matches!(exec_str_set("{1,2,3}"), vec!["1", "2", "3"]);
-        matches!(exec_str_set("{log(2, 4), 2}"), vec!["2", "2"]);
-        matches!(exec_str_set("{}"), Vec::<String>::new());
+    /*
+        #[cfg(feature = "v1-0")]
+        #[test]
+        fn test_tuple()
+        {
+            // parsing
+            matches!(exec_str_set("{1,2,3}"), vec!["1", "2", "3"]);
+            matches!(exec_str_set("{log(2, 4), 2}"), vec!["2", "2"]);
+            matches!(exec_str_set("{}"), Vec::<String>::new());
 
-        // indexing
-        matches!(exec_str("{1,2,3}_2"), 3.0);
-        matches!(exec_str("{1,2,3}_2^2"), 9.0);
-        assert!(
-            exec_str_pre_set("{1,2,3}_(1==2)^2").is_err(),
-            "bool is not a valid index"
-        );
+            // indexing
+            matches!(exec_str("{1,2,3}_2"), 3.0);
+            matches!(exec_str("{1,2,3}_2^2"), 9.0);
+            assert!(
+                exec_str_pre_set("{1,2,3}_(1==2)^2").is_err(),
+                "bool is not a valid index"
+            );
 
-        // generator
-        matches!(exec_str_set("{x | 0 < x, x < 5}"), vec!["1", "2", "3", "4"]);
-    }
+            // generator
+            matches!(exec_str_set("{x | 0 < x, x < 5}"), vec!["1", "2", "3", "4"]);
+        }
+    */
 
-    #[cfg(feature = "v1-0")]
-    #[test]
-    fn test_dependencies()
-    {
-        assert!(
-            exec_str_pre_truth("x=1").is_ok(),
-            "assignment from constant failed"
-        );
+    /*
+        #[cfg(feature = "v1-0")]
+        #[test]
+        fn test_dependencies()
+        {
+            assert!(
+                exec_str_pre_truth("x=1").is_ok(),
+                "assignment from constant failed"
+            );
 
-        assert!(
-            exec_str_pre_truth("1=2").is_err(),
-            "assignment to constant is an invalid operation"
-        );
+            assert!(
+                exec_str_pre_truth("1=2").is_err(),
+                "assignment to constant is an invalid operation"
+            );
 
-        assert!(
-            exec_str_pre_truth("x=x").is_err(),
-            "self assignment is an invalid operation"
-        );
+            assert!(
+                exec_str_pre_truth("x=x").is_err(),
+                "self assignment is an invalid operation"
+            );
 
-        assert!(
-            exec_str_pre_truth("x=x+1").is_err(),
-            "self assignment is an invalid operation"
-        );
+            assert!(
+                exec_str_pre_truth("x=x+1").is_err(),
+                "self assignment is an invalid operation"
+            );
 
-        let mut vm = Vm::new();
-        matches!(vm, "x = y * 3", Ok(Nil));
-        matches!(vm, "f(x) = x * 3", Ok(Nil));
-        matches!(vm, "bar() = f(x)", Ok(Nil));
+            let mut vm = Vm::new();
+            matches!(vm, "x = y * 3", Ok(Nil));
+            matches!(vm, "f(x) = x * 3", Ok(Nil));
+            matches!(vm, "bar() = f(x)", Ok(Nil));
 
-        assert!(
-            exec_str_pre_with_vm("y=x-1", &mut vm).is_err(),
-            "self assignment is an invalid operation"
-        );
+            assert!(
+                exec_str_pre_with_vm("y=x-1", &mut vm).is_err(),
+                "self assignment is an invalid operation"
+            );
 
-        assert!(
-            exec_str_pre_with_vm("f(x)=f(x)", &mut vm).is_err(),
-            "self assignment is an invalid operation"
-        );
+            assert!(
+                exec_str_pre_with_vm("f(x)=f(x)", &mut vm).is_err(),
+                "self assignment is an invalid operation"
+            );
 
-        assert!(
-            exec_str_pre_with_vm("f(x)=1+f(x)", &mut vm).is_err(),
-            "self assignment is an invalid operation"
-        );
+            assert!(
+                exec_str_pre_with_vm("f(x)=1+f(x)", &mut vm).is_err(),
+                "self assignment is an invalid operation"
+            );
 
-        assert!(
-            exec_str_pre_with_vm("sqrt(x=x+1)", &mut vm).is_err(),
-            "self assignment is an invalid operation"
-        );
-    }
+            assert!(
+                exec_str_pre_with_vm("sqrt(x=x+1)", &mut vm).is_err(),
+                "self assignment is an invalid operation"
+            );
+        }
+    */
 }

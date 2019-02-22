@@ -8,8 +8,6 @@ use std::rc::Rc;
 pub type VmFrame = Vec<(RefType, VmContextEntryRef)>;
 pub type VmContextEntry = VmFunction;
 pub type VmContextEntryRef = Rc<RefCell<VmFunction>>;
-// TODO: this should be a Vec<_> to support
-// 		 function overloading (needs new type match algorithm)
 pub type VmFunctionVirtual = (TupleType, Box<Expr>);
 pub type VmFunctionVirtualTable = Vec<VmFunctionVirtual>;
 pub type VmFunctionNative = fn(&TupleType, &mut Box<dyn Lookable>) -> VmResult;
@@ -117,6 +115,9 @@ impl VmContext
     {
         let mut ctx = Self::new();
 
+        insert_func!(ctx.map, "if", vm_func_if);
+        insert_func!(ctx.map, "do", vm_func_do);
+
         insert_func!(ctx.map, "pi", vm_func_pi);
         insert_func!(ctx.map, "print", vm_func_print);
         insert_func!(ctx.map, "sqrt", vm_func_sqrt);
@@ -209,4 +210,26 @@ fn vm_func_log(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
         (Some(Value(Numeric(from))), Some(Value(Numeric(n)))) => Ok(Numeric(from.log(*n))),
         (_, _) => Err("function `log` expected some paramaters".to_string()),
     }
+}
+
+fn vm_func_if(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
+{
+    assert_eq!(params.len(), 3);
+    let mut params = params.iter();
+    run_with_ctx(&params.next().unwrap(), ctx).and_then(|cond| {
+        if cond.conv() {
+            run_with_ctx(&params.next().unwrap(), ctx)
+        } else {
+            params.next().unwrap();
+            run_with_ctx(&params.next().unwrap(), ctx)
+        }
+    })
+}
+
+fn vm_func_do(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
+{
+    for param in params {
+        run_with_ctx(&param, ctx)?;
+    }
+    Ok(Empty)
 }

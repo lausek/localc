@@ -43,7 +43,7 @@ impl std::convert::From<Value> for LogType
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum Expr
 {
     Value(Value),
@@ -52,6 +52,19 @@ pub enum Expr
     Ref(RefType),
     // declaration or invocation
     Func(RefType, TupleType),
+}
+
+impl std::fmt::Debug for Expr
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error>
+    {
+        match self {
+            Expr::Value(v) => write!(f, "{:?}", v),
+            Expr::Ref(r) => write!(f, "~{:?}", r),
+            Expr::Comp(op, lhs, rhs) => write!(f, "Comp({:?}, {:?}, {:?})", op, lhs, rhs),
+            Expr::Func(n, ls) => write!(f, "Func({:?}, {:?})", n, ls),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

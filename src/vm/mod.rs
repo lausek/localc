@@ -109,28 +109,20 @@ pub fn run_lookup(name: &RefType, ctx: &mut Box<dyn Lookable>) -> VmResult
 
 pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
 {
-    let params = run_tuple_exprs(params, ctx)?;
     if let Some(entry) = ctx.get(name) {
         match &*(entry.borrow()) {
-            VmFunction::Virtual(table) => match lookup_func(table, &params) {
-                Some((args, expr)) => {
-                    /*
-                                    if args.len() != params.len() {
-                                        return Err(format!(
-                                            "function `{}` expected {} argument, got {}",
-                                            name,
-                                            args.len(),
-                                            params.len()
-                                        ));
-                                    }
-                    */
-                    push_ctx_params(ctx, &args, &params);
-                    let result = run_with_ctx(&expr, ctx);
-                    pop_ctx_params(ctx);
-                    result
+            VmFunction::Virtual(table) => {
+                let params = run_tuple_exprs(params, ctx)?;
+                match lookup_func(table, &params) {
+                    Some((args, expr)) => {
+                        push_ctx_params(ctx, &args, &params);
+                        let result = run_with_ctx(&expr, ctx);
+                        pop_ctx_params(ctx);
+                        result
+                    }
+                    _ => Err("unexpected arguments".to_string()),
                 }
-                _ => Err("unexpected arguments".to_string()),
-            },
+            }
             VmFunction::Native(func) => func(&params, ctx),
         }
     } else {

@@ -141,6 +141,7 @@ impl Lookable for VmContext
 
     fn get(&self, name: &RefType) -> Option<VmContextEntryRef>
     {
+        // TODO: only lookup last frame over stack.last()
         for frame in self.stack.iter().rev() {
             for (var, val) in frame.iter() {
                 if var == name {
@@ -182,7 +183,7 @@ fn vm_func_print(params: &TupleType, _ctx: &mut Box<dyn Lookable>) -> VmResult
     for param in params {
         print!("{:?}", param);
     }
-    Ok(Numeric(0.0))
+    Ok(Nil)
 }
 
 fn vm_func_pi(_params: &TupleType, _ctx: &mut Box<dyn Lookable>) -> VmResult
@@ -215,13 +216,11 @@ fn vm_func_log(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
 fn vm_func_if(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
 {
     assert_eq!(params.len(), 3);
-    let mut params = params.iter();
-    run_with_ctx(&params.next().unwrap(), ctx).and_then(|cond| {
+    run_with_ctx(&params.get(0).unwrap(), ctx).and_then(|cond| {
         if cond.into() {
-            run_with_ctx(&params.next().unwrap(), ctx)
+            run_with_ctx(&params.get(1).unwrap(), ctx)
         } else {
-            params.next().unwrap();
-            run_with_ctx(&params.next().unwrap(), ctx)
+            run_with_ctx(&params.get(2).unwrap(), ctx)
         }
     })
 }

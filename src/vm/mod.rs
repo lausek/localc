@@ -70,17 +70,16 @@ impl Vm
 fn optimize(expr: &mut Expr) -> Result<(), String>
 {
     let mut new_val = None;
-    info!("optimizing: {:?}", expr);
     match expr {
         Expr::Comp(op, box Expr::Value(lhs), box Expr::Value(rhs)) => {
             new_val = Some(run_operation(&op, &lhs, &rhs));
         }
         Expr::Comp(op, lhs, rhs) => {
-            optimize(lhs);
-            optimize(rhs);
+            optimize(lhs).unwrap();
+            optimize(rhs).unwrap();
             match (lhs, rhs) {
                 (box Expr::Value(lhs), box Expr::Value(rhs)) => {
-                    new_val = Some(Ok(Value::Numeric(666.)));
+                    new_val = Some(run_operation(&op, &lhs, &rhs));
                 }
                 _ => {}
             }
@@ -94,7 +93,8 @@ fn optimize(expr: &mut Expr) -> Result<(), String>
     }
     match new_val {
         Some(Ok(val)) => {
-            info!("optimizing {:?}", val);
+            info!("optimizing expr: {:?}", expr);
+            info!("replacing with const value: {:?}", val);
             *expr = Expr::Value(val);
         }
         Some(_) => panic!("error in constant optimization"),

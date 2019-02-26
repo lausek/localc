@@ -166,8 +166,10 @@ impl Lookable for VmContext
         if let Some(func) = self.map.get(name) {
             match &mut *(func.borrow_mut()) {
                 Virtual(table) => {
+                    if optimize(&mut entry.1).is_ok() {
+                        info!("optimized code: {:?}", entry.1);
+                    }
                     if let Some(bucket) = lookup_func_mut(table, &entry.0) {
-                        optimize(&mut entry.1).unwrap();
                         bucket.1 = entry.1;
                     } else {
                         table.push(entry);

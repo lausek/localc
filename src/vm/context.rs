@@ -144,9 +144,8 @@ impl Lookable for VmContext
 
     fn get(&self, name: &RefType) -> Option<VmContextEntryRef>
     {
-        // TODO: only lookup last frame over stack.last()
-        for frame in self.stack.iter().rev() {
-            for (var, val) in frame.iter() {
+        if let Some(current_frame) = self.stack.last() {
+            for (var, val) in current_frame.iter() {
                 if var == name {
                     info!("stack lookup: {:?}", val);
                     return Some(val.clone());

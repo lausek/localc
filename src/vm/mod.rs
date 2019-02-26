@@ -129,7 +129,7 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut Box<dyn Lookable>) -> VmResult
                 | Operator::Sub
                 | Operator::Mul
                 | Operator::Div
-                | Operator::Mod
+                | Operator::Rem
                 | Operator::Pow => exec_num_op(&op, &arg1, &arg2),
                 Operator::Eq
                 | Operator::Ne
@@ -151,7 +151,7 @@ pub fn run_operation(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
         | Operator::Sub
         | Operator::Mul
         | Operator::Div
-        | Operator::Mod
+        | Operator::Rem
         | Operator::Pow => exec_num_op(&op, &arg1, &arg2),
         Operator::Eq | Operator::Ne | Operator::Ge | Operator::Gt | Operator::Le | Operator::Lt => {
             exec_value_op(&op, &arg1, &arg2)
@@ -262,7 +262,7 @@ fn exec_num_op(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
             }
         }
         Operator::Pow => lhs.powf(rhs),
-        Operator::Mod => lhs % rhs,
+        Operator::Rem => lhs % rhs,
         _ => unimplemented!(),
     }
     .into())

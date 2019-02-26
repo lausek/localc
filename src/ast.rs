@@ -83,7 +83,7 @@ pub enum Operator
     Mul,
     Div,
     Pow,
-    Mod,
+    Rem,
 
     Eq,
     Ne,

@@ -13,70 +13,6 @@ Tuple: Vec<Expr> = {
     Expr => vec![<>],
 };
 
-//Tier<Op,NextTier>: Box<Expr> = {
-	//Tier<Op,NextTier> Op NextTier => Box::new(Expr::Comp(<>)),
-	//NextTier
-//};
-//
-//SumOps: Operator = {
-	//"+" => Operator::Add,
-	//"-" => Operator::Sub,
-//};
-//
-//FactorOps: Operator = {
-	//"*" => Operator::Mul,
-	//"/" => Operator::Div,
-	//"%" => Operator::Rem,
-	//"^" => Operator::Pow,
-//};
-//
-//VmOps: Operator = {
-	//"=" => Operator::Store,
-//};
-//
-//pub Expr = Tier<VmOps, Sums>;
-//Sums = Tier<SumOps, Factors>;
-//Factors = Tier<FactorOps, Value>;
-
-pub Expr: Expr = {
-    <l:Expr> "=" <r:ExprLevel0> => Expr::Comp(Operator::Store, Box::new(l), Box::new(r)),
-    ExprLevelX,
-}
-
-ExprLevelX: Expr = {
-    <l:ExprLevelX> "||" <r:ExprLevelY> => Expr::Comp(Operator::Or, Box::new(l), Box::new(r)),
-	ExprLevelY
-}
-
-ExprLevelY: Expr = {
-    <l:ExprLevelY> "&&" <r:ExprLevel0> => Expr::Comp(Operator::And, Box::new(l), Box::new(r)),
-	ExprLevel0
-}
-
-ExprLevel0: Expr = {
-    <l:ExprLevel0> "==" <r:ExprLevel1> => Expr::Comp(Operator::Eq, Box::new(l), Box::new(r)),
-    <l:ExprLevel0> "!=" <r:ExprLevel1> => Expr::Comp(Operator::Ne, Box::new(l), Box::new(r)),
-    <l:ExprLevel0> ">=" <r:ExprLevel1> => Expr::Comp(Operator::Ge, Box::new(l), Box::new(r)),
-    <l:ExprLevel0> ">" <r:ExprLevel1> => Expr::Comp(Operator::Gt, Box::new(l), Box::new(r)),
-    <l:ExprLevel0> "<=" <r:ExprLevel1> => Expr::Comp(Operator::Le, Box::new(l), Box::new(r)),
-    <l:ExprLevel0> "<" <r:ExprLevel1> => Expr::Comp(Operator::Lt, Box::new(l), Box::new(r)),
-    ExprLevel1,
-}
-
-ExprLevel1: Expr = {
-    <l:ExprLevel1> "+" <r:ExprLevel2> => Expr::Comp(Operator::Add, Box::new(l), Box::new(r)),
-    <l:ExprLevel1> "-" <r:ExprLevel2> => Expr::Comp(Operator::Sub, Box::new(l), Box::new(r)),
-    ExprLevel2,
-}
-
-ExprLevel2: Expr = {
-    <l:ExprLevel2> "*" <r:Value> => Expr::Comp(Operator::Mul, Box::new(l), Box::new(r)),
-    <l:ExprLevel2> "/" <r:Value> => Expr::Comp(Operator::Div, Box::new(l), Box::new(r)),
-    <l:ExprLevel2> "%" <r:Value> => Expr::Comp(Operator::Mod, Box::new(l), Box::new(r)),
-    <l:ExprLevel2> "^" <r:Value> => Expr::Comp(Operator::Pow, Box::new(l), Box::new(r)),
-    Value,
-}
-
 Value: Expr = {
     Num => Expr::Value(Value::Numeric(<>)),
     Ident => Expr::Ref(<>),
@@ -86,10 +22,49 @@ Value: Expr = {
         t.push(e);
         Expr::Value(Value::Tuple(t))
     },
-    <i:Ident> "(" <t:Tuple> ")" => {
-        Expr::Func(i, t)
-    },
-    <i:Ident> "(" ")" => {
-        Expr::Func(i, vec![])
-    },
+    <i:Ident> "(" <t:Tuple> ")" => Expr::Func(i, t),
+    <i:Ident> "(" ")" => Expr::Func(i, vec![]),
 };
+
+Tier<Op,NextTier>: Expr = {
+    <lhs:Tier<Op,NextTier>> <op:Op> <rhs:NextTier> => Expr::Comp(op, Box::new(lhs), Box::new(rhs)),
+	NextTier
+};
+
+SumOps: Operator = {
+	"+" => Operator::Add,
+	"-" => Operator::Sub,
+};
+
+FactorOps: Operator = {
+	"*" => Operator::Mul,
+	"/" => Operator::Div,
+	"%" => Operator::Rem,
+	"^" => Operator::Pow,
+};
+
+VmOps: Operator = {
+	"=" => Operator::Store,
+};
+
+OrOps: Operator = {
+	"||" => Operator::Or,
+};
+
+AndOps: Operator = {
+	"&&" => Operator::And,
+};
+
+CompareOps: Operator = {
+    "==" => Operator::Eq,
+    "!=" => Operator::Ne,
+    ">=" => Operator::Ge,
+    "<=" => Operator::Le,
+    ">" => Operator::Gt,
+    "<" => Operator::Lt,
+};
+
+Computations = Tier<SumOps, Tier<FactorOps, Value>>;
+Compares = Tier<CompareOps, Computations>;
+Logic = Tier<OrOps, Tier<AndOps, Compares>>;
+pub Expr = Tier<VmOps, Logic>;

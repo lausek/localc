@@ -67,6 +67,42 @@ impl Vm
     }
 }
 
+fn optimize(expr: &mut Expr) -> Result<(), String>
+{
+    let mut new_val = None;
+    info!("optimizing: {:?}", expr);
+    match expr {
+        Expr::Comp(op, box Expr::Value(lhs), box Expr::Value(rhs)) => {
+            new_val = Some(run_operation(&op, &lhs, &rhs));
+        }
+        Expr::Comp(op, lhs, rhs) => {
+            optimize(lhs);
+            optimize(rhs);
+            match (lhs, rhs) {
+                (box Expr::Value(lhs), box Expr::Value(rhs)) => {
+                    new_val = Some(Ok(Value::Numeric(666.)));
+                }
+                _ => {}
+            }
+        }
+        Expr::Func(_m, params) => {
+            for param in params {
+                optimize(param).unwrap();
+            }
+        }
+        _ => {}
+    }
+    match new_val {
+        Some(Ok(val)) => {
+            info!("optimizing {:?}", val);
+            *expr = Expr::Value(val);
+        }
+        Some(_) => panic!("error in constant optimization"),
+        _ => {}
+    }
+    Ok(())
+}
+
 pub fn run_with_ctx(expr: &Expr, ctx: &mut Box<dyn Lookable>) -> VmResult
 {
     match expr {
@@ -94,17 +130,34 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut Box<dyn Lookable>) -> VmResult
                 | Operator::Mul
                 | Operator::Div
                 | Operator::Mod
-                | Operator::Pow => exec_num_op(&op, arg1, arg2),
+                | Operator::Pow => exec_num_op(&op, &arg1, &arg2),
                 Operator::Eq
                 | Operator::Ne
                 | Operator::Ge
                 | Operator::Gt
                 | Operator::Le
-                | Operator::Lt => exec_value_op(&op, arg1, arg2),
-                Operator::And | Operator::Or => exec_log_op(&op, arg1, arg2),
+                | Operator::Lt => exec_value_op(&op, &arg1, &arg2),
+                Operator::And | Operator::Or => exec_log_op(&op, &arg1, &arg2),
                 _ => unimplemented!(),
             }
         }
+    }
+}
+
+pub fn run_operation(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
+{
+    match op {
+        Operator::Add
+        | Operator::Sub
+        | Operator::Mul
+        | Operator::Div
+        | Operator::Mod
+        | Operator::Pow => exec_num_op(&op, &arg1, &arg2),
+        Operator::Eq | Operator::Ne | Operator::Ge | Operator::Gt | Operator::Le | Operator::Lt => {
+            exec_value_op(&op, &arg1, &arg2)
+        }
+        Operator::And | Operator::Or => exec_log_op(&op, &arg1, &arg2),
+        _ => unimplemented!(),
     }
 }
 
@@ -192,7 +245,7 @@ fn pop_ctx_params(ctx: &mut Box<dyn Lookable>)
 }
 
 #[inline]
-fn exec_num_op(op: &Operator, arg1: Value, arg2: Value) -> VmResult
+fn exec_num_op(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
 {
     let lhs = NumType::from(arg1);
     let rhs = NumType::from(arg2);
@@ -216,7 +269,7 @@ fn exec_num_op(op: &Operator, arg1: Value, arg2: Value) -> VmResult
 }
 
 #[inline]
-fn exec_log_op(op: &Operator, arg1: Value, arg2: Value) -> VmResult
+fn exec_log_op(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
 {
     let lhs = LogType::from(arg1);
     let rhs = LogType::from(arg2);
@@ -230,7 +283,7 @@ fn exec_log_op(op: &Operator, arg1: Value, arg2: Value) -> VmResult
 }
 
 #[inline]
-fn exec_value_op(op: &Operator, arg1: Value, arg2: Value) -> VmResult
+fn exec_value_op(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
 {
     Ok(match op {
         Operator::Eq => arg1 == arg2,

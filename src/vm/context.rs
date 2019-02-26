@@ -161,12 +161,13 @@ impl Lookable for VmContext
         self.map.insert(name.clone(), Rc::new(RefCell::new(entry)));
     }
 
-    fn set_virtual(&mut self, name: &RefType, entry: VmFunctionVirtual)
+    fn set_virtual(&mut self, name: &RefType, mut entry: VmFunctionVirtual)
     {
         if let Some(func) = self.map.get(name) {
             match &mut *(func.borrow_mut()) {
                 Virtual(table) => {
                     if let Some(bucket) = lookup_func_mut(table, &entry.0) {
+                        optimize(&mut entry.1).unwrap();
                         bucket.1 = entry.1;
                     } else {
                         table.push(entry);
@@ -221,7 +222,7 @@ fn vm_func_if(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
 {
     assert_eq!(params.len(), 3);
     run_with_ctx(&params.get(0).unwrap(), ctx).and_then(|cond| {
-        if cond.into() {
+        if (&cond).into() {
             run_with_ctx(&params.get(1).unwrap(), ctx)
         } else {
             run_with_ctx(&params.get(2).unwrap(), ctx)

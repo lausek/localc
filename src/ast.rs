@@ -20,12 +20,12 @@ impl std::convert::From<NumType> for Value
     }
 }
 
-impl std::convert::From<Value> for NumType
+impl std::convert::From<&Value> for NumType
 {
-    fn from(v: Value) -> Self
+    fn from(v: &Value) -> Self
     {
         match v {
-            Value::Numeric(n) => n,
+            Value::Numeric(n) => *n,
             _ => unimplemented!(),
         }
     }
@@ -39,13 +39,13 @@ impl std::convert::From<LogType> for Value
     }
 }
 
-impl std::convert::From<Value> for LogType
+impl std::convert::From<&Value> for LogType
 {
-    fn from(v: Value) -> Self
+    fn from(v: &Value) -> Self
     {
         match v {
-            Value::Numeric(n) => n != 0.,
-            Value::Logical(l) => l,
+            Value::Numeric(n) => *n != 0.,
+            Value::Logical(l) => *l,
             _ => unimplemented!(),
         }
     }

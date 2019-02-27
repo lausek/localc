@@ -34,7 +34,7 @@ impl std::cmp::PartialOrd for Value
 pub struct Vm
 {
     pub parser: ExprParser,
-    ctx: Box<dyn Lookable>,
+    ctx: VmContext,
 }
 
 impl Vm
@@ -43,7 +43,7 @@ impl Vm
     {
         Self {
             parser: ExprParser::new(),
-            ctx: Box::new(VmContext::new()),
+            ctx: VmContext::new(),
         }
     }
 
@@ -51,7 +51,7 @@ impl Vm
     {
         Self {
             parser: ExprParser::new(),
-            ctx: Box::new(VmContext::stdlib()),
+            ctx: VmContext::stdlib(),
         }
     }
 
@@ -103,7 +103,7 @@ fn optimize(expr: &mut Expr) -> Result<(), String>
     Ok(())
 }
 
-pub fn run_with_ctx(expr: &Expr, ctx: &mut Box<dyn Lookable>) -> VmResult
+pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
 {
     match expr {
         Expr::Value(v) => Ok(v.clone()),
@@ -161,7 +161,7 @@ pub fn run_operation(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
     }
 }
 
-pub fn run_lookup(name: &RefType, ctx: &mut Box<dyn Lookable>) -> VmResult
+pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
 {
     info!("lookup: {}", name);
     if let Some(entry) = ctx.get(name) {
@@ -179,7 +179,7 @@ pub fn run_lookup(name: &RefType, ctx: &mut Box<dyn Lookable>) -> VmResult
     }
 }
 
-pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
+pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut VmContext) -> VmResult
 {
     info!("function: {} ({:?})", name, params);
     if let Some(entry) = ctx.get(name) {
@@ -204,7 +204,7 @@ pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut Box<dyn Lookab
     }
 }
 
-fn run_tuple_exprs(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> Result<TupleType, VmError>
+fn run_tuple_exprs(params: &TupleType, ctx: &mut VmContext) -> Result<TupleType, VmError>
 {
     let mut list = vec![];
     for param in params {
@@ -214,7 +214,7 @@ fn run_tuple_exprs(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> Result<Tu
     Ok(list)
 }
 
-fn push_ctx_params(ctx: &mut Box<dyn Lookable>, names: &TupleType, vals: &TupleType)
+fn push_ctx_params(ctx: &mut VmContext, names: &TupleType, vals: &TupleType)
 {
     use std::cell::RefCell;
     use std::rc::Rc;
@@ -239,7 +239,7 @@ fn push_ctx_params(ctx: &mut Box<dyn Lookable>, names: &TupleType, vals: &TupleT
     ctx.push_frame(frame);
 }
 
-fn pop_ctx_params(ctx: &mut Box<dyn Lookable>)
+fn pop_ctx_params(ctx: &mut VmContext)
 {
     assert!(ctx.pop_frame());
 }

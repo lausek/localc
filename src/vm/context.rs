@@ -12,7 +12,7 @@ pub type VmContextEntry = VmFunction;
 pub type VmContextEntryRef = Rc<RefCell<VmFunction>>;
 pub type VmFunctionVirtual = (TupleType, Box<Expr>);
 pub type VmFunctionVirtualTable = Vec<VmFunctionVirtual>;
-pub type VmFunctionNative = fn(&TupleType, &mut Box<dyn Lookable>) -> VmResult;
+pub type VmFunctionNative = fn(&TupleType, &mut VmContext) -> VmResult;
 
 #[derive(Clone)]
 pub enum VmFunction
@@ -76,6 +76,7 @@ pub fn lookup_func<'t>(
     None
 }
 
+/*
 pub trait Lookable
 {
     fn get(&self, name: &RefType) -> Option<VmContextEntryRef>;
@@ -84,6 +85,7 @@ pub trait Lookable
     fn push_frame(&mut self, frame: VmFrame);
     fn pop_frame(&mut self) -> bool;
 }
+*/
 
 impl std::fmt::Debug for VmFunction
 {
@@ -129,20 +131,20 @@ impl VmContext
     }
 }
 
-impl Lookable for VmContext
+impl VmContext
 {
-    fn push_frame(&mut self, frame: VmFrame)
+    pub fn push_frame(&mut self, frame: VmFrame)
     {
         self.stack.push(frame);
         assert!(self.stack.len() < MAX_STACK_SIZE, "stack size exceeded");
     }
 
-    fn pop_frame(&mut self) -> bool
+    pub fn pop_frame(&mut self) -> bool
     {
         self.stack.pop().is_some()
     }
 
-    fn get(&self, name: &RefType) -> Option<VmContextEntryRef>
+    pub fn get(&self, name: &RefType) -> Option<VmContextEntryRef>
     {
         if let Some(current_frame) = self.stack.last() {
             for (var, val) in current_frame.iter() {
@@ -155,12 +157,12 @@ impl Lookable for VmContext
         self.map.get(name).map(|r| r.clone())
     }
 
-    fn set(&mut self, name: &RefType, entry: VmContextEntry)
+    pub fn set(&mut self, name: &RefType, entry: VmContextEntry)
     {
         self.map.insert(name.clone(), Rc::new(RefCell::new(entry)));
     }
 
-    fn set_virtual(&mut self, name: &RefType, mut entry: VmFunctionVirtual)
+    pub fn set_virtual(&mut self, name: &RefType, mut entry: VmFunctionVirtual)
     {
         if let Some(func) = self.map.get(name) {
             match &mut *(func.borrow_mut()) {
@@ -183,7 +185,7 @@ impl Lookable for VmContext
     }
 }
 
-fn vm_func_print(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
+fn vm_func_print(params: &TupleType, ctx: &mut VmContext) -> VmResult
 {
     let params = run_tuple_exprs(params, ctx)?;
     for param in params {
@@ -192,12 +194,12 @@ fn vm_func_print(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
     Ok(Nil)
 }
 
-fn vm_func_pi(_params: &TupleType, _ctx: &mut Box<dyn Lookable>) -> VmResult
+fn vm_func_pi(_params: &TupleType, _ctx: &mut VmContext) -> VmResult
 {
     Ok(Numeric(std::f64::consts::PI))
 }
 
-fn vm_func_sqrt(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
+fn vm_func_sqrt(params: &TupleType, ctx: &mut VmContext) -> VmResult
 {
     let params = run_tuple_exprs(params, ctx)?;
     let mut params = params.iter();
@@ -208,7 +210,7 @@ fn vm_func_sqrt(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
     }
 }
 
-fn vm_func_log(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
+fn vm_func_log(params: &TupleType, ctx: &mut VmContext) -> VmResult
 {
     let params = run_tuple_exprs(params, ctx)?;
     let mut params = params.iter();
@@ -219,7 +221,7 @@ fn vm_func_log(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
     }
 }
 
-fn vm_func_if(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
+fn vm_func_if(params: &TupleType, ctx: &mut VmContext) -> VmResult
 {
     assert_eq!(params.len(), 3);
     run_with_ctx(&params.get(0).unwrap(), ctx).and_then(|cond| {
@@ -231,7 +233,7 @@ fn vm_func_if(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
     })
 }
 
-fn vm_func_do(params: &TupleType, ctx: &mut Box<dyn Lookable>) -> VmResult
+fn vm_func_do(params: &TupleType, ctx: &mut VmContext) -> VmResult
 {
     for param in params {
         run_with_ctx(&param, ctx)?;

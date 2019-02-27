@@ -1,6 +1,6 @@
 #![feature(box_patterns)]
 #![feature(box_syntax)]
-#![allow(illegal_floating_point_literal_pattern)]
+#![allow(clippy::all)]
 
 extern crate env_logger;
 #[macro_use]

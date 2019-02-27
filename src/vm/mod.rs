@@ -123,23 +123,7 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
         Expr::Comp(op, arg1, arg2) => {
             let arg1 = run_with_ctx(arg1, ctx)?;
             let arg2 = run_with_ctx(arg2, ctx)?;
-
-            match op {
-                Operator::Add
-                | Operator::Sub
-                | Operator::Mul
-                | Operator::Div
-                | Operator::Rem
-                | Operator::Pow => exec_num_op(&op, &arg1, &arg2),
-                Operator::Eq
-                | Operator::Ne
-                | Operator::Ge
-                | Operator::Gt
-                | Operator::Le
-                | Operator::Lt => exec_value_op(&op, &arg1, &arg2),
-                Operator::And | Operator::Or => exec_log_op(&op, &arg1, &arg2),
-                _ => unimplemented!(),
-            }
+            run_operation(op, &arg1, &arg2)
         }
     }
 }

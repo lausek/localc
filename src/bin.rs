@@ -18,13 +18,47 @@ macro_rules! present {
     };
 }
 
+struct Repl
+{
+    pub optimize: bool,
+}
+
+impl Repl
+{
+    pub fn new() -> Self
+    {
+        Self { optimize: true }
+    }
+
+    pub fn repeat(&self, vm: &mut Vm) -> Result<(), String>
+    {
+        let stdin = io::stdin();
+        for line in stdin.lock().lines() {
+            let script = line.unwrap();
+            let result = vm.parser.parse(script.as_ref());
+            if let Ok(mut program) = result {
+                if self.optimize {
+                    vm.optimize(&mut program)?;
+                }
+                println!(
+                    "program{}: {:?}",
+                    if self.optimize { " [optimized]" } else { "" },
+                    program
+                );
+                present!(vm.run(&program));
+            } else {
+                present!(result);
+            }
+        }
+        Ok(())
+    }
+}
+
 pub fn main()
 {
     env_logger::init();
     let args = env::args();
     let mut vm = Vm::with_stdlib();
-
-    let stdin = io::stdin();
 
     for path in args.skip(1) {
         if let Ok(file) = File::open(path.clone()) {
@@ -40,14 +74,5 @@ pub fn main()
         }
     }
 
-    for line in stdin.lock().lines() {
-        let script = line.unwrap();
-        let result = vm.parser.parse(script.as_ref());
-        if let Ok(program) = result {
-            println!("program: {:?}", program);
-            present!(vm.run(&program));
-        } else {
-            present!(result);
-        }
-    }
+    Repl::new().repeat(&mut vm).unwrap();
 }

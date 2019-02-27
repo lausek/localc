@@ -2,6 +2,11 @@ use crate::ast::*;
 
 grammar;
 
+Tier<Op,NextTier>: Expr = {
+    <lhs:Tier<Op,NextTier>> <op:Op> <rhs:NextTier> => Expr::Comp(op, Box::new(lhs), Box::new(rhs)),
+	NextTier
+};
+
 Num: f64 = r"[+-]?\d+(\.\d)?" => <>.parse::<f64>().unwrap();
 Ident: String = r"[a-zA-z][\w']*\??" => String::from(<>);
 Tuple: Vec<Expr> = {
@@ -24,11 +29,6 @@ Value: Expr = {
     },
     <i:Ident> "(" <t:Tuple> ")" => Expr::Func(i, t),
     <i:Ident> "(" ")" => Expr::Func(i, vec![]),
-};
-
-Tier<Op,NextTier>: Expr = {
-    <lhs:Tier<Op,NextTier>> <op:Op> <rhs:NextTier> => Expr::Comp(op, Box::new(lhs), Box::new(rhs)),
-	NextTier
 };
 
 SumOps: Operator = {

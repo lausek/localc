@@ -84,15 +84,15 @@ mod tests
         eq!("(1 + 4) * 5 / 2", Ok(Numeric(12.5)));
 
         // addition & subtraction
-        eq!("1 + 1 - 1 + 1 - 1 + 1 - 1 + 1 - 1", Ok(Numeric(1.0)));
+        eq!("1 + 1 - 1 + 1 - 1 + 1 - 1 + 1 - 1", Ok(Numeric(1.)));
 
         // multiplication & division
         eq!("2 * 5 / 2 * 5 / 2 * 5", Ok(Numeric(62.5)));
 
         // mixed
-        eq!("2 + 10 / 2 - 2 * 1 + 1", Ok(Numeric(6.0)));
-        eq!("10 * (2 + 1)", Ok(Numeric(30.0)));
-        eq!("10 * (2 * (2 + 1) - 1) - 1", Ok(Numeric(49.0)));
+        eq!("2 + 10 / 2 - 2 * 1 + 1", Ok(Numeric(6.)));
+        eq!("10 * (2 + 1)", Ok(Numeric(30.)));
+        eq!("10 * (2 * (2 + 1) - 1) - 1", Ok(Numeric(49.)));
 
         // TODO:
         //eq!("10 * [2 + 1]", Ok(Numeric(30.0)));
@@ -183,17 +183,17 @@ mod tests
         eq!(vm, "pi", Ok(Numeric(3.141592653589793)));
 
         // sqrt
-        eq!(vm, "sqrt(16)", Ok(Numeric(4.0)));
-        eq!(vm, "sqrt(64)", Ok(Numeric(8.0)));
+        eq!(vm, "sqrt(16)", Ok(Numeric(4.)));
+        eq!(vm, "sqrt(64)", Ok(Numeric(8.)));
 
         // sqrtn
         // eq!(f64::round(exec_str("sqrtn(3,64)")), Ok(Numeric(4.0)));
         // eq!(f64::round(exec_str("sqrtn(5,3125)")), Ok(Numeric(5.0)));
 
         // log
-        eq!(vm, "log(8, 2)", Ok(Numeric(3.0)));
-        eq!(vm, "log(100, 10)", Ok(Numeric(2.0)));
-        eq!(vm, "log(100)", Ok(Numeric(2.0)));
+        eq!(vm, "log(8, 2)", Ok(Numeric(3.)));
+        eq!(vm, "log(100, 10)", Ok(Numeric(2.)));
+        eq!(vm, "log(100)", Ok(Numeric(2.)));
 
         // log2
         //eq!(vm, "log2(8)", Ok(Numeric(3.0)));
@@ -205,8 +205,8 @@ mod tests
         //eq!(vm, "ln(e)", Ok(Numeric(1.0)));
 
         // if
-        eq!(vm, "if(1==1,1,2)", Ok(Numeric(1.0)));
-        eq!(vm, "if(1!=1,1,2)", Ok(Numeric(2.0)));
+        eq!(vm, "if(1==1,1,2)", Ok(Numeric(1.)));
+        eq!(vm, "if(1!=1,1,2)", Ok(Numeric(2.)));
         /*
         assert!(
             exec_str_pre_num("if(1,1,2)").is_err(),

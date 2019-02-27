@@ -65,6 +65,11 @@ impl Vm
     {
         run_with_ctx(expr, &mut self.ctx)
     }
+
+    pub fn optimize(&self, expr: &mut Expr) -> Result<(), String>
+    {
+        optimize(expr)
+    }
 }
 
 fn optimize(expr: &mut Expr) -> Result<(), String>

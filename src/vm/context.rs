@@ -76,17 +76,6 @@ pub fn lookup_func<'t>(
     None
 }
 
-/*
-pub trait Lookable
-{
-    fn get(&self, name: &RefType) -> Option<VmContextEntryRef>;
-    fn set(&mut self, name: &RefType, entry: VmContextEntry);
-    fn set_virtual(&mut self, name: &RefType, entry: VmFunctionVirtual);
-    fn push_frame(&mut self, frame: VmFrame);
-    fn pop_frame(&mut self) -> bool;
-}
-*/
-
 impl std::fmt::Debug for VmFunction
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result

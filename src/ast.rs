@@ -68,7 +68,7 @@ impl std::fmt::Debug for Expr
     {
         match self {
             Expr::Value(v) => write!(f, "{:?}", v),
-            Expr::Ref(r) => write!(f, "~{:?}", r),
+            Expr::Ref(r) => write!(f, "~{}", r),
             Expr::Comp(op, lhs, rhs) => write!(f, "Comp({:?}, {:?}, {:?})", op, lhs, rhs),
             Expr::Func(n, ls) => write!(f, "Func({:?}, {:?})", n, ls),
         }

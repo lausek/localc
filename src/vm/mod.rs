@@ -80,6 +80,8 @@ fn optimize(expr: &mut Expr) -> Result<(), String>
             new_val = Some(run_operation(&op, &lhs, &rhs));
         }
         Expr::Comp(op, lhs, rhs) => {
+            // optimize lazily because `and`, `or` must not evaluate the second operand
+            // if the first one already has a known value
             optimize(lhs).unwrap();
             match (&op, &lhs) {
                 (Operator::And, box Expr::Value(Value::Logical(false))) => {
@@ -98,8 +100,12 @@ fn optimize(expr: &mut Expr) -> Result<(), String>
                             new_val = Some(Ok(Value::Logical(true)));
                         }
                         _ => match (lhs, rhs) {
-                            (_, box Expr::Value(Value::Numeric(0.)))
-                            | (box Expr::Value(Value::Numeric(0.)), _) => {
+                            // multiplications with 0 turn out to 0 regardless
+                            // of wether or not the second operand is constant
+                            (_, box Expr::Value(Value::Numeric(n)))
+                            | (box Expr::Value(Value::Numeric(n)), _)
+                                if *n == 0. =>
+                            {
                                 new_val = Some(Ok(Value::Numeric(0.)));
                             }
                             (box Expr::Value(lhs), box Expr::Value(rhs)) => {

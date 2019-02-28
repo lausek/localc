@@ -226,6 +226,10 @@ mod tests
     #[test]
     fn test_logical()
     {
+        // constants
+        eq!("true", Ok(Logical(true)));
+        eq!("false", Ok(Logical(false)));
+
         // equal, not equal
         eq!("1==1", Ok(Logical(true)));
         eq!("1!=1", Ok(Logical(false)));

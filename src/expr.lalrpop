@@ -7,7 +7,11 @@ Tier<Op,NextTier>: Expr = {
 	NextTier
 };
 
-Num: f64 = r"[+-]?\d+(\.\d)?" => <>.parse::<f64>().unwrap();
+Log: LogType = {
+	"true" => true,
+	"false" => false,
+};
+Num: NumType = r"[+-]?\d+(\.\d)?" => <>.parse::<NumType>().unwrap();
 Ident: String = r"[a-zA-z][\w']*\??" => String::from(<>);
 Tuple: Vec<Expr> = {
     <t:Tuple> "," <e:Expr> => {
@@ -19,6 +23,7 @@ Tuple: Vec<Expr> = {
 };
 
 Value: Expr = {
+    Log => Expr::Value(Value::Logical(<>)),
     Num => Expr::Value(Value::Numeric(<>)),
     Ident => Expr::Ref(<>),
     "(" <Expr> ")",

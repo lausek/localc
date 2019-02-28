@@ -81,12 +81,34 @@ fn optimize(expr: &mut Expr) -> Result<(), String>
         }
         Expr::Comp(op, lhs, rhs) => {
             optimize(lhs).unwrap();
-            optimize(rhs).unwrap();
-            match (lhs, rhs) {
-                (box Expr::Value(lhs), box Expr::Value(rhs)) => {
-                    new_val = Some(run_operation(&op, &lhs, &rhs));
+            match (&op, &lhs) {
+                (Operator::And, box Expr::Value(Value::Logical(false))) => {
+                    new_val = Some(Ok(Value::Logical(false)));
                 }
-                _ => {}
+                (Operator::Or, box Expr::Value(Value::Logical(true))) => {
+                    new_val = Some(Ok(Value::Logical(true)));
+                }
+                _ => {
+                    optimize(rhs).unwrap();
+                    match (&op, &rhs) {
+                        (Operator::And, box Expr::Value(Value::Logical(false))) => {
+                            new_val = Some(Ok(Value::Logical(false)));
+                        }
+                        (Operator::Or, box Expr::Value(Value::Logical(true))) => {
+                            new_val = Some(Ok(Value::Logical(true)));
+                        }
+                        _ => match (lhs, rhs) {
+                            (_, box Expr::Value(Value::Numeric(0.)))
+                            | (box Expr::Value(Value::Numeric(0.)), _) => {
+                                new_val = Some(Ok(Value::Numeric(0.)));
+                            }
+                            (box Expr::Value(lhs), box Expr::Value(rhs)) => {
+                                new_val = Some(run_operation(&op, &lhs, &rhs));
+                            }
+                            _ => {}
+                        },
+                    }
+                }
             }
         }
         Expr::Func(_m, params) => {

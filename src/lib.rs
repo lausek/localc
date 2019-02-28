@@ -146,12 +146,12 @@ mod tests
             exec_str_pre_num("f(2)=1").is_err(),
             "only identifiers allowed in function assignment position"
         );
-        
+
         assert!(
             exec_str_pre_num("f(y,2)=1").is_err(),
             "only identifiers allowed in function assignment position"
         );
-        
+
         assert!(
             exec_str_pre_num("f(2)=x(1)").is_err(),
             "only identifiers allowed in function assignment position"
@@ -221,9 +221,7 @@ mod tests
 
     #[cfg(feature = "v1-0")]
     #[test]
-    fn test_version1()
-    {
-    }
+    fn test_version1() {}
 
     #[test]
     fn test_logical()
@@ -277,7 +275,7 @@ mod tests
             eq!(exec_str_set("{1,2,3}"), vec!["1", "2", "3"]);
             eq!(exec_str_set("{log(2, 4), 2}"), vec!["2", "2"]);
             eq!(exec_str_set("{}"), Vec::<String>::new());
-    
+
             // indexing
             eq!(exec_str("{1,2,3}_2"), 3.0);
             eq!(exec_str("{1,2,3}_2^2"), 9.0);
@@ -285,7 +283,7 @@ mod tests
                 exec_str_pre_set("{1,2,3}_(1==2)^2").is_err(),
                 "bool is not a valid index"
             );
-    
+
             // generator
             eq!(exec_str_set("{x | 0 < x, x < 5}"), vec!["1", "2", "3", "4"]);
         }
@@ -300,42 +298,42 @@ mod tests
                 exec_str_pre_truth("x=1").is_ok(),
                 "assignment from constant failed"
             );
-    
+
             assert!(
                 exec_str_pre_truth("1=2").is_err(),
                 "assignment to constant is an invalid operation"
             );
-    
+
             assert!(
                 exec_str_pre_truth("x=x").is_err(),
                 "self assignment is an invalid operation"
             );
-    
+
             assert!(
                 exec_str_pre_truth("x=x+1").is_err(),
                 "self assignment is an invalid operation"
             );
-    
+
             let mut vm = Vm::new();
             eq!(vm, "x = y * 3", Ok(Nil));
             eq!(vm, "f(x) = x * 3", Ok(Nil));
             eq!(vm, "bar() = f(x)", Ok(Nil));
-    
+
             assert!(
                 exec_str_pre_with_vm("y=x-1", &mut vm).is_err(),
                 "self assignment is an invalid operation"
             );
-    
+
             assert!(
                 exec_str_pre_with_vm("f(x)=f(x)", &mut vm).is_err(),
                 "self assignment is an invalid operation"
             );
-    
+
             assert!(
                 exec_str_pre_with_vm("f(x)=1+f(x)", &mut vm).is_err(),
                 "self assignment is an invalid operation"
             );
-    
+
             assert!(
                 exec_str_pre_with_vm("sqrt(x=x+1)", &mut vm).is_err(),
                 "self assignment is an invalid operation"

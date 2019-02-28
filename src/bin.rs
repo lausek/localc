@@ -55,6 +55,7 @@ fn pretty_print(expr: &Expr)
 
 macro_rules! present {
     ($result:expr) => {
+        print!("[result]\t");
         let s = format!("{:?}", $result);
         if $result.is_ok() {
             println!("{}", Green.paint(s));
@@ -87,18 +88,18 @@ impl Repl
             let script = line.unwrap();
             let result = self.vm.parser.parse(script.as_ref());
             if self.print_parse {
-                println!("parsed: {:?}", result);
+                println!("[parsed]\t{:?}", result);
             }
             if let Ok(mut program) = result {
                 if self.vm.config().is_optimizing() {
                     self.vm.optimize(&mut program)?;
                 }
                 print!(
-                    "program{}: ",
+                    "[code{}]\t",
                     Yellow.paint(if self.vm.config().is_optimizing() {
-                        " [optimized]"
+                        "++"
                     } else {
-                        ""
+                        "--"
                     }),
                 );
                 pretty_print(&program);

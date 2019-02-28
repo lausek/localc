@@ -16,7 +16,7 @@ fn pretty_print_list(ls: &TupleType)
     if let Some(first) = it.next() {
         pretty_print(first);
     }
-    for other in it.skip(1) {
+    for other in it {
         print!(",");
         pretty_print(other);
     }

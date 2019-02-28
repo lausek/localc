@@ -36,6 +36,7 @@ impl Repl
         for line in stdin.lock().lines() {
             let script = line.unwrap();
             let result = vm.parser.parse(script.as_ref());
+            println!("parsed: {:?}", result);
             if let Ok(mut program) = result {
                 if self.optimize {
                     vm.optimize(&mut program)?;

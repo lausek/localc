@@ -10,9 +10,10 @@ const MAX_STACK_SIZE: usize = 64;
 pub type VmFrame = Vec<(RefType, VmContextEntryRef)>;
 pub type VmContextEntry = VmFunction;
 pub type VmContextEntryRef = Rc<RefCell<VmFunction>>;
-pub type VmFunctionVirtual = (TupleType, Box<Expr>);
+pub type VmFunctionParameters = Option<TupleType>;
+pub type VmFunctionVirtual = (VmFunctionParameters, Box<Expr>);
 pub type VmFunctionVirtualTable = Vec<VmFunctionVirtual>;
-pub type VmFunctionNative = fn(&TupleType, &mut VmContext) -> VmResult;
+pub type VmFunctionNative = fn(&VmFunctionParameters, &mut VmContext) -> VmResult;
 
 #[derive(Clone)]
 pub enum VmFunction
@@ -35,45 +36,71 @@ macro_rules! insert_func {
 // search expression to be updated
 pub fn lookup_func_mut<'t>(
     table: &'t mut VmFunctionVirtualTable,
-    params: &TupleType,
+    params: &VmFunctionParameters,
 ) -> Option<&'t mut VmFunctionVirtual>
 {
-    let plen = params.len();
-    for entry in table.iter_mut().filter(|(args, _)| args.len() == plen) {
-        if plen == 0 {
-            return Some(entry);
-        }
-        if entry.0.iter().zip(params).all(|pair| match pair {
-            (Value(e), Value(g)) => e == g,
-            (Ref(_), Ref(_)) => true,
+    info!("table: {:?}", table);
+    info!("looking up mut: {:?}", params);
+    if let Some(params) = params.as_ref() {
+        let plen = params.len();
+        for entry in table.iter_mut().filter(|(args, _)| match args {
+            Some(args) => args.len() == plen,
             _ => false,
         }) {
-            return Some(entry);
+            if entry
+                .0
+                .as_ref()
+                .unwrap()
+                .iter()
+                .zip(params)
+                .all(|pair| match pair {
+                    (Value(e), Value(g)) => e == g,
+                    (Ref(_), Ref(_)) => true,
+                    _ => false,
+                })
+            {
+                return Some(entry);
+            }
         }
+        None
+    } else {
+        table.iter_mut().find(|(args, _)| args.is_none())
     }
-    None
 }
 
 // search expression for execution
 pub fn lookup_func<'t>(
     table: &'t VmFunctionVirtualTable,
-    params: &TupleType,
+    params: &VmFunctionParameters,
 ) -> Option<&'t VmFunctionVirtual>
 {
-    let plen = params.len();
-    for entry in table.iter().filter(|(args, _)| args.len() == plen) {
-        if plen == 0 {
-            return Some(entry);
-        }
-        if entry.0.iter().zip(params).all(|pair| match pair {
-            (Value(e), Value(g)) => e == g,
-            (Ref(_), Value(_)) => true,
-            _ => unimplemented!(),
+    info!("table: {:?}", table);
+    info!("looking up: {:?}", params);
+    if let Some(params) = params.as_ref() {
+        let plen = params.len();
+        for entry in table.iter().filter(|(args, _)| match args {
+            Some(args) => args.len() == plen,
+            _ => false,
         }) {
-            return Some(entry);
+            if entry
+                .0
+                .as_ref()
+                .unwrap()
+                .iter()
+                .zip(params)
+                .all(|pair| match pair {
+                    (Value(e), Value(g)) => e == g,
+                    (Ref(_), _) => true,
+                    _ => false,
+                })
+            {
+                return Some(entry);
+            }
         }
+        None
+    } else {
+        table.iter().find(|(args, _)| args.is_none())
     }
-    None
 }
 
 impl std::fmt::Debug for VmFunction
@@ -153,6 +180,7 @@ impl VmContext
 
     pub fn set_virtual(&mut self, name: &RefType, mut entry: VmFunctionVirtual)
     {
+        info!("setting entry: {:?}", entry);
         if let Some(func) = self.map.get(name) {
             match &mut *(func.borrow_mut()) {
                 Virtual(table) => {
@@ -174,23 +202,25 @@ impl VmContext
     }
 }
 
-fn vm_func_print(params: &TupleType, ctx: &mut VmContext) -> VmResult
+fn vm_func_print(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
 {
-    let params = run_tuple_exprs(params, ctx)?;
-    for param in params {
-        print!("{:?}", param);
+    if let Some(params) = params {
+        let params = run_tuple_exprs(params, ctx)?;
+        for param in params {
+            print!("{:?}", param);
+        }
     }
     Ok(Nil)
 }
 
-fn vm_func_pi(_params: &TupleType, _ctx: &mut VmContext) -> VmResult
+fn vm_func_pi(_params: &VmFunctionParameters, _ctx: &mut VmContext) -> VmResult
 {
     Ok(Numeric(std::f64::consts::PI))
 }
 
-fn vm_func_sqrt(params: &TupleType, ctx: &mut VmContext) -> VmResult
+fn vm_func_sqrt(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
 {
-    let params = run_tuple_exprs(params, ctx)?;
+    let params = run_tuple_exprs(params.as_ref().unwrap(), ctx)?;
     let mut params = params.iter();
     match (params.next(), params.next()) {
         (Some(Value(Numeric(from))), None) => Ok(Numeric(from.sqrt())),
@@ -199,9 +229,9 @@ fn vm_func_sqrt(params: &TupleType, ctx: &mut VmContext) -> VmResult
     }
 }
 
-fn vm_func_log(params: &TupleType, ctx: &mut VmContext) -> VmResult
+fn vm_func_log(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
 {
-    let params = run_tuple_exprs(params, ctx)?;
+    let params = run_tuple_exprs(params.as_ref().unwrap(), ctx)?;
     let mut params = params.iter();
     match (params.next(), params.next()) {
         (Some(Value(Numeric(from))), None) => Ok(Numeric(from.log10())),
@@ -210,8 +240,9 @@ fn vm_func_log(params: &TupleType, ctx: &mut VmContext) -> VmResult
     }
 }
 
-fn vm_func_if(params: &TupleType, ctx: &mut VmContext) -> VmResult
+fn vm_func_if(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
 {
+    let params = params.as_ref().unwrap();
     assert_eq!(params.len(), 3);
     run_with_ctx(&params.get(0).unwrap(), ctx).and_then(|cond| {
         if (&cond).into() {
@@ -222,10 +253,12 @@ fn vm_func_if(params: &TupleType, ctx: &mut VmContext) -> VmResult
     })
 }
 
-fn vm_func_do(params: &TupleType, ctx: &mut VmContext) -> VmResult
+fn vm_func_do(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
 {
-    for param in params {
-        run_with_ctx(&param, ctx)?;
+    if let Some(params) = params {
+        for param in params {
+            run_with_ctx(&param, ctx)?;
+        }
     }
     Ok(Nil)
 }

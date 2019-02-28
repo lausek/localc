@@ -118,8 +118,10 @@ fn optimize(expr: &mut Expr) -> Result<(), String>
             }
         }
         Expr::Func(_m, params) => {
-            for param in params {
-                optimize(param).unwrap();
+            if let Some(params) = params {
+                for param in params {
+                    optimize(param).unwrap();
+                }
             }
         }
         _ => {}
@@ -148,7 +150,7 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
                 Ok(Value::Nil)
             }
             box Expr::Ref(name) => {
-                ctx.set_virtual(name, (vec![], rhs.clone()));
+                ctx.set_virtual(name, (None, rhs.clone()));
                 Ok(Value::Nil)
             }
             _ => Err(format!("`{:?}` is not assignable", lhs)),
@@ -184,25 +186,31 @@ pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
     if let Some(entry) = ctx.get(name) {
         match &*(entry.borrow()) {
             VmFunction::Virtual(table) => {
-                let (_args, expr) = lookup_func(table, &vec![]).unwrap();
+                let (_args, expr) = lookup_func(table, &None).unwrap();
                 info!("resulted in: {:?}", expr);
                 run_with_ctx(expr, ctx)
             }
             // TODO: there must be an easier way to specify empty params. Option<Vec<>> maybe?
-            VmFunction::Native(func) => func(&vec![], ctx),
+            VmFunction::Native(func) => func(&None, ctx),
         }
     } else {
         Err(format!("function `{}` is unknown", name))
     }
 }
 
-pub fn run_function(name: &RefType, params: &TupleType, ctx: &mut VmContext) -> VmResult
+pub fn run_function(name: &RefType, params: &VmFunctionParameters, ctx: &mut VmContext)
+    -> VmResult
 {
     info!("function: {} ({:?})", name, params);
     if let Some(entry) = ctx.get(name) {
         match &*(entry.borrow()) {
             VmFunction::Virtual(table) => {
-                let params = run_tuple_exprs(params, ctx)?;
+                let params = if let Some(p) = params {
+                    let e = run_tuple_exprs(p, ctx)?;
+                    Some(e)
+                } else {
+                    None
+                };
                 match lookup_func(table, &params) {
                     Some((args, expr)) => {
                         info!("resulted in: {:?}", expr);
@@ -231,28 +239,33 @@ fn run_tuple_exprs(params: &TupleType, ctx: &mut VmContext) -> Result<TupleType,
     Ok(list)
 }
 
-fn push_ctx_params(ctx: &mut VmContext, names: &TupleType, vals: &TupleType)
+fn push_ctx_params(ctx: &mut VmContext, names: &VmFunctionParameters, vals: &VmFunctionParameters)
 {
     use std::cell::RefCell;
     use std::rc::Rc;
     // TODO: probably not needed
-    assert_eq!(names.len(), vals.len());
-    let frame = names
-        .iter()
-        .zip(vals)
-        .filter_map(|(name, val)| {
-            let expr = Box::new(val.clone());
-            match name {
-                Expr::Ref(name) => {
-                    let table = vec![(vec![], expr)];
-                    let func = VmFunction::Virtual(table);
-                    Some((name.clone(), Rc::new(RefCell::new(func))))
-                }
-                Expr::Value(_) => None,
-                _ => unimplemented!(),
-            }
-        })
-        .collect::<VmFrame>();
+    let frame = match (names, vals) {
+        (Some(names), Some(vals)) => {
+            assert_eq!(names.len(), vals.len());
+            names
+                .iter()
+                .zip(vals)
+                .filter_map(|(name, val)| {
+                    let expr = Box::new(val.clone());
+                    match name {
+                        Expr::Ref(name) => {
+                            let table = vec![(None, expr)];
+                            let func = VmFunction::Virtual(table);
+                            Some((name.clone(), Rc::new(RefCell::new(func))))
+                        }
+                        Expr::Value(_) => None,
+                        _ => unimplemented!(),
+                    }
+                })
+                .collect::<VmFrame>()
+        }
+        (_, _) => vec![],
+    };
     ctx.push_frame(frame);
 }
 

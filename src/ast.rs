@@ -1,3 +1,5 @@
+use crate::vm::context::*;
+
 pub type NumType = f64;
 pub type LogType = bool;
 pub type RefType = String;
@@ -61,7 +63,7 @@ pub enum Expr
 
     Ref(RefType),
     // declaration or invocation
-    Func(RefType, TupleType),
+    Func(RefType, VmFunctionParameters),
 }
 
 impl std::fmt::Debug for Expr

@@ -45,8 +45,8 @@ Value: Expr = {
 			Expr::Value(Value::Set(s))
 		}
 	},
-    <i:Ident> "(" <t:Tuple> ")" => Expr::Func(i, t),
-    <i:Ident> "(" ")" => Expr::Func(i, vec![]),
+    <i:Ident> "(" <t:Tuple> ")" => Expr::Func(i, Some(t)),
+    <i:Ident> "(" ")" => Expr::Func(i, None),
 };
 
 SumOps: Operator = {

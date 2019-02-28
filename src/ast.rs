@@ -75,7 +75,7 @@ impl std::fmt::Debug for Expr
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Operator
 {
     Add,

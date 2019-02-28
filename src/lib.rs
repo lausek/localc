@@ -270,6 +270,42 @@ mod tests
         eq!(vm, "odd(2)", Ok(Logical(false)));
     }
 
+    #[test]
+    fn test_optimize()
+    {
+        use crate::ast::Expr::*;
+        let vm = Vm::with_stdlib();
+        let parse_optimized = |vm: &Vm, s: &str| -> Option<Expr> {
+            match vm.parser.parse(s) {
+                Ok(mut program) => {
+                    vm.optimize(&mut program).unwrap();
+                    Some(program)
+                }
+                _ => unimplemented!(),
+            }
+        };
+
+        match parse_optimized(&vm, "1 + 2 + 3") {
+            Some(Value(Numeric(n))) if n == 6. => {}
+            _ => panic!("optimization wrong"),
+        }
+
+        match parse_optimized(&vm, "1 != 1 && 1 == 1") {
+            Some(Value(Logical(false))) => {}
+            _ => panic!("optimization wrong"),
+        }
+
+        match parse_optimized(&vm, "1 == 1 || 1 != 1") {
+            Some(Value(Logical(true))) => {}
+            _ => panic!("optimization wrong"),
+        }
+
+        match parse_optimized(&vm, "x * 0") {
+            Some(Value(Numeric(n))) if n == 0. => {}
+            _ => panic!("optimization wrong"),
+        }
+    }
+
     /*
         #[cfg(feature = "v1-0")]
         #[test]

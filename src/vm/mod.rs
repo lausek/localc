@@ -104,7 +104,7 @@ fn optimize(expr: &mut Expr) -> Result<(), String>
                             // of wether or not the second operand is constant
                             (_, box Expr::Value(Value::Numeric(n)))
                             | (box Expr::Value(Value::Numeric(n)), _)
-                                if *n == 0. =>
+                                if Operator::Mul == *op && *n == 0. =>
                             {
                                 new_val = Some(Ok(Value::Numeric(0.)));
                             }

@@ -21,13 +21,18 @@ Log: LogType = {
 	"false" => false,
 };
 Num: NumType = r"[+-]?\d+(\.\d)?" => <>.parse::<NumType>().unwrap();
-Ident: String = r"[a-zA-z][\w']*\??" => String::from(<>);
+Nil: Value = {
+	"Nil" => Value::Nil
+};
+
 Tuple = List<Expr>;
 Set = List<Expr>;
+Ident: String = r"[a-zA-z][\w']*\??" => String::from(<>);
 
 Value: Expr = {
     Log => Expr::Value(Value::Logical(<>)),
     Num => Expr::Value(Value::Numeric(<>)),
+    Nil => Expr::Value(<>),
     Ident => Expr::Ref(<>),
 	"(" <t:Tuple> ")" => {
 		let mut t = t;

@@ -260,7 +260,6 @@ fn push_ctx_params(ctx: &mut VmContext, names: &VmFunctionParameters, vals: &VmF
 {
     use std::cell::RefCell;
     use std::rc::Rc;
-    // TODO: probably not needed
     let frame = match (names, vals) {
         (Some(names), Some(vals)) => {
             assert_eq!(names.len(), vals.len());
@@ -363,6 +362,7 @@ impl std::cmp::PartialOrd for Value
     {
         match (self, rhs) {
             (Value::Numeric(lhs), Value::Numeric(rhs)) => lhs.partial_cmp(rhs),
+            (Value::Logical(lhs), Value::Logical(rhs)) => lhs.partial_cmp(rhs),
             _ => unimplemented!(),
         }
     }

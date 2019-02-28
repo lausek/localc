@@ -314,16 +314,19 @@ mod tests
         eq!(
             "{1, 2, 3}",
             Ok(Value::Set(vec![
-                Value::Numeric(1.),
-                Value::Numeric(2.),
-                Value::Numeric(3.),
+                Expr::Value(Value::Numeric(1.)),
+                Expr::Value(Value::Numeric(2.)),
+                Expr::Value(Value::Numeric(3.)),
             ]))
         );
         eq!(
             "{log(2, 4), 2}",
-            Ok(Value::Set(vec![Value::Numeric(2.), Value::Numeric(2.),]))
+            Ok(Value::Set(vec![
+                Expr::Value(Value::Numeric(2.)),
+                Expr::Value(Value::Numeric(2.)),
+            ]))
         );
-        eq!("{}", Ok(Value::Set(_)));
+        eq!("{}", Ok(Value::Set(vec![])));
 
         /*
                     // indexing

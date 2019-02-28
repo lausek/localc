@@ -2,13 +2,25 @@ extern crate ansi_term;
 
 use ansi_term::Color::*;
 use localc::{
-    ast::{Expr, Value},
+    ast::{Expr, TupleType, Value},
     vm::*,
 };
 
 use std::env;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
+
+fn pretty_print_list(ls: &TupleType)
+{
+    let mut it = ls.iter();
+    if let Some(first) = it.next() {
+        pretty_print(first);
+    }
+    for other in it.skip(1) {
+        print!(",");
+        pretty_print(other);
+    }
+}
 
 fn pretty_print(expr: &Expr)
 {
@@ -24,16 +36,7 @@ fn pretty_print(expr: &Expr)
             Expr::Value(val) => match val {
                 Value::Numeric(n) => print!("{}", n),
                 Value::Logical(l) => print!("{}", l),
-                Value::Tuple(ls) | Value::Set(ls) => {
-                    let mut it = ls.iter();
-                    if let Some(first) = it.next() {
-                        pretty_print(first);
-                    }
-                    for other in it.skip(1) {
-                        print!(",");
-                        pretty_print(other);
-                    }
-                }
+                Value::Tuple(ls) | Value::Set(ls) => pretty_print_list(&ls),
                 _ => print!("{:?}", val),
             },
             Expr::Ref(name) => print!("{}", Blue.paint(name)),
@@ -41,9 +44,7 @@ fn pretty_print(expr: &Expr)
                 print!("{}", Green.paint(name));
                 print!("(");
                 if let Some(args) = args {
-                    for arg in args {
-                        pretty_print(arg);
-                    }
+                    pretty_print_list(&args);
                 }
                 print!(")");
             }

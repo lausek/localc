@@ -7,31 +7,44 @@ Tier<Op,NextTier>: Expr = {
 	NextTier
 };
 
+List<Over>: Vec<Over> = {
+	<ls:List<Over>> "," <o:Over> => {
+		let mut ls = ls;
+		ls.push(o);
+		ls
+	},
+	<o:Over> => vec![o],
+};
+
 Log: LogType = {
 	"true" => true,
 	"false" => false,
 };
 Num: NumType = r"[+-]?\d+(\.\d)?" => <>.parse::<NumType>().unwrap();
 Ident: String = r"[a-zA-z][\w']*\??" => String::from(<>);
-Tuple: Vec<Expr> = {
-    <t:Tuple> "," <e:Expr> => {
-        let mut t = t;
-        t.push(e);
-        t
-    },
-    Expr => vec![<>],
-};
+Tuple = List<Expr>;
+Set = List<Expr>;
 
 Value: Expr = {
     Log => Expr::Value(Value::Logical(<>)),
     Num => Expr::Value(Value::Numeric(<>)),
     Ident => Expr::Ref(<>),
-    "(" <Expr> ")",
-    "(" <t:Tuple> "," <e:Expr> ")" => {
-        let mut t = t;
-        t.push(e);
-        Expr::Value(Value::Tuple(t))
-    },
+	"(" <t:Tuple> ")" => {
+		let mut t = t;
+		if t.len() == 1 {
+			t.remove(0)
+		} else {
+			Expr::Value(Value::Tuple(t))
+		}
+	},
+	"{" <s:Set> "}" => {
+		let mut s = s;
+		if s.len() == 1 {
+			s.remove(0)
+		} else {
+			Expr::Value(Value::Set(s))
+		}
+	},
     <i:Ident> "(" <t:Tuple> ")" => Expr::Func(i, t),
     <i:Ident> "(" ")" => Expr::Func(i, vec![]),
 };

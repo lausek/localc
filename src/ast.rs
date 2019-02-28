@@ -2,6 +2,7 @@ pub type NumType = f64;
 pub type LogType = bool;
 pub type RefType = String;
 pub type TupleType = Vec<Expr>;
+pub type SetType = Vec<Expr>;
 
 #[derive(Clone, Debug)]
 pub enum Value
@@ -10,6 +11,7 @@ pub enum Value
     Numeric(NumType),
     Logical(LogType),
     Tuple(TupleType),
+    Set(SetType),
 }
 
 impl std::convert::From<NumType> for Value

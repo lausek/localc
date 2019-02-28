@@ -306,28 +306,38 @@ mod tests
         }
     }
 
-    /*
-        #[cfg(feature = "v1-0")]
-        #[test]
-        fn test_tuple()
-        {
-            // parsing
-            eq!(exec_str_set("{1,2,3}"), vec!["1", "2", "3"]);
-            eq!(exec_str_set("{log(2, 4), 2}"), vec!["2", "2"]);
-            eq!(exec_str_set("{}"), Vec::<String>::new());
+    #[cfg(feature = "v1-0")]
+    #[test]
+    fn test_tuple()
+    {
+        // parsing
+        eq!(
+            "{1, 2, 3}",
+            Ok(Value::Set(vec![
+                Value::Numeric(1.),
+                Value::Numeric(2.),
+                Value::Numeric(3.),
+            ]))
+        );
+        eq!(
+            "{log(2, 4), 2}",
+            Ok(Value::Set(vec![Value::Numeric(2.), Value::Numeric(2.),]))
+        );
+        eq!("{}", Ok(Value::Set(_)));
 
-            // indexing
-            eq!(exec_str("{1,2,3}_2"), 3.0);
-            eq!(exec_str("{1,2,3}_2^2"), 9.0);
-            assert!(
-                exec_str_pre_set("{1,2,3}_(1==2)^2").is_err(),
-                "bool is not a valid index"
-            );
+        /*
+                    // indexing
+                    eq!(exec_str("{1,2,3}_2"), 3.0);
+                    eq!(exec_str("{1,2,3}_2^2"), 9.0);
+                    assert!(
+                        exec_str_pre_set("{1,2,3}_(1==2)^2").is_err(),
+                        "bool is not a valid index"
+                    );
 
-            // generator
-            eq!(exec_str_set("{x | 0 < x, x < 5}"), vec!["1", "2", "3", "4"]);
-        }
-    */
+                    // generator
+                    eq!(exec_str_set("{x | 0 < x, x < 5}"), vec!["1", "2", "3", "4"]);
+        */
+    }
 
     /*
         #[cfg(feature = "v1-0")]

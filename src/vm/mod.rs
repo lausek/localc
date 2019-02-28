@@ -193,7 +193,6 @@ pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
                 info!("resulted in: {:?}", expr);
                 run_with_ctx(expr, ctx)
             }
-            // TODO: there must be an easier way to specify empty params. Option<Vec<>> maybe?
             VmFunction::Native(func) => func(&None, ctx),
         }
     } else {

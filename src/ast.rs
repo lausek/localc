@@ -35,6 +35,29 @@ pub enum Expr
     Func(RefType, VmFunctionParameters),
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum Operator
+{
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Pow,
+    Rem,
+
+    Eq,
+    Ne,
+    Ge,
+    Gt,
+    Le,
+    Lt,
+
+    And,
+    Or,
+
+    Store,
+}
+
 impl std::convert::From<NumType> for Value
 {
     fn from(n: NumType) -> Self
@@ -74,6 +97,27 @@ impl std::convert::From<&Value> for LogType
     }
 }
 
+impl std::fmt::Display for Value
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error>
+    {
+        match self {
+            Value::Numeric(n) => write!(f, "{}", n).unwrap(),
+            Value::Logical(l) => write!(f, "{}", l).unwrap(),
+            _ => unreachable!(),
+        }
+        Ok(())
+    }
+}
+
+impl std::fmt::Display for Operator
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error>
+    {
+        write!(f, "{:?}", self)
+    }
+}
+
 impl std::fmt::Debug for Expr
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error>
@@ -85,27 +129,4 @@ impl std::fmt::Debug for Expr
             Expr::Func(n, ls) => write!(f, "Func({:?}, {:?})", n, ls),
         }
     }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum Operator
-{
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Pow,
-    Rem,
-
-    Eq,
-    Ne,
-    Ge,
-    Gt,
-    Le,
-    Lt,
-
-    And,
-    Or,
-
-    Store,
 }

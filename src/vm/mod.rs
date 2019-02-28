@@ -7,26 +7,29 @@ pub type VmValue = Value;
 pub type VmError = String;
 pub type VmResult = Result<VmValue, VmError>;
 
-impl std::cmp::PartialEq for Value
+impl GenType
 {
-    fn eq(&self, rhs: &Self) -> bool
+    pub fn new() -> Self
     {
-        match (self, rhs) {
-            (Value::Numeric(lhs), Value::Numeric(rhs)) => lhs == rhs,
-            (Value::Logical(lhs), Value::Logical(rhs)) => lhs == rhs,
-            (Value::Nil, Value::Nil) => true,
-            _ => false,
+        Self {
+            constraints: SetType::new(),
+            current: NumType::from(0.),
         }
     }
-}
 
-impl std::cmp::PartialOrd for Value
-{
-    fn partial_cmp(&self, rhs: &Self) -> Option<std::cmp::Ordering>
+    pub fn contains(&mut self) {}
+
+    pub fn next(&mut self, vm: &mut Vm) -> Option<Value>
     {
-        match (self, rhs) {
-            (Value::Numeric(lhs), Value::Numeric(rhs)) => lhs.partial_cmp(rhs),
-            _ => unimplemented!(),
+        loop {
+            if self.constraints.iter().all(|expr| match vm.run(&expr) {
+                Ok(Value::Logical(true)) => true,
+                // TODO: raise errors if err(_)
+                _ => false,
+            }) {
+                return Some(Value::Numeric(self.current));
+            }
+            self.current += 1.;
         }
     }
 }
@@ -325,4 +328,28 @@ fn exec_value_op(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
         _ => unimplemented!(),
     }
     .into())
+}
+
+impl std::cmp::PartialEq for Value
+{
+    fn eq(&self, rhs: &Self) -> bool
+    {
+        match (self, rhs) {
+            (Value::Numeric(lhs), Value::Numeric(rhs)) => lhs == rhs,
+            (Value::Logical(lhs), Value::Logical(rhs)) => lhs == rhs,
+            (Value::Nil, Value::Nil) => true,
+            _ => false,
+        }
+    }
+}
+
+impl std::cmp::PartialOrd for Value
+{
+    fn partial_cmp(&self, rhs: &Self) -> Option<std::cmp::Ordering>
+    {
+        match (self, rhs) {
+            (Value::Numeric(lhs), Value::Numeric(rhs)) => lhs.partial_cmp(rhs),
+            _ => unimplemented!(),
+        }
+    }
 }

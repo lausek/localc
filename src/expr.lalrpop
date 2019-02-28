@@ -37,12 +37,18 @@ Value: Expr = {
 			Expr::Value(Value::Tuple(t))
 		}
 	},
-	"{" <s:Set> "}" => {
+	"{" <s:Set> <g:("|" <Set>)?> "}" => match g {
+		Some(g) => {
+			let gen = GenType::new();
+			Expr::Value(Value::Gen(s, gen))
+		}
+		_ => {
 		let mut s = s;
 		if s.len() == 1 {
 			s.remove(0)
 		} else {
 			Expr::Value(Value::Set(s))
+		}
 		}
 	},
     <i:Ident> "(" <t:Tuple> ")" => Expr::Func(i, Some(t)),

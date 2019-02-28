@@ -7,6 +7,13 @@ pub type TupleType = Vec<Expr>;
 pub type SetType = Vec<Expr>;
 
 #[derive(Clone, Debug)]
+pub struct GenType
+{
+    pub(crate) constraints: SetType,
+    pub(crate) current: NumType,
+}
+
+#[derive(Clone, Debug)]
 pub enum Value
 {
     Nil,
@@ -14,6 +21,18 @@ pub enum Value
     Logical(LogType),
     Tuple(TupleType),
     Set(SetType),
+    Gen(SetType, GenType),
+}
+
+#[derive(Clone)]
+pub enum Expr
+{
+    Value(Value),
+    Comp(Operator, Box<Expr>, Box<Expr>),
+
+    Ref(RefType),
+    // declaration or invocation
+    Func(RefType, VmFunctionParameters),
 }
 
 impl std::convert::From<NumType> for Value
@@ -55,24 +74,13 @@ impl std::convert::From<&Value> for LogType
     }
 }
 
-#[derive(Clone)]
-pub enum Expr
-{
-    Value(Value),
-    Comp(Operator, Box<Expr>, Box<Expr>),
-
-    Ref(RefType),
-    // declaration or invocation
-    Func(RefType, VmFunctionParameters),
-}
-
 impl std::fmt::Debug for Expr
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error>
     {
         match self {
             Expr::Value(v) => write!(f, "{:?}", v),
-            Expr::Ref(r) => write!(f, "~{}", r),
+            Expr::Ref(r) => write!(f, "#{}", r),
             Expr::Comp(op, lhs, rhs) => write!(f, "Comp({:?}, {:?}, {:?})", op, lhs, rhs),
             Expr::Func(n, ls) => write!(f, "Func({:?}, {:?})", n, ls),
         }

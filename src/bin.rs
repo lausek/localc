@@ -65,40 +65,44 @@ macro_rules! present {
 
 struct Repl
 {
-    pub optimize: bool,
+    vm: Vm,
     pub print_parse: bool,
 }
 
 impl Repl
 {
-    pub fn new() -> Self
+    pub fn new(vm: Vm) -> Self
     {
         Self {
-            optimize: true,
+            vm,
             print_parse: true,
         }
     }
 
-    pub fn repeat(&self, vm: &mut Vm) -> Result<(), String>
+    pub fn repeat(&mut self) -> Result<(), String>
     {
         let stdin = io::stdin();
         for line in stdin.lock().lines() {
             let script = line.unwrap();
-            let result = vm.parser.parse(script.as_ref());
+            let result = self.vm.parser.parse(script.as_ref());
             if self.print_parse {
                 println!("parsed: {:?}", result);
             }
             if let Ok(mut program) = result {
-                if self.optimize {
-                    vm.optimize(&mut program)?;
+                if self.vm.config().is_optimizing() {
+                    self.vm.optimize(&mut program)?;
                 }
                 print!(
                     "program{}: ",
-                    Yellow.paint(if self.optimize { " [optimized]" } else { "" }),
+                    Yellow.paint(if self.vm.config().is_optimizing() {
+                        " [optimized]"
+                    } else {
+                        ""
+                    }),
                 );
                 pretty_print(&program);
                 println!();
-                present!(vm.run(&program));
+                present!(self.vm.run(&program));
             } else {
                 present!(result);
             }
@@ -127,5 +131,5 @@ pub fn main()
         }
     }
 
-    Repl::new().repeat(&mut vm).unwrap();
+    Repl::new(vm).repeat().unwrap();
 }

@@ -1,6 +1,7 @@
+pub mod config;
 pub mod context;
 
-use self::context::*;
+pub use self::{config::*, context::*};
 use crate::{ast::*, expr::ExprParser};
 
 pub type VmValue = Value;
@@ -36,8 +37,9 @@ impl GenType
 
 pub struct Vm
 {
-    pub parser: ExprParser,
+    config: VmConfig,
     ctx: VmContext,
+    pub parser: ExprParser,
 }
 
 impl Vm
@@ -45,16 +47,24 @@ impl Vm
     pub fn new() -> Self
     {
         Self {
-            parser: ExprParser::new(),
+            config: VmConfig::new(),
             ctx: VmContext::new(),
+            parser: ExprParser::new(),
         }
+    }
+
+    pub fn with_config(mut self, config: VmConfig) -> Self
+    {
+        self.config = config;
+        self
     }
 
     pub fn with_stdlib() -> Self
     {
         Self {
-            parser: ExprParser::new(),
+            config: VmConfig::new(),
             ctx: VmContext::stdlib(),
+            parser: ExprParser::new(),
         }
     }
 
@@ -72,6 +82,11 @@ impl Vm
     pub fn optimize(&self, expr: &mut Expr) -> Result<(), String>
     {
         optimize(expr)
+    }
+
+    pub fn config(&self) -> &VmConfig
+    {
+        &self.config
     }
 }
 

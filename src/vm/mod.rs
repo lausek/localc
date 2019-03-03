@@ -209,6 +209,7 @@ pub fn run_bytecode_with_ctx(co: &CodeObject, ctx: &mut VmContext) -> VmResult
             }
             Instruction::Move(name, expr) => {
                 ctx.set_virtual(name, (params_reg.take(), expr.clone()));
+                stack.push(Value::Nil);
             }
             Instruction::Load(name) => stack.push(run_lookup(name, ctx)?),
             Instruction::Push(v) => stack.push(v.clone()),

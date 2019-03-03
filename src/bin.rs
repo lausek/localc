@@ -94,13 +94,6 @@ impl Repl
                 println!("[parsed]\t{:?}", result);
             }
             if let Ok(mut program) = result {
-                if self.print_compile {
-                    let co = compiler::compile(&program);
-                    println!("[compil]\t{:?}", co);
-                    if let Ok(co) = co {
-                        println!("[comprs]\t{:?}", self.vm.run_bytecode(&co));
-                    }
-                }
                 if self.vm.config().is_optimizing() {
                     self.vm.optimize(&mut program)?;
                 }
@@ -114,6 +107,15 @@ impl Repl
                 );
                 pretty_print(&program);
                 println!();
+
+                if self.print_compile {
+                    let co = compiler::compile(&program);
+                    println!("[compil]\t{:?}", co);
+                    if let Ok(co) = co {
+                        println!("[comprs]\t{:?}", self.vm.run_bytecode(&co));
+                    }
+                }
+
                 present!(self.vm.run(&program));
             } else {
                 present!(result);

@@ -2,7 +2,11 @@ pub mod config;
 pub mod context;
 
 pub use self::{config::*, context::*};
-use crate::{ast::*, compiler::*, expr::ExprParser};
+use crate::{
+    ast::*,
+    compiler::{self, *},
+    expr::ExprParser,
+};
 
 pub type VmValue = Value;
 pub type VmError = String;
@@ -71,7 +75,7 @@ impl Vm
     pub fn run_raw(&mut self, raw: &str) -> VmResult
     {
         let program = self.parser.parse(raw).unwrap();
-        run_with_ctx(&program, &mut self.ctx)
+        self.run(&program)
     }
 
     pub fn run_bytecode(&mut self, co: &CodeObject) -> VmResult
@@ -81,7 +85,10 @@ impl Vm
 
     pub fn run(&mut self, expr: &Expr) -> VmResult
     {
-        run_with_ctx(expr, &mut self.ctx)
+        match compiler::compile(expr) {
+            Ok(co) => run_bytecode_with_ctx(&co, &mut self.ctx),
+            Err(e) => Err(e),
+        }
     }
 
     pub fn optimize(&self, expr: &mut Expr) -> Result<(), String>
@@ -201,13 +208,16 @@ pub fn run_bytecode_with_ctx(co: &CodeObject, ctx: &mut VmContext) -> VmResult
     let mut params_reg: VmFunctionParameters = None;
     let mut stack = vec![];
 
+    info!("bytecode!");
     for instruction in co.iter() {
         match instruction {
             Instruction::Params(params) => params_reg = Some(params.clone()),
             Instruction::Call(name) => {
+                info!("calling params with {:?}", params_reg);
                 stack.push(run_function(name, &params_reg.take(), ctx)?);
             }
             Instruction::Move(name, expr) => {
+                info!("setting `{:?}` with {:?}", name, params_reg);
                 ctx.set_virtual(name, (params_reg.take(), expr.clone()));
                 stack.push(Value::Nil);
             }
@@ -215,9 +225,11 @@ pub fn run_bytecode_with_ctx(co: &CodeObject, ctx: &mut VmContext) -> VmResult
             Instruction::Push(v) => stack.push(v.clone()),
             Instruction::Pop => assert!(stack.pop().is_some()),
             _ => {
-                let arg1 = stack.pop().unwrap();
                 let arg2 = stack.pop().unwrap();
-                stack.push(run_operation(&Operator::from(instruction), &arg1, &arg2)?);
+                let arg1 = stack.pop().unwrap();
+                let op = Operator::from(instruction);
+                stack.push(run_operation(&op, &arg1, &arg2)?);
+                info!("exec {:?} with ({:?}, {:?})", op, arg1, arg2);
             }
         }
     }

@@ -68,7 +68,7 @@ pub fn compile(ast: &Expr) -> CompileResult
             Instruction::Params(params.clone()),
             Instruction::Call(name.clone()),
         ]),
-        Expr::Func(name, None) => code_object.extend(vec![Instruction::Call(name.clone())]),
+        Expr::Func(name, None) => code_object.push(Instruction::Call(name.clone())),
         Expr::Ref(r) => code_object.push(Instruction::Load(r.clone())),
         Expr::Value(v) => code_object.push(Instruction::Push(v.clone())),
     }

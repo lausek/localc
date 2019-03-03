@@ -36,8 +36,8 @@ pub struct VmFunctionTable
 #[derive(Clone, Debug)]
 pub struct VmFunctionOverload
 {
-    definition: TupleType,
-    implementation: VmFunction,
+    pub definition: TupleType,
+    pub implementation: VmFunction,
 }
 
 impl VmFunctionOverload
@@ -90,17 +90,19 @@ impl VmFunctionTable
             if self.overloads.is_none() {
                 self.overloads = Some(vec![]);
             }
-            {
-                let mut overloads = self.overloads.as_mut().unwrap();
-                // TODO: this should insert in a sorted order for faster/more precise lookup
-                // TODO: implement insert lookup
-                let func = VmFunction::Native(vm_func_if);
-                let overload = VmFunctionOverload::new(definition.clone(), func);
-                overloads.push(overload);
+            // TODO: implement insert lookup
+            let bucket = lookup_func_mut(self.overloads.as_mut().unwrap(), definition);
+            if bucket.is_some() {
+                return bucket.unwrap();
             }
+            let func = VmFunction::Native(vm_func_if);
+            let overload = VmFunctionOverload::new(definition.clone(), func);
+            let mut overloads = self.overloads.as_mut().unwrap();
+            // TODO: this should insert in a sorted order for faster/more precise lookup
+            overloads.push(overload);
             &mut self
                 .overloads
-                .as_mut()
+                .as_ref()
                 .unwrap()
                 .last_mut()
                 .unwrap()
@@ -121,42 +123,32 @@ pub enum VmFunction
     Native(VmFunctionNative),
 }
 
-/*
 // search expression to be updated
 pub fn lookup_func_mut<'t>(
-    table: &'t mut VmContextTable,
-    params: &VmFunctionParameters,
+    table: &'t mut Vec<VmFunctionOverload>,
+    params: &TupleType,
 ) -> Option<&'t mut VmFunction>
 {
     info!("table: {:?}", table);
     info!("looking up mut: {:?}", params);
-    if let Some(params) = params.as_ref() {
-        let plen = params.len();
-        for entry in table.iter_mut().filter(|(args, _)| match args {
-            Some(args) => args.len() == plen,
+    let plen = params.len();
+    // TODO: use filter_map here
+    for entry in table
+        .iter_mut()
+        .filter(|entry| entry.definition.len() == plen)
+    {
+        if entry.definition.iter().zip(params).all(|pair| match pair {
+            (Value(e), Value(g)) => e == g,
+            (Ref(_), Ref(_)) => true,
             _ => false,
         }) {
-            if entry
-                .0
-                .as_ref()
-                .unwrap()
-                .iter()
-                .zip(params)
-                .all(|pair| match pair {
-                    (Value(e), Value(g)) => e == g,
-                    (Ref(_), Ref(_)) => true,
-                    _ => false,
-                })
-            {
-                return Some(entry);
-            }
+            return Some(&mut entry.implementation);
         }
-        None
-    } else {
-        table.iter_mut().find(|(args, _)| args.is_none())
     }
+    None
 }
 
+/*
 // search expression for execution
 pub fn lookup_func<'t>(
     table: &'t VmContextTable,

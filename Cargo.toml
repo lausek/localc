@@ -18,10 +18,13 @@ name = "localc-repl"
 path = "src/bin.rs"
 
 [dependencies]
-regex = "*"
-rand = "0.6.0"
-lazy_static = "*"
+ansi_term = "0.11.0"
+env_logger = "0.6.0"
 lalrpop-util = "0.16.3"
+lazy_static = "*"
+log = "0.4"
+rand = "0.6.0"
+regex = "*"
 
 [build-dependencies]
 lalrpop = "0.16.3"

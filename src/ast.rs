@@ -1,15 +1,61 @@
+use crate::vm::context::*;
+
 pub type NumType = f64;
 pub type LogType = bool;
 pub type RefType = String;
 pub type TupleType = Vec<Expr>;
+pub type SetType = Vec<Expr>;
+
+#[derive(Clone, Debug)]
+pub struct GenType
+{
+    pub(crate) constraints: SetType,
+    pub(crate) current: NumType,
+}
 
 #[derive(Clone, Debug)]
 pub enum Value
 {
-    Empty,
+    Nil,
     Numeric(NumType),
     Logical(LogType),
     Tuple(TupleType),
+    Set(SetType),
+    Gen(SetType, GenType),
+}
+
+#[derive(Clone)]
+pub enum Expr
+{
+    Value(Value),
+    Comp(Operator, Box<Expr>, Box<Expr>),
+
+    Ref(RefType),
+    // declaration or invocation
+    Func(RefType, VmFunctionParameters),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Operator
+{
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Pow,
+    Rem,
+
+    Eq,
+    Ne,
+    Ge,
+    Gt,
+    Le,
+    Lt,
+
+    And,
+    Or,
+
+    Store,
 }
 
 impl std::convert::From<NumType> for Value
@@ -20,37 +66,67 @@ impl std::convert::From<NumType> for Value
     }
 }
 
-impl std::convert::From<Value> for NumType
+impl std::convert::From<&Value> for NumType
 {
-    fn from(n: Value) -> Self
+    fn from(v: &Value) -> Self
     {
-        match n {
-            Value::Numeric(n) => n,
+        match v {
+            Value::Numeric(n) => *n,
             _ => unimplemented!(),
         }
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum Expr
+impl std::convert::From<LogType> for Value
 {
-    Value(Value),
-    Comp(Operator, Box<Expr>, Box<Expr>),
-
-    Ref(RefType),
-    // declaration or invocation
-    Func(RefType, TupleType),
+    fn from(l: LogType) -> Self
+    {
+        Value::Logical(l)
+    }
 }
 
-#[derive(Clone, Debug)]
-pub enum Operator
+impl std::convert::From<&Value> for LogType
 {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Pow,
-    Mod,
+    fn from(v: &Value) -> Self
+    {
+        match v {
+            Value::Numeric(n) => *n != 0.,
+            Value::Logical(l) => *l,
+            _ => unimplemented!(),
+        }
+    }
+}
 
-    Equ,
+impl std::fmt::Display for Value
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error>
+    {
+        match self {
+            Value::Numeric(n) => write!(f, "{}", n).unwrap(),
+            Value::Logical(l) => write!(f, "{}", l).unwrap(),
+            _ => unreachable!(),
+        }
+        Ok(())
+    }
+}
+
+impl std::fmt::Display for Operator
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error>
+    {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl std::fmt::Debug for Expr
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error>
+    {
+        match self {
+            Expr::Value(v) => write!(f, "{:?}", v),
+            Expr::Ref(r) => write!(f, "#{}", r),
+            Expr::Comp(op, lhs, rhs) => write!(f, "Comp({:?}, {:?}, {:?})", op, lhs, rhs),
+            Expr::Func(n, ls) => write!(f, "Func({:?}, {:?})", n, ls),
+        }
+    }
 }

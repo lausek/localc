@@ -164,11 +164,11 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
         Expr::Func(name, params) => run_function(name, params, ctx),
         Expr::Comp(Operator::Store, lhs, rhs) => match lhs {
             box Expr::Func(name, params) => {
-                ctx.set_virtual(name, (params.clone(), rhs.clone()));
+                ctx.set_virtual(name, &params, expr.clone());
                 Ok(Value::Nil)
             }
             box Expr::Ref(name) => {
-                ctx.set_virtual(name, (None, rhs.clone()));
+                ctx.set_virtual(name, &None, expr.clone());
                 Ok(Value::Nil)
             }
             _ => Err(format!("`{:?}` is not assignable", lhs)),
@@ -201,12 +201,13 @@ pub fn run_operation(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
 pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
 {
     info!("lookup: {}", name);
+    // TODO: ctx.get(name): Opt<VmFunctionTable> -> VmFunctionTable.read.unwrap
     if let Some(entry) = ctx.get(name) {
-        match &*(entry.borrow()) {
-            VmFunction::Virtual(table) => {
-                let (_args, expr) = lookup_func(table, &None).unwrap();
+        match (&*(entry.borrow())).lookup(&None).unwrap().1 {
+            //match &*(entry.borrow()) {
+            VmFunction::Virtual(expr) => {
                 info!("resulted in: {:?}", expr);
-                run_with_ctx(expr, ctx)
+                run_with_ctx(&expr, ctx)
             }
             VmFunction::Native(func) => func(&None, ctx),
         }
@@ -220,27 +221,48 @@ pub fn run_function(name: &RefType, params: &VmFunctionParameters, ctx: &mut VmC
 {
     info!("function: {} ({:?})", name, params);
     if let Some(entry) = ctx.get(name) {
-        match &*(entry.borrow()) {
-            VmFunction::Virtual(table) => {
-                let params = if let Some(p) = params {
-                    let e = run_tuple_exprs(p, ctx)?;
-                    Some(e)
-                } else {
-                    None
-                };
-                match lookup_func(table, &params) {
-                    Some((args, expr)) => {
-                        info!("resulted in: {:?}", expr);
-                        push_ctx_params(ctx, &args, &params);
-                        let result = run_with_ctx(&expr, ctx);
-                        pop_ctx_params(ctx);
-                        result
-                    }
-                    _ => Err("unexpected arguments".to_string()),
+        match (&*(entry.borrow())).lookup(params) {
+            Some((args, func)) => match func {
+                VmFunction::Virtual(expr) => {
+                    let params = if let Some(p) = params {
+                        let e = run_tuple_exprs(p, ctx)?;
+                        Some(e)
+                    } else {
+                        None
+                    };
+                    info!("resulted in: {:?}", expr);
+                    push_ctx_params(ctx, &args, &params);
+                    let result = run_with_ctx(&expr, ctx);
+                    pop_ctx_params(ctx);
+                    result
                 }
-            }
-            VmFunction::Native(func) => func(&params, ctx),
+                VmFunction::Native(func) => func(&params, ctx),
+            },
+            _ => Err("unexpected arguments".to_string()),
         }
+    /*
+            match &*(entry.borrow()) {
+                VmFunction::Virtual(table) => {
+                    let params = if let Some(p) = params {
+                        let e = run_tuple_exprs(p, ctx)?;
+                        Some(e)
+                    } else {
+                        None
+                    };
+                    match lookup_func(table, &params) {
+                        Some((args, expr)) => {
+                            info!("resulted in: {:?}", expr);
+                            push_ctx_params(ctx, &args, &params);
+                            let result = run_with_ctx(&expr, ctx);
+                            pop_ctx_params(ctx);
+                            result
+                        }
+                        _ => Err("unexpected arguments".to_string()),
+                    }
+                }
+                VmFunction::Native(func) => func(&params, ctx),
+            }
+    */
     } else {
         Err(format!("function `{}` is unknown", name))
     }
@@ -256,23 +278,22 @@ fn run_tuple_exprs(params: &TupleType, ctx: &mut VmContext) -> Result<TupleType,
     Ok(list)
 }
 
-fn push_ctx_params(ctx: &mut VmContext, names: &VmFunctionParameters, vals: &VmFunctionParameters)
+fn push_ctx_params(ctx: &mut VmContext, args: &VmFunctionParameters, params: &VmFunctionParameters)
 {
     use std::cell::RefCell;
     use std::rc::Rc;
-    let frame = match (names, vals) {
-        (Some(names), Some(vals)) => {
-            assert_eq!(names.len(), vals.len());
-            names
-                .iter()
-                .zip(vals)
-                .filter_map(|(name, val)| {
-                    let expr = Box::new(val.clone());
-                    match name {
+    let frame = match (args, params) {
+        (Some(args), Some(params)) => {
+            assert_eq!(args.len(), params.len());
+            args.iter()
+                .zip(params)
+                .filter_map(|(arg, param)| {
+                    let expr = Box::new(param.clone());
+                    match param {
                         Expr::Ref(name) => {
-                            let table = vec![(None, expr)];
-                            let func = VmFunction::Virtual(table);
-                            Some((name.clone(), Rc::new(RefCell::new(func))))
+                            let mut table = VmFunctionTable::new();
+                            table.lookup_add(&None);
+                            Some((name.clone(), Rc::new(RefCell::new(table))))
                         }
                         Expr::Value(_) => None,
                         _ => unimplemented!(),

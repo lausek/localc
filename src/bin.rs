@@ -140,6 +140,7 @@ pub fn main()
                 }
                 vm.run_raw(line.as_ref()).expect("error in runtime script");
             }
+        // TODO: using context function `print` doesn't seem to cause a flush
         } else {
             println!("could not open file `{}`", Red.paint(path));
         }

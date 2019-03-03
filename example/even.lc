@@ -1,0 +1,7 @@
+even(x) = x % 2 == 0
+odd(x) = even(x) == false
+
+even'(x) = println(x,even(x))
+odd'(x) = println(x,odd(x))
+
+do(even'(1), odd'(1))

@@ -140,6 +140,7 @@ impl VmContext
 
         insert_func!(ctx.map, "pi", vm_func_pi);
         insert_func!(ctx.map, "print", vm_func_print);
+        insert_func!(ctx.map, "println", vm_func_println);
         insert_func!(ctx.map, "sqrt", vm_func_sqrt);
         insert_func!(ctx.map, "log", vm_func_log);
 
@@ -210,6 +211,13 @@ fn vm_func_print(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
             print!("{:?}", param);
         }
     }
+    Ok(Nil)
+}
+
+fn vm_func_println(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
+{
+    vm_func_print(params, ctx)?;
+    println!();
     Ok(Nil)
 }
 

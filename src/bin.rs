@@ -3,6 +3,7 @@ extern crate ansi_term;
 use ansi_term::Color::*;
 use localc::{
     ast::{Expr, TupleType, Value},
+    compiler,
     vm::*,
 };
 
@@ -69,6 +70,7 @@ struct Repl
 {
     vm: Vm,
     pub print_parse: bool,
+    pub print_compile: bool,
 }
 
 impl Repl
@@ -78,6 +80,7 @@ impl Repl
         Self {
             vm,
             print_parse: true,
+            print_compile: true,
         }
     }
 
@@ -91,6 +94,13 @@ impl Repl
                 println!("[parsed]\t{:?}", result);
             }
             if let Ok(mut program) = result {
+                if self.print_compile {
+                    let co = compiler::compile(&program);
+                    println!("[compil]\t{:?}", co);
+                    if let Ok(co) = co {
+                        println!("[comprs]\t{:?}", self.vm.run_bytecode(&co));
+                    }
+                }
                 if self.vm.config().is_optimizing() {
                     self.vm.optimize(&mut program)?;
                 }

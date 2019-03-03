@@ -12,6 +12,7 @@ extern crate rand;
 extern crate regex;
 
 pub mod ast;
+pub mod compiler;
 pub mod vm;
 
 lalrpop_mod!(pub expr);

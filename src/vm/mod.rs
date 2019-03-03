@@ -2,7 +2,7 @@ pub mod config;
 pub mod context;
 
 pub use self::{config::*, context::*};
-use crate::{ast::*, expr::ExprParser};
+use crate::{ast::*, compiler::*, expr::ExprParser};
 
 pub type VmValue = Value;
 pub type VmError = String;
@@ -72,6 +72,11 @@ impl Vm
     {
         let program = self.parser.parse(raw).unwrap();
         run_with_ctx(&program, &mut self.ctx)
+    }
+
+    pub fn run_bytecode(&mut self, co: &CodeObject) -> VmResult
+    {
+        run_bytecode_with_ctx(co, &mut self.ctx)
     }
 
     pub fn run(&mut self, expr: &Expr) -> VmResult
@@ -189,6 +194,34 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
             run_operation(op, &arg1, &arg2)
         }
     }
+}
+
+pub fn run_bytecode_with_ctx(co: &CodeObject, ctx: &mut VmContext) -> VmResult
+{
+    let mut params_reg: VmFunctionParameters = None;
+    let mut stack = vec![];
+
+    for instruction in co.iter() {
+        match instruction {
+            Instruction::Params(params) => params_reg = Some(params.clone()),
+            Instruction::Call(name) => {
+                stack.push(run_function(name, &params_reg.take(), ctx)?);
+            }
+            Instruction::Move(name, expr) => {
+                ctx.set_virtual(name, (params_reg.take(), expr.clone()));
+            }
+            Instruction::Load(name) => stack.push(run_lookup(name, ctx)?),
+            Instruction::Push(v) => stack.push(v.clone()),
+            Instruction::Pop => assert!(stack.pop().is_some()),
+            _ => {
+                let arg1 = stack.pop().unwrap();
+                let arg2 = stack.pop().unwrap();
+                stack.push(run_operation(&Operator::from(instruction), &arg1, &arg2)?);
+            }
+        }
+    }
+
+    Ok(stack.pop().unwrap().clone())
 }
 
 pub fn run_operation(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult

@@ -36,6 +36,16 @@ impl Vm
 
 pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
 {
+    // TODO: to lower recursion there must be a special bytecode version that
+    // 		 translates the expression to a sequence of steps like:
+    //		 	push arg1
+    //		 	push arg2
+    // 			op +
+    // where `op` pops the last two values off the stack leaving the operations
+    // result in place. This fixes an old misunderstanding where the vm was expected
+    // to be run on an ast instead of a bytecode list and should have been
+    // implemented in the parser as such.
+
     match expr {
         Expr::Value(v) => Ok(v.clone()),
         Expr::Ref(name) => run_lookup(name, ctx),

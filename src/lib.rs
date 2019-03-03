@@ -168,12 +168,12 @@ mod tests
             exec_str_pre_num("f(2)=1").is_err(),
             "only identifiers allowed in function assignment position"
         );
-        
+
         assert!(
             exec_str_pre_num("f(y,2)=1").is_err(),
             "only identifiers allowed in function assignment position"
         );
-        
+
         assert!(
             exec_str_pre_num("f(2)=x(1)").is_err(),
             "only identifiers allowed in function assignment position"

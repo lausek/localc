@@ -272,6 +272,7 @@ pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
                 run_with_ctx(&expr, ctx)
             }
             VmFunction::Native(func) => func(&None, ctx),
+            VmFunction::ByteCode(co) => run_bytecode_with_ctx(&co, ctx),
         }
     } else {
         Err(format!("variable `{}` is unknown", name))
@@ -301,6 +302,7 @@ pub fn run_function(name: &RefType, params: &VmFunctionParameters, ctx: &mut VmC
                     result
                 }
                 VmFunction::Native(func) => func(&params, ctx),
+                VmFunction::ByteCode(co) => run_bytecode_with_ctx(&co, ctx),
             },
             _ => Err("unexpected arguments".to_string()),
         }

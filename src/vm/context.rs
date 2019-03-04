@@ -75,15 +75,21 @@ impl VmFunctionTable
         }
     }
 
+    pub fn with_virtual(mut self, params: &VmFunctionParameters, expr: Expr) -> Self
+    {
+        self.lookup_set(params, VmFunction::Virtual(Box::new(expr)));
+        self
+    }
+
     pub fn with_native(mut self, params: &VmFunctionParameters, func: VmFunctionNative) -> Self
     {
         self.lookup_set(params, VmFunction::Native(func));
         self
     }
 
-    pub fn with_virtual(mut self, params: &VmFunctionParameters, expr: Expr) -> Self
+    pub fn with_bytecode(mut self, params: &VmFunctionParameters, co: CodeObject) -> Self
     {
-        self.lookup_set(params, VmFunction::Virtual(Box::new(expr)));
+        self.lookup_set(params, VmFunction::ByteCode(co));
         self
     }
 
@@ -130,6 +136,7 @@ pub enum VmFunction
 {
     Virtual(VmFunctionVirtual),
     Native(VmFunctionNative),
+    ByteCode(CodeObject),
 }
 
 // search expression to be updated
@@ -191,6 +198,7 @@ impl std::fmt::Debug for VmFunction
         match self {
             Virtual(n) => write!(f, "{:?}", n),
             Native(_) => write!(f, "<native>"),
+            ByteCode(co) => write!(f, "{:?}", co),
         }
     }
 }
@@ -267,14 +275,27 @@ impl VmContext
         self.map.insert(name.clone(), Rc::new(RefCell::new(entry)));
     }
 
-    pub fn set_virtual(&mut self, name: &RefType, params: &VmFunctionParameters, entry: Expr)
+    // deprecated! consider storing byte code via `set_bytecode` instead
+    pub fn set_virtual(&mut self, name: &RefType, params: &VmFunctionParameters, expr: Expr)
     {
-        info!("setting entry: {:?}", entry);
+        info!("setting expr: {:?}", expr);
         if let Some(func) = self.map.get(name) {
             let table = &mut *(func.borrow_mut());
-            table.lookup_set(params, VmFunction::Virtual(Box::new(entry)));
+            table.lookup_set(params, VmFunction::Virtual(Box::new(expr)));
         } else {
-            let table = VmFunctionTable::new().with_virtual(params, entry);
+            let table = VmFunctionTable::new().with_virtual(params, expr);
+            self.map.insert(name.clone(), Rc::new(RefCell::new(table)));
+        }
+    }
+
+    pub fn set_bytecode(&mut self, name: &RefType, params: &VmFunctionParameters, co: CodeObject)
+    {
+        info!("setting bytecode: {:?}", co);
+        if let Some(func) = self.map.get(name) {
+            let table = &mut *(func.borrow_mut());
+            table.lookup_set(params, VmFunction::ByteCode(co));
+        } else {
+            let table = VmFunctionTable::new().with_bytecode(params, co);
             self.map.insert(name.clone(), Rc::new(RefCell::new(table)));
         }
     }

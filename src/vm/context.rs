@@ -15,15 +15,24 @@ pub type VmFunctionParameters = Option<TupleType>;
 pub type VmFunctionVirtual = Box<Expr>;
 pub type VmFunctionNative = fn(&VmFunctionParameters, &mut VmContext) -> VmResult;
 
-macro_rules! insert_func {
-    ($ctx:expr, $name:expr, $func:ident) => {
-        let r = VmFunction::Native($func);
-        $ctx.insert($name.to_string(), Rc::new(RefCell::new(r)));
-    };
-    ($ctx:expr, $name:expr, $expr:expr) => {
-        let r = VmFunction::Virtual($expr);
-        $ctx.insert($name.to_string(), Rc::new(RefCell::new(r)));
-    };
+// TODO: this could take a number as second argument where
+//		 	0 => &None
+//		 	n => &Some([n; Ref(xn)])
+//		 effectively replacing the bloating `give_refs` function in
+//		 setup of the stdlib.
+macro_rules! native_funcs {
+    ($ctx:expr, $($name:expr, $params:expr, $func:ident),+) => {
+		$(
+			if let Some(entry) = $ctx.get($name) {
+				let table = &mut *(entry.borrow_mut());
+				table.lookup_set($params, VmFunction::Native($func));
+			} else {
+				let mut table = VmFunctionTable::new();
+				table.lookup_set($params, VmFunction::Native($func));
+				$ctx.insert($name.to_string(), Rc::new(RefCell::new(table)));
+			}
+		)*
+	};
 }
 
 #[derive(Clone, Debug)]
@@ -57,61 +66,57 @@ impl VmFunctionTable
     {
         Self {
             read: None,
-            overloads: None,
+            // TODO: this should evaluate lazily
+            overloads: Some(vec![]),
         }
     }
 
-    fn read(&self) -> Option<&VmFunction>
+    pub fn with_native(mut self, params: &VmFunctionParameters, func: VmFunctionNative) -> Self
+    {
+        self.lookup_set(params, VmFunction::Native(func));
+        self
+    }
+
+    pub fn with_virtual(mut self, params: &VmFunctionParameters, expr: Expr) -> Self
+    {
+        self.lookup_set(params, VmFunction::Virtual(Box::new(expr)));
+        self
+    }
+
+    pub fn read(&self) -> Option<&VmFunction>
     {
         self.read.as_ref()
     }
 
-    fn set_read(&mut self, read: VmFunction)
+    pub fn set_read(&mut self, read: VmFunction)
     {
         self.read = Some(read);
     }
 
-    pub fn lookup(
-        &self,
-        params: &VmFunctionParameters,
-    ) -> Option<(&VmFunctionParameters, &VmFunction)>
+    pub fn lookup(&self, params: &VmFunctionParameters)
+        -> Option<(Option<TupleType>, &VmFunction)>
     {
         if let Some(params) = params {
-            unimplemented!();
+            // TODO: optimize lookup
+            lookup_func(self.overloads.as_ref().unwrap(), params)
         } else {
-            Some((&None, self.read.as_ref().unwrap()))
+            self.read.as_ref().and_then(|r| Some((None, r)))
         }
     }
 
-    // mut for easier overwriting of overloads
-    pub fn lookup_add(&mut self, definition: &VmFunctionParameters) -> &mut VmFunction
+    pub fn lookup_set(&mut self, definition: &VmFunctionParameters, implementation: VmFunction)
     {
         if let Some(definition) = definition.as_ref() {
-            if self.overloads.is_none() {
-                self.overloads = Some(vec![]);
-            }
             // TODO: implement insert lookup
-            let bucket = lookup_func_mut(self.overloads.as_mut().unwrap(), definition);
-            if bucket.is_some() {
-                return bucket.unwrap();
+            if let Some(bucket) = lookup_func_mut(self.overloads.as_mut().unwrap(), definition) {
+                *bucket = implementation;
+            } else {
+                let overload = VmFunctionOverload::new(definition.clone(), implementation);
+                // TODO: this should insert in a sorted order for faster/more precise lookup
+                self.overloads.as_mut().unwrap().push(overload);
             }
-            let func = VmFunction::Native(vm_func_if);
-            let overload = VmFunctionOverload::new(definition.clone(), func);
-            let mut overloads = self.overloads.as_mut().unwrap();
-            // TODO: this should insert in a sorted order for faster/more precise lookup
-            overloads.push(overload);
-            &mut self
-                .overloads
-                .as_ref()
-                .unwrap()
-                .last_mut()
-                .unwrap()
-                .implementation
         } else {
-            if self.read.is_none() {
-                // TODO: init read with option
-            }
-            self.read.as_mut().unwrap()
+            self.read = Some(implementation);
         }
     }
 }
@@ -129,10 +134,11 @@ pub fn lookup_func_mut<'t>(
     params: &TupleType,
 ) -> Option<&'t mut VmFunction>
 {
+    let plen = params.len();
+
     info!("table: {:?}", table);
     info!("looking up mut: {:?}", params);
-    let plen = params.len();
-    // TODO: use filter_map here
+
     for entry in table
         .iter_mut()
         .filter(|entry| entry.definition.len() == plen)
@@ -145,45 +151,34 @@ pub fn lookup_func_mut<'t>(
             return Some(&mut entry.implementation);
         }
     }
+
     None
 }
 
-/*
 // search expression for execution
 pub fn lookup_func<'t>(
-    table: &'t VmContextTable,
-    params: &VmFunctionParameters,
-) -> Option<&'t VmFunction>
+    table: &'t Vec<VmFunctionOverload>,
+    params: &TupleType,
+) -> Option<(Option<TupleType>, &'t VmFunction)>
 {
     info!("table: {:?}", table);
     info!("looking up: {:?}", params);
-    if let Some(params) = params.as_ref() {
-        let plen = params.len();
-        for entry in table.iter().filter(|(args, _)| match args {
-            Some(args) => args.len() == plen,
-            _ => false,
-        }) {
-            if entry
-                .0
-                .as_ref()
-                .unwrap()
-                .iter()
-                .zip(params)
-                .all(|pair| match pair {
-                    (Value(e), Value(g)) => e == g,
-                    (Ref(_), _) => true,
-                    _ => false,
-                })
-            {
-                return Some(entry);
+    let plen = params.len();
+    'table: for entry in table
+        .iter()
+        .filter(|overload| overload.definition.len() == plen)
+    {
+        for pair in entry.definition.iter().zip(params) {
+            match pair {
+                (Value(e), Value(g)) if e == g => {}
+                (Ref(_), _) => {}
+                _ => continue 'table,
             }
         }
-        None
-    } else {
-        table.iter().find(|(args, _)| args.is_none())
+        return Some((Some(entry.definition.clone()), &entry.implementation));
     }
+    None
 }
-*/
 
 impl std::fmt::Debug for VmFunction
 {
@@ -199,6 +194,7 @@ impl std::fmt::Debug for VmFunction
 #[derive(Clone, Debug)]
 pub struct VmContext
 {
+    // TODO: use DoS-unsafe HashMap implementation here (FNV maybe?)
     map: HashMap<RefType, VmContextEntryRef>,
     stack: Vec<VmFrame>,
 }
@@ -216,15 +212,43 @@ impl VmContext
     pub fn stdlib() -> Self
     {
         let mut ctx = Self::new();
+        // TODO: this a hacky solution for enabling params... (see regarding macro above
+        // for more)
+        let give_refs = |n: usize| {
+            (0..n)
+                .map(|i| {
+                    let name = format!("x{}", i);
+                    Expr::Ref(name)
+                })
+                .collect()
+        };
 
-                insert_func!(ctx.map, "if", vm_func_if);
-                insert_func!(ctx.map, "do", vm_func_do);
+        native_funcs!(
+            ctx.map,
+            "pi",
+            &None,
+            vm_func_pi,
+            "if",
+            &Some(give_refs(3)),
+            vm_func_if,
+            "sqrt",
+            &Some(give_refs(1)),
+            vm_func_sqrt,
+            "sqrt",
+            &Some(give_refs(2)),
+            vm_func_sqrt,
+            "log",
+            &Some(give_refs(1)),
+            vm_func_log,
+            "log",
+            &Some(give_refs(2)),
+            vm_func_log
+        );
 
-        insert_func!(ctx.map, "pi", vm_func_pi);
-        insert_func!(ctx.map, "print", vm_func_print);
-        insert_func!(ctx.map, "println", vm_func_println);
-        insert_func!(ctx.map, "sqrt", vm_func_sqrt);
-        insert_func!(ctx.map, "log", vm_func_log);
+        // the reimplementation of `do`, `print`, and `println` would have
+        // required another interface for variadic functions. as parameters
+        // for such a use case could easily be replaced by passing a `Set`,
+        // no further effort will be spent on implementing them variadically.
 
         ctx
     }
@@ -234,13 +258,16 @@ impl VmContext
 {
     pub fn push_frame(&mut self, frame: VmFrame)
     {
+        info!("pushing frame: {:?}", frame);
         self.stack.push(frame);
         assert!(self.stack.len() < MAX_STACK_SIZE, "stack size exceeded");
     }
 
     pub fn pop_frame(&mut self) -> bool
     {
-        self.stack.pop().is_some()
+        let last = self.stack.pop();
+        info!("pushing frame: {:?}", last);
+        last.is_some()
     }
 
     pub fn get(&self, name: &RefType) -> Option<VmContextEntryRef>
@@ -261,51 +288,17 @@ impl VmContext
         self.map.insert(name.clone(), Rc::new(RefCell::new(entry)));
     }
 
-    pub fn set_virtual(&mut self, name: &RefType, params: &VmFunctionParameters, mut entry: Expr)
+    pub fn set_virtual(&mut self, name: &RefType, params: &VmFunctionParameters, entry: Expr)
     {
         info!("setting entry: {:?}", entry);
         if let Some(func) = self.map.get(name) {
-            let mut table = &mut *(func.borrow_mut());
-            let mut bucket = table.lookup_add(params);
-            *bucket = VmFunction::Virtual(Box::new(entry));
-        /*
-                        Virtual(table) => {
-                            if optimize(&mut entry).is_ok() {
-                                info!("optimized code: {:?}", entry.1);
-                            }
-                            if let Some(bucket) = lookup_func_mut(table, params) {
-                                bucket.1 = entry;
-                            } else {
-                                table.push((params.clone(), entry));
-                            }
-                        }
-                        _ => unimplemented!(),
-                    }
-        */
+            let table = &mut *(func.borrow_mut());
+            table.lookup_set(params, VmFunction::Virtual(Box::new(entry)));
         } else {
-            let table = VmFunctionTable::new();
-            // TODO: set definition here
+            let table = VmFunctionTable::new().with_virtual(params, entry);
             self.map.insert(name.clone(), Rc::new(RefCell::new(table)));
         }
     }
-}
-
-fn vm_func_print(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
-{
-    if let Some(params) = params {
-        let params = run_tuple_exprs(params, ctx)?;
-        for param in params {
-            print!("{:?}", param);
-        }
-    }
-    Ok(Nil)
-}
-
-fn vm_func_println(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
-{
-    vm_func_print(params, ctx)?;
-    println!();
-    Ok(Nil)
 }
 
 fn vm_func_pi(_params: &VmFunctionParameters, _ctx: &mut VmContext) -> VmResult
@@ -348,6 +341,7 @@ fn vm_func_if(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
     })
 }
 
+/*
 fn vm_func_do(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
 {
     if let Some(params) = params {
@@ -357,3 +351,23 @@ fn vm_func_do(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
     }
     Ok(Nil)
 }
+
+fn vm_func_print(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
+{
+    if let Some(params) = params {
+        let params = run_tuple_exprs(params, ctx)?;
+        for param in params {
+            print!("{:?}", param);
+        }
+    }
+    Ok(Nil)
+}
+
+fn vm_func_println(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
+{
+    vm_func_print(params, ctx)?;
+    println!();
+    Ok(Nil)
+}
+
+*/

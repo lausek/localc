@@ -116,7 +116,7 @@ impl Repl
                     }
                 }
 
-                present!(self.vm.run(&program));
+                present!(self.vm.run_expr(&program));
             } else {
                 present!(result);
             }
@@ -138,7 +138,7 @@ pub fn main()
                 if line.is_empty() {
                     continue;
                 }
-                vm.run_raw(line.as_ref()).expect("error in runtime script");
+                vm.run(line.as_ref()).expect("error in runtime script");
             }
         // TODO: using context function `print` doesn't seem to cause a flush
         } else {

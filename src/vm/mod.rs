@@ -8,9 +8,8 @@ use crate::{
     expr::ExprParser,
 };
 
-pub type VmValue = Value;
 pub type VmError = String;
-pub type VmResult = Result<VmValue, VmError>;
+pub type VmResult = Result<Value, VmError>;
 
 impl GenType
 {
@@ -27,11 +26,15 @@ impl GenType
     pub fn next(&mut self, vm: &mut Vm) -> Option<Value>
     {
         loop {
-            if self.constraints.iter().all(|expr| match vm.run(&expr) {
-                Ok(Value::Logical(true)) => true,
-                // TODO: raise errors if err(_)
-                _ => false,
-            }) {
+            if self
+                .constraints
+                .iter()
+                .all(|expr| match vm.run_expr(&expr) {
+                    Ok(Value::Logical(true)) => true,
+                    // TODO: raise errors if err(_)
+                    _ => false,
+                })
+            {
                 return Some(Value::Numeric(self.current));
             }
             self.current += 1.;
@@ -72,23 +75,23 @@ impl Vm
         }
     }
 
-    pub fn run_raw(&mut self, raw: &str) -> VmResult
+    pub fn run(&mut self, raw: &str) -> VmResult
     {
         let program = self.parser.parse(raw).unwrap();
-        self.run(&program)
+        self.run_expr(&program)
     }
 
-    pub fn run_bytecode(&mut self, co: &CodeObject) -> VmResult
-    {
-        run_bytecode_with_ctx(co, &mut self.ctx)
-    }
-
-    pub fn run(&mut self, expr: &Expr) -> VmResult
+    pub fn run_expr(&mut self, expr: &Expr) -> VmResult
     {
         match compiler::compile(expr) {
             Ok(co) => run_bytecode_with_ctx(&co, &mut self.ctx),
             Err(e) => Err(e),
         }
+    }
+
+    pub fn run_bytecode(&mut self, co: &CodeObject) -> VmResult
+    {
+        run_bytecode_with_ctx(co, &mut self.ctx)
     }
 
     pub fn optimize(&self, expr: &mut Expr) -> Result<(), String>
@@ -170,15 +173,15 @@ fn optimize(expr: &mut Expr) -> Result<(), String>
 
 pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
 {
-    // TODO: to lower recursion there must be a special bytecode version that
-    // 		 translates the expression to a sequence of steps like:
+    // to lower recursion there must be a special bytecode version that
+    // translates the expression to a sequence of steps like:
     //		 	push arg1
     //		 	push arg2
     // 			op +
     // where `op` pops the last two values off the stack leaving the operations
-    // result in place. This fixes an old misunderstanding where the vm was expected
+    // result in place. this fixes an old misunderstanding where the vm was expected
     // to be run on an ast instead of a bytecode list and should have been
-    // implemented in the parser as such.
+    // implemented in the parser therefore.
 
     match expr {
         Expr::Value(v) => Ok(v.clone()),
@@ -186,11 +189,11 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
         Expr::Func(name, params) => run_function(name, params, ctx),
         Expr::Comp(Operator::Store, lhs, rhs) => match lhs {
             box Expr::Func(name, params) => {
-                ctx.set_virtual(name, &params, expr.clone());
+                ctx.set_virtual(name, &params, *rhs.clone());
                 Ok(Value::Nil)
             }
             box Expr::Ref(name) => {
-                ctx.set_virtual(name, &None, expr.clone());
+                ctx.set_virtual(name, &None, *rhs.clone());
                 Ok(Value::Nil)
             }
             _ => Err(format!("`{:?}` is not assignable", lhs)),
@@ -218,7 +221,7 @@ pub fn run_bytecode_with_ctx(co: &CodeObject, ctx: &mut VmContext) -> VmResult
             }
             Instruction::Move(name, expr) => {
                 info!("setting `{:?}` with {:?}", name, params_reg);
-                ctx.set_virtual(name, (params_reg.take(), expr.clone()));
+                ctx.set_virtual(name, &params_reg.take(), *expr.clone());
                 stack.push(Value::Nil);
             }
             Instruction::Load(name) => stack.push(run_lookup(name, ctx)?),
@@ -237,6 +240,10 @@ pub fn run_bytecode_with_ctx(co: &CodeObject, ctx: &mut VmContext) -> VmResult
     Ok(stack.pop().unwrap().clone())
 }
 
+// wrapper for operations on two `Value` references. this comes in handy
+// as `optimize` and `run` must execute the same computation but at
+// different processing stages.
+// TODO: implement type coercion here when `Str` arrives
 pub fn run_operation(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
 {
     match op {
@@ -254,13 +261,12 @@ pub fn run_operation(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
     }
 }
 
+// executes the stored `read` operation for given reference `name`
 pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
 {
     info!("lookup: {}", name);
-    // TODO: ctx.get(name): Opt<VmFunctionTable> -> VmFunctionTable.read.unwrap
     if let Some(entry) = ctx.get(name) {
         match (&*(entry.borrow())).lookup(&None).unwrap().1 {
-            //match &*(entry.borrow()) {
             VmFunction::Virtual(expr) => {
                 info!("resulted in: {:?}", expr);
                 run_with_ctx(&expr, ctx)
@@ -268,10 +274,12 @@ pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
             VmFunction::Native(func) => func(&None, ctx),
         }
     } else {
-        Err(format!("function `{}` is unknown", name))
+        Err(format!("variable `{}` is unknown", name))
     }
 }
 
+// executes an applicable overload `name` with values in `params`. the overload
+// matching is done inside the table itself.
 pub fn run_function(name: &RefType, params: &VmFunctionParameters, ctx: &mut VmContext)
     -> VmResult
 {
@@ -296,34 +304,14 @@ pub fn run_function(name: &RefType, params: &VmFunctionParameters, ctx: &mut VmC
             },
             _ => Err("unexpected arguments".to_string()),
         }
-    /*
-            match &*(entry.borrow()) {
-                VmFunction::Virtual(table) => {
-                    let params = if let Some(p) = params {
-                        let e = run_tuple_exprs(p, ctx)?;
-                        Some(e)
-                    } else {
-                        None
-                    };
-                    match lookup_func(table, &params) {
-                        Some((args, expr)) => {
-                            info!("resulted in: {:?}", expr);
-                            push_ctx_params(ctx, &args, &params);
-                            let result = run_with_ctx(&expr, ctx);
-                            pop_ctx_params(ctx);
-                            result
-                        }
-                        _ => Err("unexpected arguments".to_string()),
-                    }
-                }
-                VmFunction::Native(func) => func(&params, ctx),
-            }
-    */
     } else {
         Err(format!("function `{}` is unknown", name))
     }
 }
 
+// simple wrapper for executing expressions stored in `Tuples`.
+// TODO: rewrite this to a more generic approach as `Set` must evaluate this way
+// aswell.
 fn run_tuple_exprs(params: &TupleType, ctx: &mut VmContext) -> Result<TupleType, VmError>
 {
     let mut list = vec![];
@@ -334,26 +322,27 @@ fn run_tuple_exprs(params: &TupleType, ctx: &mut VmContext) -> Result<TupleType,
     Ok(list)
 }
 
+// transfers the parameters into a new frame on the call stack.
 fn push_ctx_params(ctx: &mut VmContext, args: &VmFunctionParameters, params: &VmFunctionParameters)
 {
     use std::cell::RefCell;
     use std::rc::Rc;
+    info!("zipping: args({:?}), params({:?})", args, params);
     let frame = match (args, params) {
         (Some(args), Some(params)) => {
+            // this must be guaranteed by the lookup in first place
             assert_eq!(args.len(), params.len());
             args.iter()
                 .zip(params)
-                .filter_map(|(arg, param)| {
-                    let expr = Box::new(param.clone());
-                    match param {
-                        Expr::Ref(name) => {
-                            let mut table = VmFunctionTable::new();
-                            table.lookup_add(&None);
-                            Some((name.clone(), Rc::new(RefCell::new(table))))
-                        }
-                        Expr::Value(_) => None,
-                        _ => unimplemented!(),
+                .filter_map(|(arg, param)| match arg {
+                    Expr::Ref(name) => {
+                        let table = VmFunctionTable::new().with_virtual(&None, param.clone());
+                        Some((name.clone(), Rc::new(RefCell::new(table))))
                     }
+                    // we don't want to push values into the frame as they where already
+                    // known at the time of declaration and redundant as such.
+                    Expr::Value(_) => None,
+                    _ => unreachable!(),
                 })
                 .collect::<VmFrame>()
         }
@@ -362,6 +351,8 @@ fn push_ctx_params(ctx: &mut VmContext, args: &VmFunctionParameters, params: &Vm
     ctx.push_frame(frame);
 }
 
+// removes a frame from the stack, asserting that there was one. this function
+// must be called immediately after executing a local call.
 fn pop_ctx_params(ctx: &mut VmContext)
 {
     assert!(ctx.pop_frame());
@@ -420,6 +411,7 @@ fn exec_value_op(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
     .into())
 }
 
+// TODO: implement type coercion when `Str` arrives
 impl std::cmp::PartialEq for Value
 {
     fn eq(&self, rhs: &Self) -> bool
@@ -433,6 +425,7 @@ impl std::cmp::PartialEq for Value
     }
 }
 
+// TODO: implement `Str`
 impl std::cmp::PartialOrd for Value
 {
     fn partial_cmp(&self, rhs: &Self) -> Option<std::cmp::Ordering>

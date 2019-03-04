@@ -31,7 +31,7 @@ mod tests
             eq!(Vm::new(), $script, $ex);
         };
         ($vm:expr, $script:expr, $ex:expr) => {
-            let result = $vm.run(&$vm.parser.parse($script).unwrap());
+            let result = $vm.run_expr(&$vm.parser.parse($script).unwrap());
             assert_eq!(result, $ex);
         };
     }
@@ -41,7 +41,10 @@ mod tests
             err!(Vm::new(), $script, $msg);
         };
         ($vm:expr, $script:expr, $msg:expr) => {
-            assert!($vm.run(&$vm.parser.parse($script).unwrap()).is_err(), $msg);
+            assert!(
+                $vm.run_expr(&$vm.parser.parse($script).unwrap()).is_err(),
+                $msg
+            );
         };
     }
 

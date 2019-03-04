@@ -426,6 +426,17 @@ impl std::cmp::PartialEq for Value
         match (self, rhs) {
             (Value::Numeric(lhs), Value::Numeric(rhs)) => lhs == rhs,
             (Value::Logical(lhs), Value::Logical(rhs)) => lhs == rhs,
+            (Value::Tuple(lhs), Value::Tuple(rhs)) | (Value::Set(lhs), Value::Set(rhs)) => {
+                if lhs.len() != rhs.len() {
+                    return false;
+                }
+                lhs.iter().zip(rhs).all(|(l, r)| match (l, r) {
+                    (Expr::Value(lhs), Expr::Value(rhs)) => lhs == rhs,
+                    // TODO: if the tuple/set does not only contain constant values, evaluation
+                    // 		 must happend before comparison somehow. requires ref to the context
+                    _ => unimplemented!(),
+                })
+            }
             (Value::Nil, Value::Nil) => true,
             _ => false,
         }

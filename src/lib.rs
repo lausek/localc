@@ -309,7 +309,6 @@ mod tests
     #[test]
     fn test_tuple()
     {
-        // parsing
         eq!(
             "{1, 2, 3}",
             Ok(Value::Set(vec![
@@ -318,6 +317,9 @@ mod tests
                 Expr::Value(Value::Numeric(3.)),
             ]))
         );
+
+        /*
+        TODO: requires `log` to be a constant function
         eq!(
             "{log(2, 4), 2}",
             Ok(Value::Set(vec![
@@ -325,6 +327,8 @@ mod tests
                 Expr::Value(Value::Numeric(2.)),
             ]))
         );
+        */
+
         eq!("{}", Ok(Value::Set(vec![])));
 
         /*

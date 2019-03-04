@@ -184,24 +184,21 @@ mod tests
         let mut vm = Vm::with_stdlib();
 
         // constants
-        eq!(vm, "pi", Ok(Numeric(3.141592653589793)));
+        eq!(vm, "pi", Ok(Numeric(std::f64::consts::PI)));
+        eq!(vm, "e", Ok(Numeric(std::f64::consts::E)));
 
         // sqrt
         eq!(vm, "sqrt(16)", Ok(Numeric(4.)));
         eq!(vm, "sqrt(64)", Ok(Numeric(8.)));
 
         // sqrtn
-        // eq!(f64::round(exec_str("sqrtn(3,64)")), Ok(Numeric(4.0)));
-        // eq!(f64::round(exec_str("sqrtn(5,3125)")), Ok(Numeric(5.0)));
+        //eq!(vm, "sqrt(64, 3)", Ok(Numeric(4.)));
+        //eq!(vm, "sqrt(3125, 5)", Ok(Numeric(5.)));
 
         // log
         eq!(vm, "log(8, 2)", Ok(Numeric(3.)));
         eq!(vm, "log(100, 10)", Ok(Numeric(2.)));
         eq!(vm, "log(100)", Ok(Numeric(2.)));
-
-        // log2
-        //eq!(vm, "log2(8)", Ok(Numeric(3.0)));
-        //eq!(vm, "log2(16)", Ok(Numeric(4.0)));
 
         // ln
         //eq!(vm, "ln(10)", Ok(Numeric(2.302585092994046)));
@@ -211,12 +208,10 @@ mod tests
         // if
         eq!(vm, "if(1==1,1,2)", Ok(Numeric(1.)));
         eq!(vm, "if(1!=1,1,2)", Ok(Numeric(2.)));
-        /*
-        assert!(
-            exec_str_pre_num("if(1,1,2)").is_err(),
-            "only logical values allowed in `if` condition"
-        );
-        */
+
+        // assert
+        eq!(vm, "assert(1==1)", Ok(Nil));
+        eq!(vm, "assert(true)", Ok(Nil));
 
         // empty?
         //eq!(vm, "empty?({})", Ok(Logical(true)));

@@ -226,11 +226,13 @@ impl VmContext
         let mut ctx = Self::new();
 
         native_funcs!(ctx.map, "pi", 0, vm_func_pi);
+        native_funcs!(ctx.map, "e", 0, vm_func_e);
         native_funcs!(ctx.map, "if", 3, vm_func_if);
         native_funcs!(ctx.map, "sqrt", 1, vm_func_sqrt);
         native_funcs!(ctx.map, "sqrt", 2, vm_func_sqrt);
         native_funcs!(ctx.map, "log", 1, vm_func_log);
         native_funcs!(ctx.map, "log", 2, vm_func_log);
+        native_funcs!(ctx.map, "assert", 1, vm_func_assert);
 
         // the reimplementation of `do`, `print`, and `println` would have
         // required another interface for variadic functions. as parameters
@@ -301,9 +303,16 @@ impl VmContext
     }
 }
 
-fn vm_func_pi(_params: &VmFunctionParameters, _ctx: &mut VmContext) -> VmResult
+fn vm_func_pi(params: &VmFunctionParameters, _ctx: &mut VmContext) -> VmResult
 {
+    assert!(params.is_none());
     Ok(Numeric(std::f64::consts::PI))
+}
+
+fn vm_func_e(params: &VmFunctionParameters, _ctx: &mut VmContext) -> VmResult
+{
+    assert!(params.is_none());
+    Ok(Numeric(std::f64::consts::E))
 }
 
 fn vm_func_sqrt(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
@@ -339,6 +348,18 @@ fn vm_func_if(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
             run_with_ctx(&params.get(2).unwrap(), ctx)
         }
     })
+}
+
+fn vm_func_assert(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
+{
+    let params = params.as_ref().unwrap();
+    assert_eq!(params.len(), 1);
+    match run_with_ctx(&params.get(0).unwrap(), ctx) {
+        Ok(Logical(true)) => {}
+        // TODO: print place of occurrence
+        _ => panic!("assert condition violated"),
+    }
+    Ok(Nil)
 }
 
 /*

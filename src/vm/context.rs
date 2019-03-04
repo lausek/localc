@@ -15,24 +15,28 @@ pub type VmFunctionParameters = Option<TupleType>;
 pub type VmFunctionVirtual = Box<Expr>;
 pub type VmFunctionNative = fn(&VmFunctionParameters, &mut VmContext) -> VmResult;
 
-// TODO: this could take a number as second argument where
-//		 	0 => &None
-//		 	n => &Some([n; Ref(xn)])
-//		 effectively replacing the bloating `give_refs` function in
-//		 setup of the stdlib.
+// this macro creates a new function from a static reference and links it with
+// an argument number specified in `$params` onto the function table.
+// TODO: add support for constants/type constraints
 macro_rules! native_funcs {
-    ($ctx:expr, $($name:expr, $params:expr, $func:ident),+) => {
-		$(
-			if let Some(entry) = $ctx.get($name) {
-				let table = &mut *(entry.borrow_mut());
-				table.lookup_set($params, VmFunction::Native($func));
-			} else {
-				let mut table = VmFunctionTable::new();
-				table.lookup_set($params, VmFunction::Native($func));
-				$ctx.insert($name.to_string(), Rc::new(RefCell::new(table)));
-			}
-		)*
-	};
+    ($ctx:expr, $name:expr, $params:expr, $func:ident) => {
+        let params = (0..$params)
+            .map(|i| Expr::Ref(format!("x{}", i)))
+            .collect::<Vec<_>>();
+        let params = if params.is_empty() {
+            None
+        } else {
+            Some(params)
+        };
+        if let Some(entry) = $ctx.get($name) {
+            let table = &mut *(entry.borrow_mut());
+            table.lookup_set(&params, VmFunction::Native($func));
+        } else {
+            let mut table = VmFunctionTable::new();
+            table.lookup_set(&params, VmFunction::Native($func));
+            $ctx.insert($name.to_string(), Rc::new(RefCell::new(table)));
+        }
+    };
 }
 
 #[derive(Clone, Debug)]
@@ -212,38 +216,13 @@ impl VmContext
     pub fn stdlib() -> Self
     {
         let mut ctx = Self::new();
-        // TODO: this a hacky solution for enabling params... (see regarding macro above
-        // for more)
-        let give_refs = |n: usize| {
-            (0..n)
-                .map(|i| {
-                    let name = format!("x{}", i);
-                    Expr::Ref(name)
-                })
-                .collect()
-        };
 
-        native_funcs!(
-            ctx.map,
-            "pi",
-            &None,
-            vm_func_pi,
-            "if",
-            &Some(give_refs(3)),
-            vm_func_if,
-            "sqrt",
-            &Some(give_refs(1)),
-            vm_func_sqrt,
-            "sqrt",
-            &Some(give_refs(2)),
-            vm_func_sqrt,
-            "log",
-            &Some(give_refs(1)),
-            vm_func_log,
-            "log",
-            &Some(give_refs(2)),
-            vm_func_log
-        );
+        native_funcs!(ctx.map, "pi", 0, vm_func_pi);
+        native_funcs!(ctx.map, "if", 3, vm_func_if);
+        native_funcs!(ctx.map, "sqrt", 1, vm_func_sqrt);
+        native_funcs!(ctx.map, "sqrt", 2, vm_func_sqrt);
+        native_funcs!(ctx.map, "log", 1, vm_func_log);
+        native_funcs!(ctx.map, "log", 2, vm_func_log);
 
         // the reimplementation of `do`, `print`, and `println` would have
         // required another interface for variadic functions. as parameters

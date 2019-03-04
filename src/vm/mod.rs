@@ -157,6 +157,11 @@ fn optimize(expr: &mut Expr) -> Result<(), String>
                 }
             }
         }
+        Expr::Value(Value::Tuple(ls)) | Expr::Value(Value::Set(ls)) => {
+            for param in ls {
+                optimize(param).unwrap();
+            }
+        }
         _ => {}
     }
     match new_val {

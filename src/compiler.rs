@@ -9,6 +9,7 @@ pub type CompileResult = Result<CodeObject, String>;
 // `Params` should further be used to introduce a kind of callstack.
 // `Call` will pop the last `Params` off and use the so gained values
 // for its internal processing. this enables straightforward chains like:
+//
 //  bytecode		| stack
 // -------------------------------------
 //		params		| []
@@ -18,6 +19,12 @@ pub type CompileResult = Result<CodeObject, String>;
 // 		push 2 		| [1],[1,2]
 // 		call f 		| [1, f(1,2)]
 //		call x 		| g(1, f(1,2))
+//
+// To allow arbitrary functions with `Move`, the rhs of the operation must be
+// popped off the stack instead of passing it as enum field.
+//
+// 		push 1
+// 		move x 	# x = 1
 
 #[derive(Clone, Debug)]
 pub enum Instruction

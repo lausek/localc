@@ -267,6 +267,15 @@ mod tests
         eq!(vm, "odd(n) = even(n) == (1 != 1)", Ok(Nil));
         eq!(vm, "odd(1)", Ok(Logical(true)));
         eq!(vm, "odd(2)", Ok(Logical(false)));
+
+        eq!(vm, "my_const = 10", Ok(Nil));
+        eq!(vm, "x = 2", Ok(Nil));
+        eq!(vm, "f(x) = my_const ^ x", Ok(Nil));
+        eq!(vm, "f(1)", Ok(Numeric(10.)));
+        eq!(vm, "f(x)", Ok(Numeric(100.)));
+        eq!(vm, "my_const = 2", Ok(Nil));
+        eq!(vm, "f(1)", Ok(Numeric(2.)));
+        eq!(vm, "f(x)", Ok(Numeric(4.)));
     }
 
     #[test]

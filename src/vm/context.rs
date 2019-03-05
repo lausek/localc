@@ -233,6 +233,8 @@ impl VmContext
         native_funcs!(ctx.map, "log", 1, vm_func_log);
         native_funcs!(ctx.map, "log", 2, vm_func_log);
         native_funcs!(ctx.map, "assert", 1, vm_func_assert);
+        native_funcs!(ctx.map, "print", 1, vm_func_print);
+        native_funcs!(ctx.map, "println", 1, vm_func_println);
 
         // the reimplementation of `do`, `print`, and `println` would have
         // required another interface for variadic functions. as parameters
@@ -362,24 +364,18 @@ fn vm_func_assert(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResul
     Ok(Nil)
 }
 
-/*
-fn vm_func_do(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
-{
-    if let Some(params) = params {
-        for param in params {
-            run_with_ctx(&param, ctx)?;
-        }
-    }
-    Ok(Nil)
-}
-
 fn vm_func_print(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
 {
-    if let Some(params) = params {
-        let params = run_tuple_exprs(params, ctx)?;
-        for param in params {
-            print!("{:?}", param);
+    let params = params.as_ref().unwrap();
+    assert!(params.len() == 1);
+    match params.get(0) {
+        Some(Value(Set(params))) => {
+            for param in params {
+                let result = run_with_ctx(&param, ctx)?;
+                print!("{}", result);
+            }
         }
+        _ => panic!("unexpected parameter"),
     }
     Ok(Nil)
 }
@@ -390,5 +386,3 @@ fn vm_func_println(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResu
     println!();
     Ok(Nil)
 }
-
-*/

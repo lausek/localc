@@ -189,7 +189,11 @@ pub fn run_with_ctx(expr: &Expr, ctx: &mut VmContext) -> VmResult
     // implemented in the parser therefore.
 
     match expr {
-        Expr::Value(v) => Ok(v.clone()),
+        Expr::Value(v) => match v {
+            Value::Tuple(ls) => Ok(Value::Tuple(run_tuple_exprs(&ls, ctx)?)),
+            Value::Set(ls) => Ok(Value::Set(run_tuple_exprs(&ls, ctx)?)),
+            _ => Ok(v.clone()),
+        },
         Expr::Ref(name) => run_lookup(name, ctx),
         Expr::Func(name, params) => run_function(name, params, ctx),
         Expr::Comp(Operator::Store, lhs, rhs) => match lhs {

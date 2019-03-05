@@ -218,10 +218,6 @@ mod tests
         //eq!(vm, "empty?({1})", Ok(Logical(false)));
     }
 
-    #[cfg(feature = "v1-0")]
-    #[test]
-    fn test_version1() {}
-
     #[test]
     fn test_logical()
     {
@@ -314,7 +310,6 @@ mod tests
         }
     }
 
-    #[cfg(feature = "v1-0")]
     #[test]
     fn test_tuple()
     {
@@ -355,7 +350,6 @@ mod tests
     }
 
     /*
-        #[cfg(feature = "v1-0")]
         #[test]
         fn test_dependencies()
         {

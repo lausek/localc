@@ -42,20 +42,13 @@ Value: Expr = {
 			Expr::Value(Value::Tuple(t))
 		}
 	},
-	"{" "}" => Expr::Value(Value::Set(vec![])),
-	"{" <s:Set> <g:("|" <Set>)?> "}" => match g {
-		Some(g) => {
+	"{" <s:Set?> <g:("|" <Set>)?> "}" => match (s, g) {
+		(Some(s), Some(g)) => {
 			let gen = GenType::new();
 			Expr::Value(Value::Gen(s, gen))
 		}
-		_ => {
-			let mut s = s;
-			if s.len() == 1 {
-				s.remove(0)
-			} else {
-				Expr::Value(Value::Set(s))
-			}
-		}
+		(Some(s), _) => Expr::Value(Value::Set(s)),
+		_ => Expr::Value(Value::Set(vec![])),
 	},
     <i:Ident> "(" <t:Tuple> ")" => Expr::Func(i, Some(t)),
     <i:Ident> "(" ")" => Expr::Func(i, None),

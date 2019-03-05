@@ -5,10 +5,6 @@ authors = ["lausek <root@lausek.eu>"]
 edition = "2018"
 build = "build.rs"
 
-[features]
-v0-1 = []
-v1-0 = ["v0-1"]
-
 [lib]
 name = "localc"
 path = "src/lib.rs"

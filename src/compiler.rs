@@ -3,6 +3,22 @@ use crate::ast::*;
 pub type CodeObject = Vec<Instruction>;
 pub type CompileResult = Result<CodeObject, String>;
 
+// TODO:
+// the compiler should smoothen out the `Instruction` enum to
+// achieve a smaller memory footprint and flatten the whole interaction.
+// `Params` should further be used to introduce a kind of callstack.
+// `Call` will pop the last `Params` off and use the so gained values
+// for its internal processing. this enables straightforward chains like:
+//  bytecode		| stack
+// -------------------------------------
+//		params		| []
+// 		push 1 		| [1]
+// 		params 		| [1],[]
+// 		push 1 		| [1],[1]
+// 		push 2 		| [1],[1,2]
+// 		call f 		| [1, f(1,2)]
+//		call x 		| g(1, f(1,2))
+
 #[derive(Clone, Debug)]
 pub enum Instruction
 {

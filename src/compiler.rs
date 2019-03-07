@@ -26,6 +26,11 @@ pub type CompileResult = Result<CodeObject, String>;
 // 		push 1
 // 		move x 	# x = 1
 
+// TODO: stack or register based?
+// a stack based virtual machine would enable a smaller compiled size and cleaner
+// implementation
+// a register based virtual machine could improve performance for large code objects
+
 #[derive(Clone, Debug)]
 pub enum Instruction
 {

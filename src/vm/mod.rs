@@ -166,8 +166,8 @@ fn optimize(expr: &mut Expr) -> Result<(), String>
     }
     match new_val {
         Some(Ok(val)) => {
-            info!("optimizing expr: {:?}", expr);
-            info!("replacing with const value: {:?}", val);
+            trace!("optimizing expr: {:?}", expr);
+            trace!("replacing with const value: {:?}", val);
             *expr = Expr::Value(val);
         }
         Some(_) => panic!("error in constant optimization"),
@@ -220,16 +220,16 @@ pub fn run_bytecode_with_ctx(co: &CodeObject, ctx: &mut VmContext) -> VmResult
     let mut params_reg: VmFunctionParameters = None;
     let mut stack = vec![];
 
-    info!("bytecode!");
+    trace!("bytecode!");
     for instruction in co.iter() {
         match instruction {
             Instruction::Params(params) => params_reg = Some(params.clone()),
             Instruction::Call(name) => {
-                info!("calling params with {:?}", params_reg);
+                trace!("calling params with {:?}", params_reg);
                 stack.push(run_function(name, &params_reg.take(), ctx)?);
             }
             Instruction::Move(name, expr) => {
-                info!("setting `{:?}` with {:?}", name, params_reg);
+                trace!("setting `{:?}` with {:?}", name, params_reg);
                 ctx.set_virtual(name, &params_reg.take(), *expr.clone());
                 stack.push(Value::Nil);
             }
@@ -241,7 +241,7 @@ pub fn run_bytecode_with_ctx(co: &CodeObject, ctx: &mut VmContext) -> VmResult
                 let arg1 = stack.pop().unwrap();
                 let op = Operator::from(instruction);
                 stack.push(run_operation(&op, &arg1, &arg2)?);
-                info!("exec {:?} with ({:?}, {:?})", op, arg1, arg2);
+                trace!("exec {:?} with ({:?}, {:?})", op, arg1, arg2);
             }
         }
     }
@@ -273,11 +273,11 @@ pub fn run_operation(op: &Operator, arg1: &Value, arg2: &Value) -> VmResult
 // executes the stored `read` operation for given reference `name`
 pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
 {
-    info!("lookup: {}", name);
+    trace!("lookup: {}", name);
     if let Some(entry) = ctx.get(name) {
         match (&*(entry.borrow())).lookup(&None).unwrap().1 {
             VmFunction::Virtual(expr) => {
-                info!("resulted in: {:?}", expr);
+                trace!("resulted in: {:?}", expr);
                 run_with_ctx(&expr, ctx)
             }
             VmFunction::Native(func) => func(&None, ctx),
@@ -293,18 +293,26 @@ pub fn run_lookup(name: &RefType, ctx: &mut VmContext) -> VmResult
 pub fn run_function(name: &RefType, params: &VmFunctionParameters, ctx: &mut VmContext)
     -> VmResult
 {
-    info!("function: {} ({:?})", name, params);
     if let Some(entry) = ctx.get(name) {
-        match (&*(entry.borrow())).lookup(params) {
+        //let params = &Some(run_tuple_exprs(&params, ctx).unwrap());
+        let params = if let Some(params) = params {
+            Some(run_tuple_exprs(&params, ctx)?)
+        } else {
+            None
+        };
+        info!("function: {}({:?})", name, params);
+        match (&*(entry.borrow())).lookup(&params) {
             Some((args, func)) => match func {
                 VmFunction::Virtual(expr) => {
+                    /*
                     let params = if let Some(p) = params {
                         let e = run_tuple_exprs(p, ctx)?;
                         Some(e)
                     } else {
                         None
                     };
-                    info!("resulted in: {:?}", expr);
+                    */
+                    trace!("resulted in: {:?}", expr);
                     push_ctx_params(ctx, &args, &params);
                     let result = run_with_ctx(&expr, ctx);
                     pop_ctx_params(ctx);
@@ -338,7 +346,7 @@ fn push_ctx_params(ctx: &mut VmContext, args: &VmFunctionParameters, params: &Vm
 {
     use std::cell::RefCell;
     use std::rc::Rc;
-    info!("zipping: args({:?}), params({:?})", args, params);
+    trace!("zipping: args({:?}), params({:?})", args, params);
     let frame = match (args, params) {
         (Some(args), Some(params)) => {
             // this must be guaranteed by the lookup in first place
@@ -346,10 +354,14 @@ fn push_ctx_params(ctx: &mut VmContext, args: &VmFunctionParameters, params: &Vm
             args.iter()
                 .zip(params)
                 .filter_map(|(arg, param)| match arg {
-                    Expr::Ref(name) => {
-                        let table = VmFunctionTable::new().with_virtual(&None, param.clone());
-                        Some((name.clone(), Rc::new(RefCell::new(table))))
-                    }
+                    Expr::Ref(name) => match run_with_ctx(&param, ctx) {
+                        Ok(value) => {
+                            let table =
+                                VmFunctionTable::new().with_virtual(&None, Expr::Value(value));
+                            Some((name.clone(), Rc::new(RefCell::new(table))))
+                        }
+                        _ => panic!("not a value in function call"),
+                    },
                     // we don't want to push values into the frame as they where already
                     // known at the time of declaration and redundant as such.
                     Expr::Value(_) => None,

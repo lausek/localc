@@ -147,8 +147,8 @@ pub fn lookup_func_mut<'t>(
 {
     let plen = params.len();
 
-    info!("table: {:?}", table);
-    info!("looking up mut: {:?}", params);
+    trace!("table: {:?}", table);
+    trace!("looking up mut: {:?}", params);
 
     for entry in table
         .iter_mut()
@@ -172,8 +172,8 @@ pub fn lookup_func<'t>(
     params: &TupleType,
 ) -> Option<(Option<TupleType>, &'t VmFunction)>
 {
-    info!("table: {:?}", table);
-    info!("looking up: {:?}", params);
+    trace!("table: {:?}", table);
+    trace!("looking up: {:?}", params);
     let plen = params.len();
     'table: for entry in table
         .iter()
@@ -257,7 +257,7 @@ impl VmContext
     pub fn pop_frame(&mut self) -> bool
     {
         let last = self.stack.pop();
-        info!("pushing frame: {:?}", last);
+        info!("popped frame: {:?}", last);
         last.is_some()
     }
 
@@ -266,7 +266,7 @@ impl VmContext
         if let Some(current_frame) = self.stack.last() {
             for (var, val) in current_frame.iter() {
                 if var == name {
-                    info!("stack lookup: {:?}", val);
+                    trace!("stack lookup: {:?}", val);
                     return Some(val.clone());
                 }
             }
@@ -282,7 +282,7 @@ impl VmContext
     // deprecated! consider storing byte code via `set_bytecode` instead
     pub fn set_virtual(&mut self, name: &RefType, params: &VmFunctionParameters, expr: Expr)
     {
-        info!("setting expr: {:?}", expr);
+        trace!("setting expr: {:?}", expr);
         if let Some(func) = self.map.get(name) {
             let table = &mut *(func.borrow_mut());
             table.lookup_set(params, VmFunction::Virtual(Box::new(expr)));
@@ -294,7 +294,7 @@ impl VmContext
 
     pub fn set_bytecode(&mut self, name: &RefType, params: &VmFunctionParameters, co: CodeObject)
     {
-        info!("setting bytecode: {:?}", co);
+        trace!("setting bytecode: {:?}", co);
         if let Some(func) = self.map.get(name) {
             let table = &mut *(func.borrow_mut());
             table.lookup_set(params, VmFunction::ByteCode(co));

@@ -1,5 +1,5 @@
-f(0) = 1
+f(0) = 0
 f(1) = 1
-f(x) = f(x - 1) + f(x)
+f(x) = f(x - 1) + f(x - 2)
 
-f'(x) = print(f(x))
+f'(x) = print({f(x)})

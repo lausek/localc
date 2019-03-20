@@ -275,6 +275,23 @@ mod tests
     }
 
     #[test]
+    fn context_recursion()
+    {
+        let mut vm = Vm::with_stdlib();
+        eq!(vm, "f(0) = 0", Ok(Nil));
+        eq!(vm, "f(1) = 1", Ok(Nil));
+        eq!(vm, "f(x) = f(x - 1) + f(x - 2)", Ok(Nil));
+
+        eq!(vm, "f(0)", Ok(Numeric(0.)));
+        eq!(vm, "f(1)", Ok(Numeric(1.)));
+        eq!(vm, "f(2)", Ok(Numeric(1.)));
+        eq!(vm, "f(3)", Ok(Numeric(2.)));
+        eq!(vm, "f(4)", Ok(Numeric(3.)));
+        eq!(vm, "f(5)", Ok(Numeric(5.)));
+        eq!(vm, "f(9)", Ok(Numeric(34.)));
+    }
+
+    #[test]
     fn test_optimize()
     {
         use crate::ast::Expr::*;

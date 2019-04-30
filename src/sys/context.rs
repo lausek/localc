@@ -40,23 +40,19 @@ macro_rules! native_funcs {
 }
 
 #[derive(Clone, Debug)]
-pub struct VmFunctionTable
-{
+pub struct VmFunctionTable {
     read: Option<VmFunction>,
     overloads: Option<Vec<VmFunctionOverload>>,
 }
 
 #[derive(Clone, Debug)]
-pub struct VmFunctionOverload
-{
+pub struct VmFunctionOverload {
     pub definition: TupleType,
     pub implementation: VmFunction,
 }
 
-impl VmFunctionOverload
-{
-    pub fn new(definition: TupleType, implementation: VmFunction) -> Self
-    {
+impl VmFunctionOverload {
+    pub fn new(definition: TupleType, implementation: VmFunction) -> Self {
         Self {
             definition,
             implementation,
@@ -64,10 +60,8 @@ impl VmFunctionOverload
     }
 }
 
-impl VmFunctionTable
-{
-    pub fn new() -> Self
-    {
+impl VmFunctionTable {
+    pub fn new() -> Self {
         Self {
             read: None,
             // TODO: this should evaluate lazily
@@ -75,37 +69,33 @@ impl VmFunctionTable
         }
     }
 
-    pub fn with_virtual(mut self, params: &VmFunctionParameters, expr: Expr) -> Self
-    {
+    pub fn with_virtual(mut self, params: &VmFunctionParameters, expr: Expr) -> Self {
         self.lookup_set(params, VmFunction::Virtual(Box::new(expr)));
         self
     }
 
-    pub fn with_native(mut self, params: &VmFunctionParameters, func: VmFunctionNative) -> Self
-    {
+    pub fn with_native(mut self, params: &VmFunctionParameters, func: VmFunctionNative) -> Self {
         self.lookup_set(params, VmFunction::Native(func));
         self
     }
 
-    pub fn with_bytecode(mut self, params: &VmFunctionParameters, co: CodeObject) -> Self
-    {
+    pub fn with_bytecode(mut self, params: &VmFunctionParameters, co: CodeObject) -> Self {
         self.lookup_set(params, VmFunction::ByteCode(co));
         self
     }
 
-    pub fn read(&self) -> Option<&VmFunction>
-    {
+    pub fn read(&self) -> Option<&VmFunction> {
         self.read.as_ref()
     }
 
-    pub fn set_read(&mut self, read: VmFunction)
-    {
+    pub fn set_read(&mut self, read: VmFunction) {
         self.read = Some(read);
     }
 
-    pub fn lookup(&self, params: &VmFunctionParameters)
-        -> Option<(Option<TupleType>, &VmFunction)>
-    {
+    pub fn lookup(
+        &self,
+        params: &VmFunctionParameters,
+    ) -> Option<(Option<TupleType>, &VmFunction)> {
         if let Some(params) = params {
             // TODO: optimize lookup
             lookup_func(self.overloads.as_ref().unwrap(), params)
@@ -114,8 +104,7 @@ impl VmFunctionTable
         }
     }
 
-    pub fn lookup_set(&mut self, definition: &VmFunctionParameters, implementation: VmFunction)
-    {
+    pub fn lookup_set(&mut self, definition: &VmFunctionParameters, implementation: VmFunction) {
         if let Some(definition) = definition.as_ref() {
             // TODO: implement insert lookup
             if let Some(bucket) = lookup_func_mut(self.overloads.as_mut().unwrap(), definition) {
@@ -132,8 +121,7 @@ impl VmFunctionTable
 }
 
 #[derive(Clone)]
-pub enum VmFunction
-{
+pub enum VmFunction {
     Virtual(VmFunctionVirtual),
     Native(VmFunctionNative),
     ByteCode(CodeObject),
@@ -143,8 +131,7 @@ pub enum VmFunction
 pub fn lookup_func_mut<'t>(
     table: &'t mut Vec<VmFunctionOverload>,
     params: &TupleType,
-) -> Option<&'t mut VmFunction>
-{
+) -> Option<&'t mut VmFunction> {
     let plen = params.len();
 
     trace!("table: {:?}", table);
@@ -170,8 +157,7 @@ pub fn lookup_func_mut<'t>(
 pub fn lookup_func<'t>(
     table: &'t Vec<VmFunctionOverload>,
     params: &TupleType,
-) -> Option<(Option<TupleType>, &'t VmFunction)>
-{
+) -> Option<(Option<TupleType>, &'t VmFunction)> {
     trace!("table: {:?}", table);
     trace!("looking up: {:?}", params);
     let plen = params.len();
@@ -191,10 +177,8 @@ pub fn lookup_func<'t>(
     None
 }
 
-impl std::fmt::Debug for VmFunction
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
-    {
+impl std::fmt::Debug for VmFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Virtual(n) => write!(f, "{:?}", n),
             Native(_) => write!(f, "<native>"),
@@ -204,25 +188,21 @@ impl std::fmt::Debug for VmFunction
 }
 
 #[derive(Clone, Debug)]
-pub struct VmContext
-{
+pub struct VmContext {
     // TODO: use DoS-unsafe HashMap implementation here (FNV maybe?)
     map: HashMap<RefType, VmContextEntryRef>,
     stack: Vec<VmFrame>,
 }
 
-impl VmContext
-{
-    pub fn new() -> Self
-    {
+impl VmContext {
+    pub fn new() -> Self {
         Self {
             map: HashMap::new(),
             stack: Vec::new(),
         }
     }
 
-    pub fn stdlib() -> Self
-    {
+    pub fn stdlib() -> Self {
         let mut ctx = Self::new();
 
         native_funcs!(ctx.map, "pi", 0, vm_func_pi);
@@ -245,24 +225,20 @@ impl VmContext
     }
 }
 
-impl VmContext
-{
-    pub fn push_frame(&mut self, frame: VmFrame)
-    {
+impl VmContext {
+    pub fn push_frame(&mut self, frame: VmFrame) {
         info!("pushing frame: {:?}", frame);
         self.stack.push(frame);
         assert!(self.stack.len() < MAX_STACK_SIZE, "stack size exceeded");
     }
 
-    pub fn pop_frame(&mut self) -> bool
-    {
+    pub fn pop_frame(&mut self) -> bool {
         let last = self.stack.pop();
         info!("popped frame: {:?}", last);
         last.is_some()
     }
 
-    pub fn get(&self, name: &RefType) -> Option<VmContextEntryRef>
-    {
+    pub fn get(&self, name: &RefType) -> Option<VmContextEntryRef> {
         if let Some(current_frame) = self.stack.last() {
             for (var, val) in current_frame.iter() {
                 if var == name {
@@ -274,14 +250,12 @@ impl VmContext
         self.map.get(name).map(|r| r.clone())
     }
 
-    pub fn set(&mut self, name: &RefType, entry: VmContextEntry)
-    {
+    pub fn set(&mut self, name: &RefType, entry: VmContextEntry) {
         self.map.insert(name.clone(), Rc::new(RefCell::new(entry)));
     }
 
     // deprecated! consider storing byte code via `set_bytecode` instead
-    pub fn set_virtual(&mut self, name: &RefType, params: &VmFunctionParameters, expr: Expr)
-    {
+    pub fn set_virtual(&mut self, name: &RefType, params: &VmFunctionParameters, expr: Expr) {
         trace!("setting expr: {:?}", expr);
         if let Some(func) = self.map.get(name) {
             let table = &mut *(func.borrow_mut());
@@ -292,8 +266,7 @@ impl VmContext
         }
     }
 
-    pub fn set_bytecode(&mut self, name: &RefType, params: &VmFunctionParameters, co: CodeObject)
-    {
+    pub fn set_bytecode(&mut self, name: &RefType, params: &VmFunctionParameters, co: CodeObject) {
         trace!("setting bytecode: {:?}", co);
         if let Some(func) = self.map.get(name) {
             let table = &mut *(func.borrow_mut());
@@ -305,20 +278,17 @@ impl VmContext
     }
 }
 
-fn vm_func_pi(params: &VmFunctionParameters, _ctx: &mut VmContext) -> VmResult
-{
+fn vm_func_pi(params: &VmFunctionParameters, _ctx: &mut VmContext) -> VmResult {
     assert!(params.is_none());
     Ok(Numeric(std::f64::consts::PI))
 }
 
-fn vm_func_e(params: &VmFunctionParameters, _ctx: &mut VmContext) -> VmResult
-{
+fn vm_func_e(params: &VmFunctionParameters, _ctx: &mut VmContext) -> VmResult {
     assert!(params.is_none());
     Ok(Numeric(std::f64::consts::E))
 }
 
-fn vm_func_sqrt(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
-{
+fn vm_func_sqrt(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult {
     let params = run_tuple_exprs(params.as_ref().unwrap(), ctx)?;
     let mut params = params.iter();
     match (params.next(), params.next()) {
@@ -328,8 +298,7 @@ fn vm_func_sqrt(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
     }
 }
 
-fn vm_func_log(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
-{
+fn vm_func_log(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult {
     let params = run_tuple_exprs(params.as_ref().unwrap(), ctx)?;
     let mut params = params.iter();
     match (params.next(), params.next()) {
@@ -339,8 +308,7 @@ fn vm_func_log(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
     }
 }
 
-fn vm_func_if(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
-{
+fn vm_func_if(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult {
     let params = params.as_ref().unwrap();
     assert_eq!(params.len(), 3);
     run_with_ctx(&params.get(0).unwrap(), ctx).and_then(|cond| {
@@ -352,8 +320,7 @@ fn vm_func_if(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
     })
 }
 
-fn vm_func_assert(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
-{
+fn vm_func_assert(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult {
     let params = params.as_ref().unwrap();
     assert_eq!(params.len(), 1);
     match run_with_ctx(&params.get(0).unwrap(), ctx) {
@@ -364,8 +331,7 @@ fn vm_func_assert(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResul
     Ok(Nil)
 }
 
-fn vm_func_print(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
-{
+fn vm_func_print(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult {
     let params = params.as_ref().unwrap();
     assert!(params.len() == 1);
     match params.get(0) {
@@ -380,8 +346,7 @@ fn vm_func_print(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
     Ok(Nil)
 }
 
-fn vm_func_println(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult
-{
+fn vm_func_println(params: &VmFunctionParameters, ctx: &mut VmContext) -> VmResult {
     vm_func_print(params, ctx)?;
     println!();
     Ok(Nil)

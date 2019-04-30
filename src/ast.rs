@@ -1,4 +1,26 @@
-use crate::vm::context::*;
+use super::*;
+
+use lovm::*;
+
+use std::cell::RefCell;
+use std::rc::Rc;
+
+// >>>>>> begin of migratet types
+pub type VmFrame = Vec<(RefType, VmContextEntryRef)>;
+pub type VmContextEntry = VmFunctionTable;
+pub type VmContextEntryRef = Rc<RefCell<VmFunctionTable>>;
+pub type VmContextTable = Vec<VmFunctionTable>;
+pub type VmFunction = gen::FunctionBuilder;
+pub type VmFunctionParameters = Option<TupleType>;
+pub type VmFunctionOverload = TupleType;
+
+#[derive(Clone, Debug)]
+pub struct VmFunctionTable {
+    read: Option<VmFunction>,
+    overloads: Option<Vec<VmFunctionOverload>>,
+}
+
+// <<<<<< end of migratet types
 
 pub type NumType = f64;
 pub type LogType = bool;
@@ -7,26 +29,16 @@ pub type TupleType = Vec<Expr>;
 pub type SetType = Vec<Expr>;
 
 #[derive(Clone, Debug)]
-pub struct GenType
-{
-    pub(crate) constraints: SetType,
-    pub(crate) current: NumType,
-}
-
-#[derive(Clone, Debug)]
-pub enum Value
-{
+pub enum Value {
     Nil,
     Numeric(NumType),
     Logical(LogType),
     Tuple(TupleType),
     Set(SetType),
-    Gen(SetType, GenType),
 }
 
 #[derive(Clone)]
-pub enum Expr
-{
+pub enum Expr {
     Value(Value),
     Comp(Operator, Box<Expr>, Box<Expr>),
 
@@ -36,8 +48,7 @@ pub enum Expr
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Operator
-{
+pub enum Operator {
     Add,
     Sub,
     Mul,
@@ -58,18 +69,14 @@ pub enum Operator
     Store,
 }
 
-impl std::convert::From<NumType> for Value
-{
-    fn from(n: NumType) -> Self
-    {
+impl std::convert::From<NumType> for Value {
+    fn from(n: NumType) -> Self {
         Value::Numeric(n)
     }
 }
 
-impl std::convert::From<&Value> for NumType
-{
-    fn from(v: &Value) -> Self
-    {
+impl std::convert::From<&Value> for NumType {
+    fn from(v: &Value) -> Self {
         match v {
             Value::Numeric(n) => *n,
             _ => unimplemented!(),
@@ -77,18 +84,14 @@ impl std::convert::From<&Value> for NumType
     }
 }
 
-impl std::convert::From<LogType> for Value
-{
-    fn from(l: LogType) -> Self
-    {
+impl std::convert::From<LogType> for Value {
+    fn from(l: LogType) -> Self {
         Value::Logical(l)
     }
 }
 
-impl std::convert::From<&Value> for LogType
-{
-    fn from(v: &Value) -> Self
-    {
+impl std::convert::From<&Value> for LogType {
+    fn from(v: &Value) -> Self {
         match v {
             Value::Numeric(n) => *n != 0.,
             Value::Logical(l) => *l,
@@ -97,10 +100,8 @@ impl std::convert::From<&Value> for LogType
     }
 }
 
-impl std::fmt::Display for Value
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error>
-    {
+impl std::fmt::Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         match self {
             Value::Numeric(n) => write!(f, "{}", n).unwrap(),
             Value::Logical(l) => write!(f, "{}", l).unwrap(),
@@ -110,18 +111,14 @@ impl std::fmt::Display for Value
     }
 }
 
-impl std::fmt::Display for Operator
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error>
-    {
+impl std::fmt::Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         write!(f, "{:?}", self)
     }
 }
 
-impl std::fmt::Debug for Expr
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error>
-    {
+impl std::fmt::Debug for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         match self {
             Expr::Value(v) => write!(f, "{:?}", v),
             Expr::Ref(r) => write!(f, "#{}", r),

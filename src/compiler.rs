@@ -1,156 +1,104 @@
-use crate::ast::*;
+use super::*;
 
-pub type CodeObject = Vec<Instruction>;
+use lovm::gen::*;
+use lovm::*;
+
 pub type CompileResult = Result<CodeObject, String>;
 
-// TODO:
-// the compiler should smoothen out the `Instruction` enum to
-// achieve a smaller memory footprint and flatten the whole interaction.
-// `Params` should further be used to introduce a kind of callstack.
-// `Call` will pop the last `Params` off and use the so gained values
-// for its internal processing. this enables straightforward chains like:
-//
-//  bytecode		| stack
-// -------------------------------------
-//		params		| []
-// 		push 1 		| [1]
-// 		params 		| [1],[]
-// 		push 1 		| [1],[1]
-// 		push 2 		| [1],[1,2]
-// 		call f 		| [1, f(1,2)]
-//		call x 		| g(1, f(1,2))
-//
-// To allow arbitrary functions with `Move`, the rhs of the operation must be
-// popped off the stack instead of passing it as enum field.
-//
-// 		push 1
-// 		move x 	# x = 1
-
-// TODO: stack or register based?
-// a stack based virtual machine would enable a smaller compiled size and
-// cleaner implementation
-// a register based virtual machine could improve performance for large code
-// objects
-
-#[derive(Clone, Debug)]
-pub enum Instruction
-{
-    // set the `params` local variable for calls
-    Params(TupleType),
-    // consumes the `params` variable leaving None in its place
-    Call(RefType),
-    // assigns the `Expr` specified in .1 to the name in .0
-    // consumes the `params` variable leaving None in its place
-    // in this case, the overloading for `params` will be used for futher
-    // operation
-    Move(RefType, Box<Expr>),
-    // loads the current value of reference .0 onto the stack
-    Load(RefType),
-    // stores a constant on the stack
-    Push(Value),
-    // removes the last value on the stack
-    Pop,
-
-    // the following operations consume two arguments from the stack
-    // leaving the operations result in place
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Pow,
-    Rem,
-
-    Eq,
-    Ne,
-    Ge,
-    Gt,
-    Le,
-    Lt,
-
-    And,
-    Or,
+pub fn compile(ast: &Expr) -> CompileResult {
+    let mut func = FunctionBuilder::new();
+    let mut op_stack = vec![];
+    compile_deep(&mut func, &mut op_stack, ast)?;
+    let func = func.build().unwrap();
+    println!("{:?}", func);
+    Ok(func.into())
 }
 
-pub fn compile(ast: &Expr) -> CompileResult
-{
-    let mut code_object = CodeObject::new();
+fn compile_deep(
+    func: &mut FunctionBuilder,
+    op_stack: &mut Vec<Operation>,
+    ast: &Expr,
+) -> Result<(), String> {
     match ast {
-        Expr::Comp(Operator::Store, lhs, rhs) => match lhs {
-            box Expr::Ref(name) => {
-                code_object.extend(vec![Instruction::Move(name.clone(), rhs.clone())])
-            }
-            box Expr::Func(name, Some(params)) => code_object.extend(vec![
-                Instruction::Params(params.clone()),
-                Instruction::Move(name.clone(), rhs.clone()),
-            ]),
-            box Expr::Func(name, None) => {
-                code_object.extend(vec![Instruction::Move(name.clone(), rhs.clone())])
-            }
-            _ => return Err("assignment not allowed".to_string()),
-        },
+        // store must be handled before compilation to still support dynamic function dispatch.
+        Expr::Comp(Operator::Store, _, _) => unimplemented!(),
         Expr::Comp(op, lhs, rhs) => {
-            code_object.extend(compile(&lhs)?);
-            code_object.extend(compile(&rhs)?);
-            code_object.push(Instruction::from(op));
+            op_stack.push(Operation::new(op.into()));
+            println!("lhs {:?}, rhs {:?}", lhs, rhs);
+            compile_deep(func, op_stack, &lhs)?;
+            compile_deep(func, op_stack, &rhs)?;
+            let op = op_stack.pop().unwrap();
+            if let Some(last) = op_stack.last_mut() {
+                last.op(op);
+            } else {
+                func.step(op.end());
+            }
         }
-        Expr::Func(name, Some(params)) => code_object.extend(vec![
-            Instruction::Params(params.clone()),
-            Instruction::Call(name.clone()),
-        ]),
-        Expr::Func(name, None) => code_object.push(Instruction::Call(name.clone())),
-        Expr::Ref(r) => code_object.push(Instruction::Load(r.clone())),
-        Expr::Value(v) => code_object.push(Instruction::Push(v.clone())),
+        Expr::Func(name, Some(params)) => {
+            op_stack.push(Operation::call(name));
+            for param in params.iter() {
+                compile_deep(func, op_stack, &param)?;
+            }
+            let op = op_stack.pop().unwrap();
+            if let Some(last) = op_stack.last_mut() {
+                last.op(op);
+            } else {
+                func.step(op.end());
+            }
+        }
+        Expr::Func(name, None) => {
+            if let Some(last) = op_stack.last_mut() {
+                last.op(Operation::call(name));
+            } else {
+                func.step(Operation::call(name));
+            }
+        }
+        Expr::Ref(r) => {
+            if let Some(last) = op_stack.last_mut() {
+                last.op(r.as_ref());
+            } else {
+                func.step(Operation::push().var(r.clone()).end());
+            }
+        }
+        Expr::Value(crate::ast::Value::Numeric(v)) => {
+            if let Some(last) = op_stack.last_mut() {
+                last.op(*v);
+            } else {
+                func.step(Operation::push().op(*v).end());
+            }
+        }
+        Expr::Value(crate::ast::Value::Logical(v)) => {
+            if let Some(last) = op_stack.last_mut() {
+                last.op(*v);
+            } else {
+                func.step(Operation::push().op(*v).end());
+            }
+        }
+        _ => unimplemented!(),
     }
-    Ok(code_object)
+    Ok(())
 }
 
-impl From<&Operator> for Instruction
-{
-    fn from(from: &Operator) -> Self
-    {
+impl From<&Operator> for OperationType {
+    fn from(from: &Operator) -> Self {
         match from {
-            Operator::Add => Instruction::Add,
-            Operator::Sub => Instruction::Sub,
-            Operator::Mul => Instruction::Mul,
-            Operator::Div => Instruction::Div,
-            Operator::Pow => Instruction::Pow,
-            Operator::Rem => Instruction::Rem,
+            Operator::Add => OperationType::Add,
+            Operator::Sub => OperationType::Sub,
+            Operator::Mul => OperationType::Mul,
+            Operator::Div => OperationType::Div,
+            Operator::Pow => OperationType::Pow,
+            Operator::Rem => OperationType::Rem,
 
+            /*
             Operator::Eq => Instruction::Eq,
             Operator::Ne => Instruction::Ne,
             Operator::Ge => Instruction::Ge,
             Operator::Gt => Instruction::Gt,
             Operator::Le => Instruction::Le,
             Operator::Lt => Instruction::Lt,
-
-            Operator::And => Instruction::And,
-            Operator::Or => Instruction::Or,
-            _ => unimplemented!(),
-        }
-    }
-}
-
-impl From<&Instruction> for Operator
-{
-    fn from(from: &Instruction) -> Self
-    {
-        match from {
-            Instruction::Add => Operator::Add,
-            Instruction::Sub => Operator::Sub,
-            Instruction::Mul => Operator::Mul,
-            Instruction::Div => Operator::Div,
-            Instruction::Pow => Operator::Pow,
-            Instruction::Rem => Operator::Rem,
-
-            Instruction::Eq => Operator::Eq,
-            Instruction::Ne => Operator::Ne,
-            Instruction::Ge => Operator::Ge,
-            Instruction::Gt => Operator::Gt,
-            Instruction::Le => Operator::Le,
-            Instruction::Lt => Operator::Lt,
-
-            Instruction::And => Operator::And,
-            Instruction::Or => Operator::Or,
+            */
+            Operator::And => OperationType::And,
+            Operator::Or => OperationType::Or,
             _ => unimplemented!(),
         }
     }

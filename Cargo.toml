@@ -14,6 +14,8 @@ name = "localc-repl"
 path = "src/bin.rs"
 
 [dependencies]
+#lovm = { git = "https://github.com/lausek/lovm" }
+lovm = { path = "../lovm" }
 ansi_term = "0.11.0"
 env_logger = "0.6.0"
 lalrpop-util = "0.16.3"

@@ -5,6 +5,11 @@ use lovm::*;
 
 pub type CompileResult = Result<CodeObject, String>;
 
+pub fn compile_str(s: &str) -> CompileResult {
+    let expr = ExprParser::new().parse(s.as_ref()).unwrap();
+    compile(&expr)
+}
+
 pub fn compile(ast: &Expr) -> CompileResult {
     let mut func = FunctionBuilder::new();
     let mut op_stack = vec![];
@@ -34,7 +39,7 @@ fn compile_deep(
                 func.step(op.end());
             }
         }
-        Expr::Func(name, Some(params)) => {
+        Expr::Func(name, params) => {
             op_stack.push(Operation::call(name));
             for param in params.iter() {
                 compile_deep(func, op_stack, &param)?;
@@ -44,13 +49,6 @@ fn compile_deep(
                 last.op(op);
             } else {
                 func.step(op.end());
-            }
-        }
-        Expr::Func(name, None) => {
-            if let Some(last) = op_stack.last_mut() {
-                last.op(Operation::call(name));
-            } else {
-                func.step(Operation::call(name));
             }
         }
         Expr::Ref(r) => {

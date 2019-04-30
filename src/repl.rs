@@ -26,18 +26,7 @@ impl Repl {
     }
 
     pub fn run_expr(&mut self, expr: &Expr) -> ReplResult {
-        match expr {
-            Expr::Comp(Operator::Store, lhs, rhs) => match lhs {
-                box Expr::Func(name, Some(params)) => self.runtime.store_var(),
-                box Expr::Ref(name) | box Expr::Func(name, None) => self.runtime.store_var(),
-                _ => Err("assignment not allowed".to_string()),
-            },
-            _ => {
-                // flat expressions can be executed directly
-                let code_object = compiler::compile(expr)?;
-                self.runtime.run(&code_object)
-            }
-        }
+        self.runtime.run_expr(expr)
     }
 
     pub fn repeat(&mut self) -> ReplResult {

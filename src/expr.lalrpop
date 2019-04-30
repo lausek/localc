@@ -51,8 +51,7 @@ Value: Expr = {
 		(Some(s), _) => Expr::Value(Value::Set(s)),
 		_ => Expr::Value(Value::Set(vec![])),
 	},
-    <i:Ident> "(" <t:Tuple> ")" => Expr::Func(i, Some(t)),
-    <i:Ident> "(" ")" => Expr::Func(i, None),
+    <i:Ident> "(" <t:Tuple?> ")" => Expr::Func(i, if let Some(t) = t {t} else {vec![]}),
 };
 
 SumOps: Operator = {

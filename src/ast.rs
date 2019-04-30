@@ -11,7 +11,7 @@ pub type VmContextEntry = VmFunctionTable;
 pub type VmContextEntryRef = Rc<RefCell<VmFunctionTable>>;
 pub type VmContextTable = Vec<VmFunctionTable>;
 pub type VmFunction = gen::FunctionBuilder;
-pub type VmFunctionParameters = Option<TupleType>;
+pub type VmFunctionParameters = TupleType;
 pub type VmFunctionOverload = TupleType;
 
 #[derive(Clone, Debug)]

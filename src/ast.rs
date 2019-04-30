@@ -19,7 +19,6 @@ pub struct VmFunctionTable {
     read: Option<VmFunction>,
     overloads: Option<Vec<VmFunctionOverload>>,
 }
-
 // <<<<<< end of migratet types
 
 pub type NumType = f64;

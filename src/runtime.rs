@@ -18,8 +18,7 @@ impl Runtime {
 
     pub fn store_var(&mut self, name: &Name, expr: &Expr) -> ReplResult {
         println!("storing var");
-        let code_object = compiler::compile(expr)?;
-        let value = self.run(&code_object)?.unwrap();
+        let value = self.run_expr(expr)?.unwrap();
         self.vm.data.globals.insert(name.clone(), value);
         Ok(None)
     }
@@ -31,7 +30,7 @@ impl Runtime {
         expr: &Expr,
     ) -> ReplResult {
         println!("storing function");
-        let code_object = compiler::compile(expr)?;
+        let code_object = compiler::compile_args(expr, params)?;
         self.module.set(name, code_object);
         let module = self.module.build().unwrap();
         match self.vm.data.modules.0.get_mut(0) {

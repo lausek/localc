@@ -10,6 +10,21 @@ pub fn compile_str(s: &str) -> CompileResult {
     compile(&expr)
 }
 
+pub fn compile_args(ast: &Expr, args: &VmFunctionParameters) -> CompileResult {
+    let args = args
+        .iter()
+        .map(|arg| match arg {
+            Expr::Ref(n) => n.clone(),
+            _ => unimplemented!(),
+        })
+        .collect::<Vec<_>>();
+    let mut func = FunctionBuilder::new().with_args(args);
+    let mut op_stack = vec![];
+    compile_deep(&mut func, &mut op_stack, ast)?;
+    let func = func.build().unwrap();
+    Ok(func.into())
+}
+
 pub fn compile(ast: &Expr) -> CompileResult {
     let mut func = FunctionBuilder::new();
     let mut op_stack = vec![];
@@ -53,7 +68,7 @@ fn compile_deep(
         }
         Expr::Ref(r) => {
             if let Some(last) = op_stack.last_mut() {
-                last.op(r.as_ref());
+                last.var(r.as_ref());
             } else {
                 func.step(Operation::push().var(r.clone()).end());
             }

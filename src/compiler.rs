@@ -10,15 +10,15 @@ pub fn compile_str(s: &str) -> CompileResult {
     compile(&expr)
 }
 
-pub fn compile_args(ast: &Expr, args: &VmFunctionParameters) -> CompileResult {
-    let args = args
+pub fn compile_params(ast: &Expr, params: &VmFunctionParameters) -> CompileResult {
+    let params = params
         .iter()
-        .map(|arg| match arg {
+        .map(|param| match param {
             Expr::Ref(n) => n.clone(),
             _ => unimplemented!(),
         })
         .collect::<Vec<_>>();
-    let mut func = FunctionBuilder::new().with_args(args);
+    let mut func = FunctionBuilder::new().with_params(params);
     let mut op_stack = vec![];
     compile_deep(&mut func, &mut op_stack, ast)?;
     let func = func.build().unwrap();

@@ -1,3 +1,7 @@
+pub mod overload;
+
+pub use self::overload::*;
+
 use super::*;
 
 use lovm::gen::*;
@@ -30,7 +34,7 @@ impl Runtime {
         expr: &Expr,
     ) -> ReplResult {
         println!("storing function");
-        let code_object = compiler::compile_args(expr, params)?;
+        let code_object = compiler::compile_params(expr, params)?;
         self.module.set(name, code_object);
         let module = self.module.build().unwrap();
         match self.vm.data.modules.0.get_mut(0) {

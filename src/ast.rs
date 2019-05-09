@@ -25,9 +25,9 @@ pub type NumType = f64;
 pub type LogType = bool;
 pub type RefType = String;
 pub type TupleType = Vec<Expr>;
-pub type SetType = Vec<Expr>;
+pub type SetType = TupleType;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Nil,
     Numeric(NumType),
@@ -36,7 +36,19 @@ pub enum Value {
     Set(SetType),
 }
 
-#[derive(Clone)]
+impl std::cmp::PartialOrd for Value {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        use std::cmp::Ordering;
+        match (self, other) {
+            (Value::Nil, Value::Nil) => Some(Ordering::Equal),
+            (Value::Numeric(s), Value::Numeric(o)) => s.partial_cmp(o),
+            (Value::Logical(s), Value::Logical(o)) => s.partial_cmp(o),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, PartialEq)]
 pub enum Expr {
     Value(Value),
     Comp(Operator, Box<Expr>, Box<Expr>),

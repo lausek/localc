@@ -5,7 +5,7 @@ use lovm::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-// >>>>>> begin of migratet types
+// >>>>>> begin of migrated types
 pub type VmFrame = Vec<(RefType, VmContextEntryRef)>;
 pub type VmContextEntry = VmFunctionTable;
 pub type VmContextEntryRef = Rc<RefCell<VmFunctionTable>>;
@@ -19,7 +19,7 @@ pub struct VmFunctionTable {
     read: Option<VmFunction>,
     overloads: Option<Vec<VmFunctionOverload>>,
 }
-// <<<<<< end of migratet types
+// <<<<<< end of migrated types
 
 pub type NumType = f64;
 pub type LogType = bool;

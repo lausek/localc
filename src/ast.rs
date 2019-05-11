@@ -80,13 +80,13 @@ pub enum Operator {
     Store,
 }
 
-impl std::convert::From<NumType> for Value {
+impl From<NumType> for Value {
     fn from(n: NumType) -> Self {
         Value::Numeric(n)
     }
 }
 
-impl std::convert::From<&Value> for NumType {
+impl From<&Value> for NumType {
     fn from(v: &Value) -> Self {
         match v {
             Value::Numeric(n) => *n,
@@ -95,19 +95,34 @@ impl std::convert::From<&Value> for NumType {
     }
 }
 
-impl std::convert::From<LogType> for Value {
+impl From<LogType> for Value {
     fn from(l: LogType) -> Self {
         Value::Logical(l)
     }
 }
 
-impl std::convert::From<&Value> for LogType {
+impl From<&Value> for LogType {
     fn from(v: &Value) -> Self {
         match v {
             Value::Numeric(n) => *n != 0.,
             Value::Logical(l) => *l,
             _ => unimplemented!(),
         }
+    }
+}
+
+impl From<&str> for Expr {
+    fn from(from: &str) -> Self {
+        Expr::Ref(from.to_string())
+    }
+}
+
+impl<V> From<V> for Expr
+where
+    V: Into<Value>,
+{
+    fn from(v: V) -> Self {
+        Expr::Value(v.into())
     }
 }
 

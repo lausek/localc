@@ -1,5 +1,47 @@
-//#![cfg(test)]
-//
+#![cfg(test)]
+
+use super::*;
+
+use lovm::gen;
+
+#[test]
+fn building_fib() {
+    // let's build the fibonacci function
+    let mut func = crate::runtime::func::Function::new();
+
+    let a1 = gen::FunctionBuilder::new();
+    let a2 = gen::FunctionBuilder::new();
+
+    func.overload(vec![0f64], a1);
+    func.overload(vec![1f64], a2);
+
+    let result = func.build();
+    println!("{:?}", result);
+
+    assert!(true);
+}
+
+#[test]
+fn building_sqrt() {
+    let mut func = crate::runtime::func::Function::new();
+
+    let mut a1 = gen::FunctionBuilder::new();
+    a1.step(gen::Operation::pow().op(0.5).end());
+
+    let mut a2 = gen::FunctionBuilder::new();
+    a2.step(gen::Operation::pop().var("n").end());
+    let exp = gen::Operation::div().op(1).var("n").end();
+    a2.step(gen::Operation::pow().op(exp).end());
+
+    func.overload(vec!["x"], a1);
+    func.overload(vec!["x", "n"], a2);
+
+    let result = func.build();
+    println!("{:?}", result);
+
+    assert!(false);
+}
+
 //use crate::{expr::*, repl::*};
 //
 //macro_rules! eq {

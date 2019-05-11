@@ -1,5 +1,7 @@
+pub mod func;
 pub mod overload;
 
+pub use self::func::*;
 pub use self::overload::*;
 
 use super::*;

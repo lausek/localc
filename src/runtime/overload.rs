@@ -43,6 +43,44 @@ impl Overload {
     }
 }
 
+impl<T> From<Vec<T>> for Overload
+where
+    T: Into<Expr>,
+{
+    fn from(from: Vec<T>) -> Self {
+        let exprs = from.into_iter().map(|f| f.into()).collect::<Vec<_>>();
+        Overload(exprs)
+    }
+}
+
+impl std::cmp::Eq for Overload {}
+
+impl std::cmp::Ord for Overload {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self.count(), other.count()) {
+            (s, o) if s == 0 && o == 0 => Ordering::Equal,
+            (s, o) if s < o => Ordering::Less,
+            (s, o) if s > o => Ordering::Greater,
+            _ => {
+                for (s, o) in self.0.iter().zip(other.iter()) {
+                    let result = match (s, o) {
+                        (Expr::Value(s), Expr::Value(o)) => s.partial_cmp(&o).unwrap(),
+                        (Expr::Ref(s), Expr::Ref(o)) => s.partial_cmp(&o).unwrap(),
+                        (Expr::Value(_), _) => Ordering::Less,
+                        (Expr::Ref(_), _) => Ordering::Greater,
+                        // only `Value` and `Ref` are allowed in overload
+                        _ => unreachable!(),
+                    };
+                    if result != Ordering::Equal {
+                        return result;
+                    }
+                }
+                Ordering::Equal
+            }
+        }
+    }
+}
+
 impl std::cmp::PartialOrd for Overload {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self.count(), other.count()) {
@@ -54,8 +92,8 @@ impl std::cmp::PartialOrd for Overload {
                     let result = match (s, o) {
                         (Expr::Value(s), Expr::Value(o)) => s.partial_cmp(&o),
                         (Expr::Ref(s), Expr::Ref(o)) => s.partial_cmp(&o),
-                        (Expr::Value(s), _) => Some(Ordering::Less),
-                        (Expr::Ref(s), _) => Some(Ordering::Greater),
+                        (Expr::Value(_), _) => Some(Ordering::Less),
+                        (Expr::Ref(_), _) => Some(Ordering::Greater),
                         // only `Value` and `Ref` are allowed in overload
                         _ => unreachable!(),
                     };

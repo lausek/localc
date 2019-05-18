@@ -49,7 +49,6 @@ fn compile_deep(
         Expr::Comp(Operator::Store, _, _) => unimplemented!(),
         Expr::Comp(op, lhs, rhs) => {
             op_stack.push(Operation::new(op.into()));
-            println!("lhs {:?}, rhs {:?}", lhs, rhs);
             compile_deep(func, op_stack, &lhs)?;
             compile_deep(func, op_stack, &rhs)?;
             let op = op_stack.pop().unwrap();

@@ -10,3 +10,8 @@ fac(n) = n * fac(n - 1)
 
 if(true, x, y) = x
 if(false, x, y) = y
+
+and(x, y) = x && y
+or(x, y) = x || y
+
+even(n) = n % 2 == 0

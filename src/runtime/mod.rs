@@ -26,14 +26,12 @@ impl Runtime {
     }
 
     pub fn store_var(&mut self, name: &Name, expr: &Expr) -> ReplResult {
-        println!("storing var");
         let value = self.run_expr(expr)?.unwrap();
         self.vm.data.globals.insert(name.clone(), value);
         Ok(None)
     }
 
     pub fn store_fun(&mut self, name: &Name, params: &TupleType, expr: &Expr) -> ReplResult {
-        println!("storing function");
         if !self.fn_templates.contains_key(name) {
             self.fn_templates.insert(name.clone(), Function::new());
         }
@@ -45,10 +43,7 @@ impl Runtime {
 
         self.module.set(name, co);
 
-        println!("{}", fn_template);
-
         let module = self.module.build().unwrap();
-        println!("{}", module);
         match self.vm.data.modules.0.get_mut(0) {
             Some(slot) => *slot = module,
             _ => self.vm.data.modules.load(&module)?,

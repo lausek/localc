@@ -59,7 +59,6 @@ impl Function {
             atable.branch_if(vtable);
         }
 
-        println!("{:?}", atable);
         atable.step(gen::Operation::ret());
 
         atable.build()

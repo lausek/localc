@@ -14,7 +14,8 @@ pub mod ast;
 pub mod compiler;
 pub mod repl;
 pub mod runtime;
-mod test;
+#[macro_use]
+pub mod test;
 
 lalrpop_mod!(pub expr);
 

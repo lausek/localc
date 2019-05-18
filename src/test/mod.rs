@@ -1,10 +1,13 @@
 #![cfg(test)]
 
+mod perf;
+
 use super::*;
 
 use lovm::gen;
 use lovm::vm;
 
+#[macro_export]
 macro_rules! expect {
     ($repl:expr, $line:expr, $expect:expr) => {{
         fn debug(data: &mut vm::VmData) -> vm::VmResult {

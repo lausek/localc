@@ -37,8 +37,8 @@ pub fn compile(ast: &Expr) -> CompileResult {
     let mut func = FunctionBuilder::new();
     let mut op_stack = vec![];
     compile_deep(&mut func, &mut op_stack, ast)?;
+    func.debug();
     let func = func.build().unwrap();
-    println!("{:?}", func);
     Ok(func.into())
 }
 
@@ -64,8 +64,8 @@ fn compile_deep(
         }
         Expr::Func(name, params) => {
             op_stack.push(Operation::call(name));
-            // param order: last in, first out
-            for param in params.iter().rev() {
+            // calling order does not need `.rev()`
+            for param in params.iter() {
                 compile_deep(func, op_stack, &param)?;
             }
             // pass argc to function call
@@ -114,17 +114,16 @@ impl From<&Operator> for OperationType {
             Operator::Pow => OperationType::Pow,
             Operator::Rem => OperationType::Rem,
 
-            /*
-            Operator::Eq => Instruction::Eq,
-            Operator::Ne => Instruction::Ne,
-            Operator::Ge => Instruction::Ge,
-            Operator::Gt => Instruction::Gt,
-            Operator::Le => Instruction::Le,
-            Operator::Lt => Instruction::Lt,
-            */
+            Operator::Eq => OperationType::CmpEq,
+            Operator::Ne => OperationType::CmpNe,
+            Operator::Ge => OperationType::CmpGe,
+            Operator::Gt => OperationType::CmpGt,
+            Operator::Le => OperationType::CmpLe,
+            Operator::Lt => OperationType::CmpLt,
+
             Operator::And => OperationType::And,
             Operator::Or => OperationType::Or,
-            _ => unimplemented!(),
+            _ => panic!("from not implemented for `{:?}`", from),
         }
     }
 }

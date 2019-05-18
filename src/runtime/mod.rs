@@ -70,16 +70,7 @@ impl Runtime {
             },
             _ => {
                 // no storage location given: execute directly
-                let mut code_object = compiler::compile(expr)?;
-
-                // TODO: check config if debug at return is requested
-                if true {
-                    code_object
-                        .inner
-                        .push(Instruction::Int(vm::Interrupt::Debug as usize));
-                }
-
-                self.run(&code_object)
+                self.run(&compiler::compile(expr)?)
             }
         }
     }
@@ -88,6 +79,9 @@ impl Runtime {
     pub fn run(&mut self, co: &CodeObject) -> ReplResult {
         self.vm.data.state = vm::VmState::Running;
         self.vm.run_object(co)?;
-        Ok(self.vm.data.vstack.pop())
+        let result = self.vm.data.vstack.pop();
+        // clear vstack to avoid stack poisoning through invalid bytecode
+        self.vm.data.vstack.clear();
+        Ok(result)
     }
 }

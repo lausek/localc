@@ -5,76 +5,50 @@ use super::*;
 use lovm::gen;
 use lovm::vm;
 
+macro_rules! expect {
+    ($repl:expr, $line:expr, $expect:expr) => {{
+        fn debug(data: &mut vm::VmData) -> vm::VmResult {
+            let result = data.vstack.last_mut().expect("no value");
+            println!("{:?}", result);
+            assert_eq!(result, &$expect);
+            Ok(())
+        }
+        $repl
+            .runtime
+            .vm
+            .interrupts_mut()
+            .set(vm::Interrupt::Debug as usize, &debug);
+        $repl.run($line).unwrap();
+        $repl
+            .runtime
+            .vm
+            .interrupts_mut()
+            .unset(vm::Interrupt::Debug as usize);
+    }};
+}
+
 #[test]
 fn building_fib() {
-    // let's build the fibonacci function
     let mut repl = Repl::new();
 
     repl.run("f(0) = 0").unwrap();
     repl.run("f(1) = 1").unwrap();
     repl.run("f(x) = f(x - 1) + f(x - 2)").unwrap();
 
-    fn debug(data: &mut vm::VmData) -> vm::VmResult {
-        let frame = data.stack.last_mut().unwrap();
-        println!("{:?}", frame);
-        let result = data.vstack.pop().expect("no value");
-        assert_eq!(result, lovm::Value::I64(0));
-        Ok(())
-    }
-
-    repl.runtime
-        .vm
-        .interrupts_mut()
-        .set(vm::Interrupt::Debug as usize, &debug);
-
-    repl.run("f(8)").unwrap();
-
-    /*
-    let mut func = crate::runtime::func::Function::new();
-
-    let mut v0 = gen::FunctionBuilder::new();
-    v0.step(gen::Operation::ret().op(0).end());
-
-    let mut v1 = gen::FunctionBuilder::new();
-    v1.step(gen::Operation::ret().op(1).end());
-
-    func.overload(vec![0f64], v0.clone());
-    func.overload(vec![1f64], v1.clone());
-    //func.overload(vec!["x"], v1);
-
-    println!("{}", func);
-    let result = func.build().unwrap();
-    println!("{}", result);
-    */
+    expect!(repl, "f(0)", lovm::Value::F64(0.));
+    expect!(repl, "f(1)", lovm::Value::F64(1.));
+    expect!(repl, "f(8)", lovm::Value::F64(21.));
 }
 
 #[test]
 fn building_sqrt() {
-    let mut func = crate::runtime::func::Function::new();
+    let mut repl = Repl::new();
 
-    let mut a1 = gen::FunctionBuilder::new();
-    a1.step(
-        gen::Operation::ret()
-            .op(gen::Operation::pow().op(0.5).end())
-            .end(),
-    );
+    repl.run("sqrt(x) = x ^ (1 / 2)").unwrap();
+    repl.run("sqrt(x,n) = x ^ (1 / n)").unwrap();
 
-    let mut a2 = gen::FunctionBuilder::new();
-    a2.step(gen::Operation::pop().var("n").end());
-    let exp = gen::Operation::div().op(1).var("n").end();
-    a2.step(
-        gen::Operation::ret()
-            .op(gen::Operation::pow().op(exp).end())
-            .end(),
-    );
-
-    func.overload(vec!["x"], a1);
-    func.overload(vec!["x", "n"], a2);
-
-    println!("{}", func);
-    let result = func.build();
-
-    assert!(false);
+    expect!(repl, "sqrt(4)", lovm::Value::F64(2.));
+    expect!(repl, "sqrt(27, 3)", lovm::Value::F64(3.));
 }
 
 #[test]
@@ -83,30 +57,16 @@ fn building_multiargs() {
     // return false if (0, 1)
     // return true if (1, 0)
     // return `eq` if (x, y)
-    let mut func = crate::runtime::func::Function::new();
 
-    let mut v0 = gen::FunctionBuilder::new();
-    v0.step(gen::Operation::ret().op(false).end());
+    let mut repl = Repl::new();
 
-    let mut v1 = gen::FunctionBuilder::new();
-    v1.step(gen::Operation::ret().op(true).end());
+    repl.run("f(0, 1) = false").unwrap();
+    repl.run("f(1, 0) = true").unwrap();
+    repl.run("f(x, y) = x == y").unwrap();
 
-    let mut v2 = gen::FunctionBuilder::new();
-    v2.step(
-        gen::Operation::ret()
-            .op(gen::Operation::cmp_eq().var("x").var("y").end())
-            .end(),
-    );
-
-    func.overload(vec![0f64, 1f64], v0.clone());
-    func.overload(vec![1f64, 0f64], v1.clone());
-    func.overload(vec!["x", "y"], v2.clone());
-
-    println!("{}", func);
-    let result = func.build();
-    println!("{}", result.unwrap());
-
-    assert!(false);
+    expect!(repl, "f(0, 1)", lovm::Value::T(false));
+    expect!(repl, "f(1, 0)", lovm::Value::T(true));
+    expect!(repl, "f(1, 1)", lovm::Value::T(true));
 }
 
 //use crate::{expr::*, repl::*};

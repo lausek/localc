@@ -22,7 +22,6 @@ impl Repl {
 
     pub fn run(&mut self, raw: &str) -> ReplResult {
         let mut program = self.parser.parse(raw).unwrap();
-        println!("{:?}", program);
         self.run_expr(&program)
     }
 

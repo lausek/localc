@@ -80,6 +80,16 @@ pub enum Operator {
     Store,
 }
 
+impl From<&Value> for lovm::Value {
+    fn from(v: &Value) -> Self {
+        match v {
+            Value::Numeric(n) => lovm::Value::F64(*n),
+            Value::Logical(t) => lovm::Value::T(*t),
+            _ => unimplemented!(),
+        }
+    }
+}
+
 impl From<NumType> for Value {
     fn from(n: NumType) -> Self {
         Value::Numeric(n)

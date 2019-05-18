@@ -18,6 +18,9 @@ impl Repl {
     // TODO: load stdlib module later
     pub fn with_stdlib() -> Self {
         Self::new()
+        //let mut new = Self::new();
+        //new.runtime.vm.modules.load();
+        //new
     }
 
     pub fn run(&mut self, raw: &str) -> ReplResult {

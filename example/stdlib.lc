@@ -1,0 +1,12 @@
+pi = 3.1415
+e = 2.7
+
+sqrt(x) = x ^ 0.5
+sqrt(x, n) = x ^ (1 / n)
+
+fac(0) = 1
+fac(1) = 1
+fac(n) = n * fac(n - 1)
+
+if(true, x, y) = x
+if(false, x, y) = y

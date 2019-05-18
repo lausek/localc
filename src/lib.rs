@@ -22,3 +22,5 @@ use ast::*;
 use expr::*;
 use repl::*;
 use runtime::*;
+
+pub type Module = lovm::Module;

@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 pub struct Runtime {
     fn_templates: HashMap<Name, Function>,
-    module: gen::ModuleBuilder,
+    pub module: gen::ModuleBuilder,
     pub(crate) vm: vm::Vm,
 }
 
@@ -53,6 +53,7 @@ impl Runtime {
             Some(slot) => *slot = module,
             _ => self.vm.data.modules.load(&module)?,
         }
+
         Ok(None)
     }
 

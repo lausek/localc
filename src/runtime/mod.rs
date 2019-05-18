@@ -32,12 +32,7 @@ impl Runtime {
         Ok(None)
     }
 
-    pub fn store_fun(
-        &mut self,
-        name: &Name,
-        params: &VmFunctionParameters,
-        expr: &Expr,
-    ) -> ReplResult {
+    pub fn store_fun(&mut self, name: &Name, params: &TupleType, expr: &Expr) -> ReplResult {
         println!("storing function");
         if !self.fn_templates.contains_key(name) {
             self.fn_templates.insert(name.clone(), Function::new());

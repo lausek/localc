@@ -21,8 +21,7 @@ impl Repl {
     }
 
     pub fn run(&mut self, raw: &str) -> ReplResult {
-        let mut program = self.parser.parse(raw).unwrap();
-        self.run_expr(&program)
+        self.run_expr(&self.parser.parse(raw).unwrap())
     }
 
     pub fn run_expr(&mut self, expr: &Expr) -> ReplResult {

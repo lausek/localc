@@ -6,7 +6,6 @@ extern crate env_logger;
 #[macro_use]
 extern crate lalrpop_util;
 extern crate lazy_static;
-#[macro_use]
 extern crate log;
 extern crate rand;
 extern crate regex;
@@ -20,7 +19,6 @@ mod test;
 lalrpop_mod!(pub expr);
 
 use ast::*;
-use compiler::*;
 use expr::*;
 use repl::*;
 use runtime::*;

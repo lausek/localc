@@ -1,26 +1,3 @@
-use super::*;
-
-use lovm::*;
-
-use std::cell::RefCell;
-use std::rc::Rc;
-
-// >>>>>> begin of migrated types
-pub type VmFrame = Vec<(RefType, VmContextEntryRef)>;
-pub type VmContextEntry = VmFunctionTable;
-pub type VmContextEntryRef = Rc<RefCell<VmFunctionTable>>;
-pub type VmContextTable = Vec<VmFunctionTable>;
-pub type VmFunction = gen::FunctionBuilder;
-pub type VmFunctionParameters = TupleType;
-pub type VmFunctionOverload = TupleType;
-
-#[derive(Clone, Debug)]
-pub struct VmFunctionTable {
-    read: Option<VmFunction>,
-    overloads: Option<Vec<VmFunctionOverload>>,
-}
-// <<<<<< end of migrated types
-
 pub type NumType = f64;
 pub type LogType = bool;
 pub type RefType = String;
@@ -55,7 +32,7 @@ pub enum Expr {
 
     Ref(RefType),
     // declaration or invocation
-    Func(RefType, VmFunctionParameters),
+    Func(RefType, TupleType),
 }
 
 #[derive(Clone, Debug, PartialEq)]

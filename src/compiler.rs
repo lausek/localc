@@ -10,10 +10,7 @@ pub fn compile_str(s: &str) -> CompileResult {
     compile(&expr)
 }
 
-pub fn compile_params_lazy(
-    ast: &Expr,
-    params: &VmFunctionParameters,
-) -> Result<FunctionBuilder, String> {
+pub fn compile_params_lazy(ast: &Expr, params: &TupleType) -> Result<FunctionBuilder, String> {
     let params = params
         .iter()
         .filter_map(|param| match param {
@@ -27,7 +24,7 @@ pub fn compile_params_lazy(
     Ok(func)
 }
 
-pub fn compile_params(ast: &Expr, params: &VmFunctionParameters) -> CompileResult {
+pub fn compile_params(ast: &Expr, params: &TupleType) -> CompileResult {
     let func = compile_params_lazy(ast, params)?;
     let func = func.build().unwrap();
     Ok(func.into())

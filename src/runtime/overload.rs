@@ -20,6 +20,20 @@ impl Overload {
         self.0.iter()
     }
 
+    // returns true if the overload matches all arguments
+    pub fn accepts_count(&self, count: usize) -> bool {
+        if self.count() != count {
+            return false;
+        }
+        for arg in self.iter() {
+            match arg {
+                Expr::Ref(_) => {}
+                _ => return false,
+            }
+        }
+        true
+    }
+
     // tests if the arguments supplied satisfy the `Overload`s constraints
     pub fn accepts(&self, args: Vec<Expr>) -> bool {
         // equal if both are empty

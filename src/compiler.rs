@@ -10,17 +10,25 @@ pub fn compile_str(s: &str) -> CompileResult {
     compile(&expr)
 }
 
-pub fn compile_params(ast: &Expr, params: &VmFunctionParameters) -> CompileResult {
+pub fn compile_params_lazy(
+    ast: &Expr,
+    params: &VmFunctionParameters,
+) -> Result<FunctionBuilder, String> {
     let params = params
         .iter()
-        .map(|param| match param {
-            Expr::Ref(n) => n.clone(),
-            _ => unimplemented!(),
+        .filter_map(|param| match param {
+            Expr::Ref(n) => Some(n.clone()),
+            _ => None,
         })
         .collect::<Vec<_>>();
     let mut func = FunctionBuilder::new().with_params(params);
     let mut op_stack = vec![];
     compile_deep(&mut func, &mut op_stack, ast)?;
+    Ok(func)
+}
+
+pub fn compile_params(ast: &Expr, params: &VmFunctionParameters) -> CompileResult {
+    let func = compile_params_lazy(ast, params)?;
     let func = func.build().unwrap();
     Ok(func.into())
 }
@@ -56,9 +64,13 @@ fn compile_deep(
         }
         Expr::Func(name, params) => {
             op_stack.push(Operation::call(name));
-            for param in params.iter() {
+            // param order: last in, first out
+            for param in params.iter().rev() {
                 compile_deep(func, op_stack, &param)?;
             }
+            // pass argc to function call
+            op_stack.last_mut().unwrap().op(params.len());
+
             let op = op_stack.pop().unwrap();
             if let Some(last) = op_stack.last_mut() {
                 last.op(op);

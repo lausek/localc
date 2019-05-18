@@ -3,22 +3,49 @@
 use super::*;
 
 use lovm::gen;
+use lovm::vm;
 
 #[test]
 fn building_fib() {
     // let's build the fibonacci function
+    let mut repl = Repl::new();
+
+    repl.run("f(0) = 0").unwrap();
+    repl.run("f(1) = 1").unwrap();
+    repl.run("f(x) = f(x - 1) + f(x - 2)").unwrap();
+
+    fn debug(data: &mut vm::VmData) -> vm::VmResult {
+        let frame = data.stack.last_mut().unwrap();
+        println!("{:?}", frame);
+        let result = data.vstack.pop().expect("no value");
+        assert_eq!(result, lovm::Value::I64(0));
+        Ok(())
+    }
+
+    repl.runtime
+        .vm
+        .interrupts_mut()
+        .set(vm::Interrupt::Debug as usize, &debug);
+
+    repl.run("f(8)").unwrap();
+
+    /*
     let mut func = crate::runtime::func::Function::new();
 
-    let a1 = gen::FunctionBuilder::new();
-    let a2 = gen::FunctionBuilder::new();
+    let mut v0 = gen::FunctionBuilder::new();
+    v0.step(gen::Operation::ret().op(0).end());
 
-    func.overload(vec![0f64], a1);
-    func.overload(vec![1f64], a2);
+    let mut v1 = gen::FunctionBuilder::new();
+    v1.step(gen::Operation::ret().op(1).end());
 
-    let result = func.build();
-    println!("{:?}", result);
+    func.overload(vec![0f64], v0.clone());
+    func.overload(vec![1f64], v1.clone());
+    //func.overload(vec!["x"], v1);
 
-    assert!(true);
+    println!("{}", func);
+    let result = func.build().unwrap();
+    println!("{}", result);
+    */
 }
 
 #[test]
@@ -26,18 +53,58 @@ fn building_sqrt() {
     let mut func = crate::runtime::func::Function::new();
 
     let mut a1 = gen::FunctionBuilder::new();
-    a1.step(gen::Operation::pow().op(0.5).end());
+    a1.step(
+        gen::Operation::ret()
+            .op(gen::Operation::pow().op(0.5).end())
+            .end(),
+    );
 
     let mut a2 = gen::FunctionBuilder::new();
     a2.step(gen::Operation::pop().var("n").end());
     let exp = gen::Operation::div().op(1).var("n").end();
-    a2.step(gen::Operation::pow().op(exp).end());
+    a2.step(
+        gen::Operation::ret()
+            .op(gen::Operation::pow().op(exp).end())
+            .end(),
+    );
 
     func.overload(vec!["x"], a1);
     func.overload(vec!["x", "n"], a2);
 
+    println!("{}", func);
     let result = func.build();
-    println!("{:?}", result);
+
+    assert!(false);
+}
+
+#[test]
+fn building_multiargs() {
+    // implements crazy logic
+    // return false if (0, 1)
+    // return true if (1, 0)
+    // return `eq` if (x, y)
+    let mut func = crate::runtime::func::Function::new();
+
+    let mut v0 = gen::FunctionBuilder::new();
+    v0.step(gen::Operation::ret().op(false).end());
+
+    let mut v1 = gen::FunctionBuilder::new();
+    v1.step(gen::Operation::ret().op(true).end());
+
+    let mut v2 = gen::FunctionBuilder::new();
+    v2.step(
+        gen::Operation::ret()
+            .op(gen::Operation::cmp_eq().var("x").var("y").end())
+            .end(),
+    );
+
+    func.overload(vec![0f64, 1f64], v0.clone());
+    func.overload(vec![1f64, 0f64], v1.clone());
+    func.overload(vec!["x", "y"], v2.clone());
+
+    println!("{}", func);
+    let result = func.build();
+    println!("{}", result.unwrap());
 
     assert!(false);
 }

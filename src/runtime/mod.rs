@@ -6,18 +6,21 @@ pub use self::overload::*;
 
 use super::*;
 
-use lovm::gen::*;
 use lovm::*;
 
+use std::collections::HashMap;
+
 pub struct Runtime {
-    module: ModuleBuilder,
-    vm: vm::Vm,
+    fn_templates: HashMap<Name, Function>,
+    module: gen::ModuleBuilder,
+    pub(crate) vm: vm::Vm,
 }
 
 impl Runtime {
     pub fn new() -> Self {
         Self {
-            module: ModuleBuilder::new(),
+            fn_templates: HashMap::new(),
+            module: gen::ModuleBuilder::new(),
             vm: vm::Vm::new(),
         }
     }
@@ -36,9 +39,21 @@ impl Runtime {
         expr: &Expr,
     ) -> ReplResult {
         println!("storing function");
-        let code_object = compiler::compile_params(expr, params)?;
-        self.module.set(name, code_object);
+        if !self.fn_templates.contains_key(name) {
+            self.fn_templates.insert(name.clone(), Function::new());
+        }
+
+        let overload_co = compiler::compile_params_lazy(expr, params)?;
+        let fn_template = self.fn_templates.get_mut(name).unwrap();
+        fn_template.overload(params.clone(), overload_co);
+        let co = fn_template.build().unwrap();
+
+        self.module.set(name, co);
+
+        println!("{}", fn_template);
+
         let module = self.module.build().unwrap();
+        println!("{}", module);
         match self.vm.data.modules.0.get_mut(0) {
             Some(slot) => *slot = module,
             _ => self.vm.data.modules.load(&module)?,
@@ -55,7 +70,15 @@ impl Runtime {
             },
             _ => {
                 // no storage location given: execute directly
-                let code_object = compiler::compile(expr)?;
+                let mut code_object = compiler::compile(expr)?;
+
+                // TODO: check config if debug at return is requested
+                if true {
+                    code_object
+                        .inner
+                        .push(Instruction::Int(vm::Interrupt::Debug as usize));
+                }
+
                 self.run(&code_object)
             }
         }

@@ -52,7 +52,11 @@ impl Repl {
     }
 
     pub fn run(&mut self, raw: &str) -> ReplResult {
-        self.run_expr(&self.parser.parse(raw).unwrap())
+        let program = &self.parser.parse(raw);
+        match program {
+            Ok(program) => self.run_expr(program),
+            Err(err) => Err(format!("{:?}", err)),
+        }
     }
 
     pub fn run_expr(&mut self, expr: &Expr) -> ReplResult {

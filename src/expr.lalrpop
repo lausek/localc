@@ -20,7 +20,11 @@ Log: LogType = {
 	"true" => true,
 	"false" => false,
 };
-Num: NumType = r"[+-]?\d+(\.\d)?" => <>.parse::<NumType>().unwrap();
+Num: NumType = r"[+-]?\d+(\.\d+)?" => <>.parse::<NumType>().unwrap();
+
+// TODO: distinguish float from int automatically
+//Num: NumType = r"[+-]?\d+(\.\d)?" => <>.parse::<NumType>().unwrap();
+
 Nil: Value = {
 	"Nil" => Value::Nil
 };

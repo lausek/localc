@@ -29,27 +29,10 @@ fn write_file(file: String, module: Module) {
 }
 
 pub fn main() {
-    let mut repl = repl::Repl::with_stdlib();
-
     let (files, output) = get_program_args();
+    let co = compiler::compile_files(&files).expect("could not compile code");
 
-    for file in files.iter() {
-        match File::open(file.clone()) {
-            Ok(file) => {
-                for line in BufReader::new(file).lines() {
-                    let line = line.unwrap();
-                    if line.is_empty() {
-                        continue;
-                    }
-                    repl.run(&line).expect("error in runtime script");
-                }
-            }
-            _ => panic!("could not open file `{}`", file),
-        }
-    }
-
-    let output = output.unwrap_or("out.llc".to_string());
-    let co = repl.runtime.module.build().unwrap();
+    let output = output.unwrap_or("out.lcc".to_string());
 
     write_file(output, co);
 }

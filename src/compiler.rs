@@ -5,12 +5,34 @@ use lovm::*;
 
 pub type CompileResult = Result<CodeObject, String>;
 
-pub fn compile_str(s: &str) -> CompileResult {
-    let expr = ExprParser::new().parse(s.as_ref()).unwrap();
-    compile(&expr)
+pub fn compile_files(files: &Vec<String>) -> Result<lovm::Module, String> {
+    use std::fs::File;
+    use std::io::Read;
+
+    let mut repl = Repl::new();
+
+    for file in files.iter() {
+        match File::open(file) {
+            Ok(mut file) => {
+                let mut content = String::new();
+                file.read_to_string(&mut content).unwrap();
+                for line in content.lines().filter(|line| !line.is_empty()) {
+                    repl.run(&line).unwrap();
+                }
+            }
+            _ => return Err(format!("could not open file `{}`", file)),
+        }
+    }
+
+    Ok(repl.runtime.module.build().unwrap())
 }
 
-pub fn compile_params_lazy(ast: &Expr, params: &TupleType) -> Result<FunctionBuilder, String> {
+pub fn compile_str(s: &str) -> CompileResult {
+    let expr = ExprParser::new().parse(s.as_ref()).unwrap();
+    compile_expr(&expr)
+}
+
+pub fn compile_with_params_lazy(ast: &Expr, params: &TupleType) -> Result<FunctionBuilder, String> {
     let params = params
         .iter()
         .filter_map(|param| match param {
@@ -24,13 +46,13 @@ pub fn compile_params_lazy(ast: &Expr, params: &TupleType) -> Result<FunctionBui
     Ok(func)
 }
 
-pub fn compile_params(ast: &Expr, params: &TupleType) -> CompileResult {
-    let func = compile_params_lazy(ast, params)?;
+pub fn compile_with_params(ast: &Expr, params: &TupleType) -> CompileResult {
+    let func = compile_with_params_lazy(ast, params)?;
     let func = func.build().unwrap();
     Ok(func.into())
 }
 
-pub fn compile(ast: &Expr) -> CompileResult {
+pub fn compile_expr(ast: &Expr) -> CompileResult {
     let mut func = FunctionBuilder::new();
     let mut op_stack = vec![];
     compile_deep(&mut func, &mut op_stack, ast)?;

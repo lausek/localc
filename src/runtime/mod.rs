@@ -36,7 +36,7 @@ impl Runtime {
             self.fn_templates.insert(name.clone(), Function::new());
         }
 
-        let overload_co = compiler::compile_params_lazy(expr, params)?;
+        let overload_co = compiler::compile_with_params_lazy(expr, params)?;
         let fn_template = self.fn_templates.get_mut(name).unwrap();
         fn_template.overload(params.clone(), overload_co);
         let co = fn_template.build().unwrap();
@@ -61,7 +61,7 @@ impl Runtime {
             },
             _ => {
                 // no storage location given: execute directly
-                self.run(&compiler::compile(expr)?)
+                self.run(&compiler::compile_expr(expr)?)
             }
         }
     }

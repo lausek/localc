@@ -4,24 +4,38 @@ use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 
-fn get_program_args() -> (Vec<String>, Option<String>) {
+#[derive(Default)]
+struct Config {
+    verbose: bool,
+    input_files: Vec<String>,
+    output_file: Option<String>,
+}
+
+impl Config {
+    fn output_file(&self) -> String {
+        match self.output_file.as_ref() {
+            Some(f) => f.clone(),
+            _ => "out.lcc".to_string(),
+        }
+    }
+}
+
+fn get_config_from_args() -> Config {
     let mut args = env::args().skip(1);
-    let mut files = vec![];
-    let mut output = None;
+    let mut config = Config::default();
 
     while let Some(arg) = args.next() {
         match arg.as_ref() {
-            "-o" => {
-                output = Some(args.next().expect("no output file"));
-            }
-            _ => files.push(arg),
+            "-v" => config.verbose = true,
+            "-o" => config.output_file = Some(args.next().expect("no output file")),
+            _ => config.input_files.push(arg),
         }
     }
 
-    (files, output)
+    config
 }
 
-fn write_file(file: String, module: Module) {
+fn write_file(file: &str, module: Module) {
     match File::create(file.clone()) {
         Ok(mut file) => file.write_all(&module.serialize().unwrap()).unwrap(),
         _ => panic!("could not open file `{}`", file),
@@ -29,10 +43,13 @@ fn write_file(file: String, module: Module) {
 }
 
 pub fn main() {
-    let (files, output) = get_program_args();
-    let co = compiler::compile_files(&files).expect("could not compile code");
+    let config = get_config_from_args();
 
-    let output = output.unwrap_or("out.lcc".to_string());
+    if config.input_files.is_empty() {
+        panic!("no input files given");
+    }
 
-    write_file(output, co);
+    let co = compiler::compile_files(&config.input_files).expect("could not compile code");
+
+    write_file(&config.output_file(), co);
 }

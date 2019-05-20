@@ -52,8 +52,7 @@ impl Repl {
     }
 
     pub fn run(&mut self, raw: &str) -> ReplResult {
-        let program = &self.parser.parse(raw);
-        match program {
+        match &self.parser.parse(raw) {
             Ok(program) => self.run_expr(program),
             Err(err) => Err(format!("{:?}", err)),
         }

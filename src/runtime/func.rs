@@ -109,7 +109,7 @@ fn create_case(
             Expr::Ref(_) => {}
             Expr::Value(v) => {
                 let name = format!("arg{}", i);
-                case.step(gen::Operation::cmp_eq().var(name).op(v).end());
+                case.step(gen::Operation::cmp_eq().var(name).op(v.clone()).end());
                 if 0 < comps {
                     case.step(gen::Operation::and());
                 }

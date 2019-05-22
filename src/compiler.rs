@@ -117,7 +117,15 @@ fn compile_deep(
                 func.step(Operation::push().op(*v).end());
             }
         }
-        _ => unimplemented!(),
+        Expr::Value(crate::ast::Value::Tuple(tuple)) => {
+            // TODO: this could cause stack indexing problems
+            if let Some(last) = op_stack.last_mut() {
+                last.op(tuple.clone());
+            } else {
+                func.step(Operation::push().op(tuple.clone()).end());
+            }
+        }
+        other => print!("`{:?}` not yet implemented", other),
     }
     Ok(())
 }

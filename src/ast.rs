@@ -57,11 +57,24 @@ pub enum Operator {
     Store,
 }
 
-impl From<&Value> for lovm::Value {
-    fn from(v: &Value) -> Self {
+impl From<Expr> for lovm::gen::OpValue {
+    fn from(v: Expr) -> Self {
         match v {
-            Value::Numeric(n) => lovm::Value::F64(*n),
-            Value::Logical(t) => lovm::Value::T(*t),
+            Expr::Value(v) => Self::from(v),
+            Expr::Ref(name) => Self::from(name.as_ref()),
+            // TODO: add these
+            //Expr::Comp(op, lhs, rhs)
+            //Expr::Func(fname, args)
+            _ => unimplemented!(),
+        }
+    }
+}
+
+impl From<Value> for lovm::Value {
+    fn from(v: Value) -> Self {
+        match v {
+            Value::Numeric(n) => lovm::Value::F64(n),
+            Value::Logical(t) => lovm::Value::T(t),
             _ => unimplemented!(),
         }
     }

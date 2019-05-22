@@ -67,7 +67,19 @@ impl Repl {
 
         for line in std::io::stdin().lock().lines() {
             let script = line.unwrap();
-            println!("{:?}", self.run(&script));
+            match self.run(&script) {
+                Ok(Some(lovm::Value::Ref(handle))) => {
+                    let object = self
+                        .runtime
+                        .vm
+                        .data
+                        .obj_pool
+                        .get(&handle)
+                        .expect("invalid ref");
+                    println!("{:?}", object)
+                }
+                result => println!("{:?}", result),
+            }
         }
 
         Ok(None)

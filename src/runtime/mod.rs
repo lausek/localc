@@ -60,6 +60,7 @@ impl Runtime {
                 _ => Err("assignment not allowed".to_string()),
             },
             _ => {
+                // TODO: if this returns a reference to an temporary object; drop it to save memory
                 // no storage location given: execute directly
                 self.run(&compiler::compile_expr(expr)?)
             }
@@ -72,7 +73,7 @@ impl Runtime {
         self.vm.run_object(co)?;
         let result = self.vm.data.vstack.pop();
         // clear vstack to avoid stack poisoning through invalid bytecode
-        self.vm.data.vstack.clear();
+        assert_eq!(self.vm.data.vstack.drain(..).len(), 0);
         Ok(result)
     }
 }

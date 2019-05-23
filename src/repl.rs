@@ -3,7 +3,7 @@ use super::*;
 pub type ReplResult = Result<Option<lovm::Value>, String>;
 
 // include content of stdlib here
-const STDLIB: &str = include_str!("./lib/stdlib.lc");
+const STDLIB: &str = include_str!("./lclib/stdlib.lc");
 
 pub struct Repl {
     pub parser: ExprParser,

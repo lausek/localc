@@ -1,3 +1,5 @@
+use super::*;
+
 pub type NumType = f64;
 pub type LogType = bool;
 pub type RefType = String;
@@ -59,13 +61,44 @@ pub enum Operator {
 
 impl From<Expr> for lovm::gen::OpValue {
     fn from(v: Expr) -> Self {
+        use lovm::gen::*;
+
         match v {
             Expr::Value(v) => Self::from(v),
             Expr::Ref(name) => Self::from(name.as_ref()),
             // TODO: add these
-            //Expr::Comp(op, lhs, rhs)
-            //Expr::Func(fname, args)
-            _ => unimplemented!(),
+            Expr::Comp(op, lhs, rhs) => {
+                let ty = match op {
+                    Operator::Add => OperationType::Add,
+                    Operator::Sub => OperationType::Sub,
+                    Operator::Mul => OperationType::Mul,
+                    Operator::Div => OperationType::Div,
+                    Operator::Pow => OperationType::Pow,
+                    Operator::Rem => OperationType::Rem,
+                    Operator::Eq => OperationType::CmpEq,
+                    Operator::Ne => OperationType::CmpNe,
+                    Operator::Ge => OperationType::CmpGe,
+                    Operator::Gt => OperationType::CmpGt,
+                    Operator::Le => OperationType::CmpLe,
+                    Operator::Lt => OperationType::CmpLt,
+                    Operator::And => OperationType::And,
+                    Operator::Or => OperationType::Or,
+                    Operator::Store => OperationType::Ass,
+                };
+                let mut comp = Operation::new(ty);
+                OpValue::Operation(comp.op(*lhs).op(*rhs).end())
+            }
+            Expr::Func(fname, args) => {
+                let argc = args.len();
+                let mut call = Operation::call(&fname);
+
+                for arg in args.into_iter() {
+                    call.op(arg);
+                }
+
+                call.op(argc);
+                OpValue::Operation(call.end())
+            }
         }
     }
 }

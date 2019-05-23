@@ -72,8 +72,11 @@ impl Runtime {
         self.vm.data.state = vm::VmState::Running;
         self.vm.run_object(co)?;
         let result = self.vm.data.vstack.pop();
+
         // clear vstack to avoid stack poisoning through invalid bytecode
-        assert_eq!(self.vm.data.vstack.drain(..).len(), 0);
+        self.vm.data.vstack.clear();
+        //assert_eq!(self.vm.data.vstack.drain(..).len(), 0);
+
         Ok(result)
     }
 }

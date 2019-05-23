@@ -67,7 +67,7 @@ fn compile_deep(
     ast: &Expr,
 ) -> Result<(), String> {
     match ast {
-        // store must be handled before compilation to still support dynamic function dispatch.
+        // store must be handled before compilation to support dynamic function dispatch.
         Expr::Comp(Operator::Store, _, _) => unimplemented!(),
         Expr::Comp(op, lhs, rhs) => {
             op_stack.push(Operation::new(op.into()));

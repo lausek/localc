@@ -17,3 +17,6 @@ and(x, y) = x && y
 or(x, y) = x || y
 
 even(n) = n % 2 == 0
+
+solve(p, q) = (p, q)
+solve(a, b, c) = (a, b, c)

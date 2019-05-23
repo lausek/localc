@@ -11,6 +11,7 @@ pub enum Value {
     Nil,
     Numeric(NumType),
     Logical(LogType),
+    Str(lovm::Str),
     Tuple(TupleType),
     Set(SetType),
 }
@@ -65,7 +66,7 @@ impl From<Expr> for lovm::gen::OpValue {
 
         match v {
             Expr::Value(v) => Self::from(v),
-            Expr::Ref(name) => Self::from(name.as_ref()),
+            Expr::Ref(name) => OpValue::Operation(Operation::push().var(name).end()),
             // TODO: add these
             Expr::Comp(op, lhs, rhs) => {
                 let ty = match op {
@@ -146,7 +147,7 @@ impl From<&Value> for LogType {
 
 impl From<&str> for Expr {
     fn from(from: &str) -> Self {
-        Expr::Ref(from.to_string())
+        Expr::Value(Value::Str(from.into()))
     }
 }
 

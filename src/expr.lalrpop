@@ -21,6 +21,7 @@ Log: LogType = {
 	"false" => false,
 };
 Num: NumType = r"[+-]?\d+(\.\d+)?" => <>.parse::<NumType>().unwrap();
+Str: lovm::Str = r"'.*'" => <>.parse::<lovm::Str>().unwrap();
 
 // TODO: distinguish float from int automatically
 //Num: NumType = r"[+-]?\d+(\.\d)?" => <>.parse::<NumType>().unwrap();
@@ -36,6 +37,7 @@ Ident: String = r"[a-zA-z][\w']*\??" => String::from(<>);
 Value: Expr = {
     Log => Expr::Value(Value::Logical(<>)),
     Num => Expr::Value(Value::Numeric(<>)),
+    Str => Expr::Value(Value::Str(<>)),
     Nil => Expr::Value(<>),
     Ident => Expr::Ref(<>),
 	"(" <t:Tuple> ")" => {

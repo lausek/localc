@@ -16,6 +16,24 @@ List<Over>: Vec<Over> = {
 	<o:Over> => vec![o],
 };
 
+//Set: Vec<(Option<Expr>, Expr)> = vec![];
+Set: Vec<(Option<Expr>, Expr)> = {
+    <s:Set> "," <v:Expr> => {
+        let mut s = s;
+        match v {
+            Expr::Comp(Operator::Store, key, val) => s.push((Some(*key), *val)),
+            _ => s.push((None, v)),
+        }
+        s
+    },
+    <Expr> => {
+        match <> {
+            Expr::Comp(Operator::Store, key, val) => vec![(Some(*key), *val)],
+            _ => vec![(None, <>)],
+        }
+    },
+};
+
 Log: LogType = {
 	"true" => true,
 	"false" => false,
@@ -31,7 +49,6 @@ Nil: Value = {
 };
 
 Tuple = List<Expr>;
-Set = List<Expr>;
 Ident: String = r"[a-zA-z][\w']*\??" => String::from(<>);
 
 Value: Expr = {
@@ -57,6 +74,13 @@ Value: Expr = {
 		(Some(s), _) => Expr::Value(Value::Set(s)),
 		_ => Expr::Value(Value::Set(vec![])),
 	},
+	//"{" <s:Set> "," <k:(<Expr> Assign)?> <v:Expr> "}" => {
+	//	let mut s = s;
+	//	s.push(k, v);
+	//	s
+	//},
+	//"{" <k:(<Expr> Assign)?> <v:Expr> "}" => vec![(k, v)],
+    //"{" "}" => vec![],
     <i:Ident> "(" <t:Tuple?> ")" => Expr::Func(i, if let Some(t) = t {t} else {vec![]}),
 };
 
@@ -70,10 +94,6 @@ FactorOps: Operator = {
 	"/" => Operator::Div,
 	"%" => Operator::Rem,
 	"^" => Operator::Pow,
-};
-
-VmOps: Operator = {
-	"=" => Operator::Store,
 };
 
 OrOps: Operator = {
@@ -93,7 +113,11 @@ CompareOps: Operator = {
     "<" => Operator::Lt,
 };
 
+Assign: Operator = {
+	"=" => Operator::Store,
+};
+
 Computations = Tier<SumOps, Tier<FactorOps, Value>>;
 Compares = Tier<CompareOps, Computations>;
 Logic = Tier<OrOps, Tier<AndOps, Compares>>;
-pub Expr = Tier<VmOps, Logic>;
+pub Expr = Tier<Assign, Logic>;

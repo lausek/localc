@@ -189,6 +189,25 @@ fn context_example() {
     expect!(repl, "f(x)", lovm::Value::F64(4.));
 }
 
+#[test]
+fn tuples() {
+    use lovm::vm::object_pool::*;
+
+    let mut repl = Repl::new();
+
+    repl.run("f(n) = n ^ 2").unwrap();
+    expect!(repl, "(1,2,3,f(2))", lovm::Value::Ref(1));
+
+    let tuple = repl.runtime.vm.data.obj_pool.get(&1).unwrap();
+    let mut cmp_arr = Array::new();
+    cmp_arr.append(lovm::Value::F64(1.));
+    cmp_arr.append(lovm::Value::F64(2.));
+    cmp_arr.append(lovm::Value::F64(3.));
+    cmp_arr.append(lovm::Value::F64(4.));
+
+    assert!(tuple == &ObjectKind::Array(cmp_arr));
+}
+
 //#[test]
 //fn test_stdlib() {
 //    let mut repl = Repl::with_stdlib();

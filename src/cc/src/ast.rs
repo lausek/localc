@@ -4,7 +4,7 @@ pub type NumType = f64;
 pub type LogType = bool;
 pub type RefType = String;
 pub type TupleType = Vec<Expr>;
-pub type SetType = TupleType;
+pub type SetType = Vec<(Option<Expr>, Expr)>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
@@ -65,6 +65,7 @@ impl From<Expr> for lovm::gen::OpValue {
         use lovm::gen::*;
 
         match v {
+            Expr::Value(Value::Set(set)) => unimplemented!(),
             Expr::Value(v) => Self::from(v),
             Expr::Ref(name) => OpValue::Operation(Operation::push().var(name).end()),
             // TODO: add these
@@ -103,6 +104,12 @@ impl From<Expr> for lovm::gen::OpValue {
         }
     }
 }
+
+//impl From<Vec<(Option<Expr>, Expr)>> for lovm::gen::OpValue {
+//    fn from(from: Vec<(Option<Expr>, Expr)>) -> Self {
+//        unimplemented!()
+//    }
+//}
 
 impl From<Value> for lovm::Value {
     fn from(v: Value) -> Self {

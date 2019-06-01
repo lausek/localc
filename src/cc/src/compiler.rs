@@ -138,6 +138,14 @@ fn compile_deep(
                 func.step(Operation::push().op(tuple.clone()).end());
             }
         }
+        Expr::Value(crate::ast::Value::Set(set)) => {
+            // TODO: this could cause stack indexing problems
+            if let Some(last) = op_stack.last_mut() {
+                last.op(set.clone());
+            } else {
+                func.step(Operation::push().op(set.clone()).end());
+            }
+        }
         other => print!("`{:?}` not yet implemented", other),
     }
     Ok(())

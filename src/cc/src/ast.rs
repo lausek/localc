@@ -105,12 +105,6 @@ impl From<Expr> for lovm::gen::OpValue {
     }
 }
 
-//impl From<Vec<(Option<Expr>, Expr)>> for lovm::gen::OpValue {
-//    fn from(from: Vec<(Option<Expr>, Expr)>) -> Self {
-//        unimplemented!()
-//    }
-//}
-
 impl From<Value> for lovm::Value {
     fn from(v: Value) -> Self {
         match v {

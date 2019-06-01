@@ -208,6 +208,23 @@ fn tuples() {
     assert!(tuple == &ObjectKind::Array(cmp_arr));
 }
 
+#[test]
+fn sets() {
+    use lovm::vm::object_pool::*;
+
+    let mut repl = Repl::new();
+
+    expect!(repl, "{ x = 10, 1, y = 20 }", lovm::Value::Ref(1));
+
+    let set = repl.runtime.vm.data.obj_pool.get(&1).unwrap();
+    let mut cmp_obj = Object::new();
+    cmp_obj.set(&lovm::Value::Str("x".to_string()), lovm::Value::F64(10.));
+    cmp_obj.append(lovm::Value::F64(1.));
+    cmp_obj.set(&lovm::Value::Str("y".to_string()), lovm::Value::F64(20.));
+
+    assert!(set == &ObjectKind::Object(cmp_obj));
+}
+
 //#[test]
 //fn test_stdlib() {
 //    let mut repl = Repl::with_stdlib();

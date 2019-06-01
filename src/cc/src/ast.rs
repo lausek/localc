@@ -1,6 +1,21 @@
 use super::*;
 
-pub type NumType = f64;
+pub fn numeric(raw: &str) -> NumType {
+    let re = regex::Regex::new(r"[+-]?\d+(\.\d+)?").unwrap();
+    let groups = re.captures(raw).unwrap();
+    if let Some(_) = groups.get(1) {
+        NumType::Rational(raw.parse::<f64>().unwrap())
+    } else {
+        NumType::Natural(raw.parse::<i64>().unwrap())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum NumType {
+    Natural(i64),
+    Rational(f64),
+}
+
 pub type LogType = bool;
 pub type RefType = String;
 pub type TupleType = Vec<Expr>;
@@ -21,7 +36,8 @@ impl std::cmp::PartialOrd for Value {
         use std::cmp::Ordering;
         match (self, other) {
             (Value::Nil, Value::Nil) => Some(Ordering::Equal),
-            (Value::Numeric(s), Value::Numeric(o)) => s.partial_cmp(o),
+            (Value::Numeric(NumType::Natural(s)), Value::Numeric(NumType::Natural(o))) => s.partial_cmp(o),
+            (Value::Numeric(NumType::Rational(s)), Value::Numeric(NumType::Rational(o))) => s.partial_cmp(o),
             (Value::Logical(s), Value::Logical(o)) => s.partial_cmp(o),
             _ => None,
         }
@@ -108,7 +124,8 @@ impl From<Expr> for lovm::gen::OpValue {
 impl From<Value> for lovm::Value {
     fn from(v: Value) -> Self {
         match v {
-            Value::Numeric(n) => lovm::Value::F64(n),
+            Value::Numeric(NumType::Natural(n)) => lovm::Value::I64(n),
+            Value::Numeric(NumType::Rational(n)) => lovm::Value::F64(n),
             Value::Logical(t) => lovm::Value::T(t),
             Value::Str(s) => lovm::Value::Str(s),
             _ => panic!("not expected lovm value `{:?}`", v),
@@ -125,7 +142,7 @@ impl From<NumType> for Value {
 impl From<&Value> for NumType {
     fn from(v: &Value) -> Self {
         match v {
-            Value::Numeric(n) => *n,
+            Value::Numeric(n) => n.clone(),
             _ => unimplemented!(),
         }
     }
@@ -140,7 +157,8 @@ impl From<LogType> for Value {
 impl From<&Value> for LogType {
     fn from(v: &Value) -> Self {
         match v {
-            Value::Numeric(n) => *n != 0.,
+            Value::Numeric(NumType::Natural(n)) => *n != 0,
+            Value::Numeric(NumType::Rational(n)) => *n != 0.,
             Value::Logical(l) => *l,
             _ => unimplemented!(),
         }
@@ -165,7 +183,8 @@ where
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         match self {
-            Value::Numeric(n) => write!(f, "{}", n).unwrap(),
+            Value::Numeric(NumType::Natural(n)) => write!(f, "{}", n).unwrap(),
+            Value::Numeric(NumType::Rational(n)) => write!(f, "{}", n).unwrap(),
             Value::Logical(l) => write!(f, "{}", l).unwrap(),
             _ => unreachable!(),
         }

@@ -116,7 +116,14 @@ fn compile_deep(
                 func.step(Operation::push().var(r.clone()).end());
             }
         }
-        Expr::Value(crate::ast::Value::Numeric(v)) => {
+        Expr::Value(crate::ast::Value::Numeric(NumType::Natural(v))) => {
+            if let Some(last) = op_stack.last_mut() {
+                last.op(*v);
+            } else {
+                func.step(Operation::push().op(*v).end());
+            }
+        }
+        Expr::Value(crate::ast::Value::Numeric(NumType::Rational(v))) => {
             if let Some(last) = op_stack.last_mut() {
                 last.op(*v);
             } else {

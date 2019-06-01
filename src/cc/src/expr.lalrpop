@@ -16,7 +16,6 @@ List<Over>: Vec<Over> = {
 	<o:Over> => vec![o],
 };
 
-//Set: Vec<(Option<Expr>, Expr)> = vec![];
 Set: Vec<(Option<Expr>, Expr)> = {
     <s:Set> "," <v:Expr> => {
         let mut s = s;
@@ -38,11 +37,10 @@ Log: LogType = {
 	"true" => true,
 	"false" => false,
 };
-Num: NumType = r"[+-]?\d+(\.\d+)?" => <>.parse::<NumType>().unwrap();
+Num: NumType = {
+    r"[+-]?\d+(\.\d+)?" => numeric(<>),
+};
 Str: lovm::Str = r"'.*'" => <>.parse::<lovm::Str>().unwrap();
-
-// TODO: distinguish float from int automatically
-//Num: NumType = r"[+-]?\d+(\.\d)?" => <>.parse::<NumType>().unwrap();
 
 Nil: Value = {
 	"Nil" => Value::Nil
@@ -74,13 +72,6 @@ Value: Expr = {
 		(Some(s), _) => Expr::Value(Value::Set(s)),
 		_ => Expr::Value(Value::Set(vec![])),
 	},
-	//"{" <s:Set> "," <k:(<Expr> Assign)?> <v:Expr> "}" => {
-	//	let mut s = s;
-	//	s.push(k, v);
-	//	s
-	//},
-	//"{" <k:(<Expr> Assign)?> <v:Expr> "}" => vec![(k, v)],
-    //"{" "}" => vec![],
     <i:Ident> "(" <t:Tuple?> ")" => Expr::Func(i, if let Some(t) = t {t} else {vec![]}),
 };
 

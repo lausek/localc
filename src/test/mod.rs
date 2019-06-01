@@ -214,7 +214,8 @@ fn sets() {
 
     let mut repl = Repl::new();
 
-    expect!(repl, "{ x = 10, 1, y = 20 }", lovm::Value::Ref(1));
+    // TODO: won't work because string parser is still a bit stupid
+    expect!(repl, "{ 'x' = 10, 1, 'y' = 20 }", lovm::Value::Ref(1));
 
     let set = repl.runtime.vm.data.obj_pool.get(&1).unwrap();
     let mut cmp_obj = Object::new();

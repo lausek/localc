@@ -110,6 +110,7 @@ impl From<Value> for lovm::Value {
         match v {
             Value::Numeric(n) => lovm::Value::F64(n),
             Value::Logical(t) => lovm::Value::T(t),
+            Value::Str(s) => lovm::Value::Str(s),
             _ => panic!("not expected lovm value `{:?}`", v),
         }
     }

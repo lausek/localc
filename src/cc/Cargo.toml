@@ -1,0 +1,23 @@
+[package]
+name = "localc_cc"
+version = "0.1.0"
+authors = ["lausek <root@lausek.eu>"]
+edition = "2018"
+build = "build.rs"
+
+[[bin]]
+name = "localc-cc"
+path = "src/bin.rs"
+
+[lib]
+name = "localc_cc_lib"
+path = "src/lib.rs"
+
+[dependencies]
+#lovm = { git = "https://github.com/lausek/lovm" }
+lovm = { path = "../../../lovm" }
+lalrpop-util = "0.16.3"
+regex = "*"
+
+[build-dependencies]
+lalrpop = "0.16.3"

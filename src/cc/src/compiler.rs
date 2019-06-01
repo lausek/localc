@@ -9,7 +9,8 @@ pub fn compile_files(files: &Vec<String>) -> Result<lovm::Module, String> {
     use std::fs::File;
     use std::io::Read;
 
-    let mut repl = Repl::new();
+    let mut parser = ExprParser::new();
+    let mut module = ModuleBuilder::new();
 
     for file in files.iter() {
         match File::open(file) {
@@ -17,14 +18,26 @@ pub fn compile_files(files: &Vec<String>) -> Result<lovm::Module, String> {
                 let mut content = String::new();
                 file.read_to_string(&mut content).unwrap();
                 for line in content.lines().filter(|line| !line.is_empty()) {
-                    repl.run(&line).unwrap();
+                    let ast = parser.parse(line).expect("parse error");
+                    //match ast {
+                    //    Expr::Comp(Operator::Store, lhs, rhs) => match lhs {
+                    //        box Expr::Func(name, params) => self.store_fun(name, params, rhs),
+                    //        box Expr::Ref(name) => self.store_var(name, rhs),
+                    //        _ => Err("assignment not allowed".to_string()),
+                    //    },
+                    //    _ => {
+                    //        // TODO: if this returns a reference to an temporary object; drop it to save memory
+                    //        // no storage location given: execute directly
+                    //        self.run(&compiler::compile_expr(expr)?)
+                    //    }
+                    //}
                 }
             }
             _ => return Err(format!("could not open file `{}`", file)),
         }
     }
 
-    Ok(repl.runtime.module.build().unwrap())
+    Ok(module.build().unwrap())
 }
 
 pub fn compile_str(s: &str) -> CompileResult {

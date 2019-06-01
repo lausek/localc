@@ -1,4 +1,4 @@
-use localc::*;
+use localc_cc_lib::*;
 
 use std::env;
 use std::fs::File;
@@ -35,7 +35,7 @@ fn get_config_from_args() -> Config {
     config
 }
 
-fn write_file(file: &str, module: Module) {
+fn write_file(file: &str, module: lovm::Module) {
     match File::create(file.clone()) {
         Ok(mut file) => file.write_all(&module.serialize().unwrap()).unwrap(),
         _ => panic!("could not open file `{}`", file),

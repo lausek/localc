@@ -130,6 +130,13 @@ fn compile_deep(
                 func.step(Operation::push().op(*v).end());
             }
         }
+        Expr::Value(crate::ast::Value::Str(v)) => {
+            if let Some(last) = op_stack.last_mut() {
+                last.op(v.as_ref());
+            } else {
+                func.step(Operation::push().op(v.as_ref()).end());
+            }
+        }
         Expr::Value(crate::ast::Value::Tuple(tuple)) => {
             // TODO: this could cause stack indexing problems
             if let Some(last) = op_stack.last_mut() {
@@ -146,7 +153,7 @@ fn compile_deep(
                 func.step(Operation::push().op(set.clone()).end());
             }
         }
-        other => print!("`{:?}` not yet implemented", other),
+        other => println!("`{:?}` not yet implemented", other),
     }
     Ok(())
 }

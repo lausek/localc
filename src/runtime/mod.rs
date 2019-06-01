@@ -61,8 +61,14 @@ impl Runtime {
             },
             _ => {
                 // TODO: if this returns a reference to an temporary object; drop it to save memory
+                let co = &compiler::compile_expr(expr)?;
+
+                if cfg!(debug_assertions) {
+                    println!("{:?}", co);
+                }
+
                 // no storage location given: execute directly
-                self.run(&compiler::compile_expr(expr)?)
+                self.run(co)
             }
         }
     }

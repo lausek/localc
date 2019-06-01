@@ -18,5 +18,8 @@ or(x, y) = x || y
 
 even(n) = n % 2 == 0
 
-solve(p, q) = (p, q)
-solve(a, b, c) = (a, b, c)
+solve'(p, q, s) = -1 * (p / 2) + s * sqrt((p / 2) ^ 2 - q)
+solve(p, q) = (solve'(p, q, 1), solve'(p, q, -1))
+
+solve'(a, b, c, s) = -1 * b + s * sqrt(b ^ 2 - 4 * a *c)
+solve(a, b, c) = (solve'(a, b, c, 1) / (2 * a), solve'(a, b, c, -1) / (2 * a))

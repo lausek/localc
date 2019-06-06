@@ -1,5 +1,7 @@
 use super::*;
 
+#[allow(dead_code)]
+#[allow(unreachable_code)]
 #[test]
 fn fib() {
     use std::time::*;
@@ -19,9 +21,10 @@ fn fib() {
     repl.run("f(1) = 1").unwrap();
     repl.run("f(x) = f(x - 1) + f(x - 2)").unwrap();
 
-    for i in 0..46 {
+    for i in 32..46 {
+        let call = format!("f({})", i);
         let start = Instant::now();
-        repl.run(&format!("f({})", i)).unwrap();
+        repl.run(&call).unwrap();
         let end = Instant::now();
         let time = end.duration_since(start);
 

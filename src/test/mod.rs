@@ -119,12 +119,7 @@ fn numeric() {
     expect!(repl, "10.0 * (2 + 1)", lovm::Value::F64(30.));
     expect!(repl, "10.0 * (2 * (2 + 1) - 1) - 1", lovm::Value::F64(49.));
 
-    // TODO:
-    //eq!("10 * [2 + 1]", Ok(Numeric(30.0)));
-    //eq!("10 * [2*(2 + 1) - 1] - 1", Ok(Numeric(49.0)));
-    // reducing prefixes
-    //eq!("--1", Ok(Numeric(1.0)));
-    // multiplication without parens
+    // TODO: multiplication without parens
     //eq!("3*-1", Ok(Numeric(-3.0)));
     //eq!("-(1+2)", Ok(Numeric(-3.0)));
 }

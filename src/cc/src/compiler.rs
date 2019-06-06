@@ -145,7 +145,6 @@ fn compile_deep(
             }
         }
         Expr::Value(crate::ast::Value::Tuple(tuple)) => {
-            // TODO: this could cause stack indexing problems
             if let Some(last) = op_stack.last_mut() {
                 last.op(tuple.clone());
             } else {
@@ -153,7 +152,6 @@ fn compile_deep(
             }
         }
         Expr::Value(crate::ast::Value::Set(set)) => {
-            // TODO: this could cause stack indexing problems
             if let Some(last) = op_stack.last_mut() {
                 last.op(set.clone());
             } else {

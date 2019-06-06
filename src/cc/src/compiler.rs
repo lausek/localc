@@ -5,12 +5,12 @@ use lovm::*;
 
 pub type CompileResult = Result<CodeObject, String>;
 
-pub fn compile_files(files: &Vec<String>) -> Result<lovm::Module, String> {
+pub fn compile_files(files: &Vec<String>) -> Result<Unit, String> {
     use std::fs::File;
     use std::io::Read;
 
     let mut parser = ExprParser::new();
-    let mut module = ModuleBuilder::new();
+    let mut unit = UnitBuilder::new();
 
     for file in files.iter() {
         match File::open(file) {
@@ -37,7 +37,7 @@ pub fn compile_files(files: &Vec<String>) -> Result<lovm::Module, String> {
         }
     }
 
-    Ok(module.build().unwrap())
+    Ok(unit.build().unwrap())
 }
 
 pub fn compile_str(s: &str) -> CompileResult {

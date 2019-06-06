@@ -18,17 +18,17 @@ impl Repl {
         }
     }
 
-    // TODO: load stdlib module later
+    // TODO: load stdlib unit later
     pub fn with_stdlib() -> Self {
         use std::fs::File;
         use std::io::{Read, Write};
 
-        let module = match File::open("/tmp/stdlib.lcc") {
+        let unit = match File::open("/tmp/stdlib.lcc") {
             Ok(mut file) => {
                 let mut buffer = vec![];
                 file.read_to_end(&mut buffer).unwrap();
                 // TODO: if this failes, compile again
-                Module::deserialize(&buffer).expect("invalid code in stdlib")
+                Unit::deserialize(&buffer).expect("invalid code in stdlib")
             }
             _ => {
                 let mut repl = Repl::new();
@@ -40,14 +40,14 @@ impl Repl {
                     repl.run(&line).unwrap();
                 }
 
-                let module = repl.runtime.module.build().expect("building stdlib failed");
-                compiled.write_all(&module.serialize().unwrap()).unwrap();
-                module
+                let unit = repl.runtime.unit.build().expect("building stdlib failed");
+                compiled.write_all(&unit.serialize().unwrap()).unwrap();
+                unit
             }
         };
 
         let mut new = Self::new();
-        new.runtime.vm.data.modules.load(&module).unwrap();
+        new.runtime.vm.data.units.load(&unit).unwrap();
         new
     }
 

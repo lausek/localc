@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 pub struct Runtime {
     fn_templates: HashMap<Name, Function>,
-    pub module: gen::ModuleBuilder,
+    pub unit: gen::UnitBuilder,
     pub(crate) vm: vm::Vm,
 }
 
@@ -20,7 +20,7 @@ impl Runtime {
     pub fn new() -> Self {
         Self {
             fn_templates: HashMap::new(),
-            module: gen::ModuleBuilder::new(),
+            unit: gen::UnitBuilder::new(),
             vm: vm::Vm::new(),
         }
     }
@@ -41,12 +41,12 @@ impl Runtime {
         fn_template.overload(params.clone(), overload_co);
         let co = fn_template.build().unwrap();
 
-        self.module.set(name, co);
+        self.unit.set(name, co);
 
-        let module = self.module.build().unwrap();
-        match self.vm.data.modules.0.get_mut(0) {
-            Some(slot) => *slot = module,
-            _ => self.vm.data.modules.load(&module)?,
+        let unit = self.unit.build().unwrap();
+        match self.vm.data.units.0.get_mut(0) {
+            Some(slot) => *slot = unit,
+            _ => self.vm.data.units.load(&unit)?,
         }
 
         Ok(None)

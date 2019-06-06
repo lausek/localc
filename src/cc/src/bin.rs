@@ -35,9 +35,9 @@ fn get_config_from_args() -> Config {
     config
 }
 
-fn write_file(file: &str, module: lovm::Module) {
+fn write_file(file: &str, unit: Unit) {
     match File::create(file.clone()) {
-        Ok(mut file) => file.write_all(&module.serialize().unwrap()).unwrap(),
+        Ok(mut file) => file.write_all(&unit.serialize().unwrap()).unwrap(),
         _ => panic!("could not open file `{}`", file),
     }
 }

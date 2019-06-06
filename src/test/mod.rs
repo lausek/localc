@@ -4,8 +4,8 @@ mod perf;
 
 use super::*;
 
-use lovm::gen;
-use lovm::vm;
+#[allow(unused_imports)]
+use lovm::{gen, vm, *};
 
 #[macro_export]
 macro_rules! expect {
@@ -38,17 +38,17 @@ fn fib() {
     repl.run("f(1) = 1").unwrap();
     repl.run("f(x) = f(x - 1) + f(x - 2)").unwrap();
 
-    expect!(repl, "f(0)", lovm::Value::F64(0.));
-    expect!(repl, "f(1)", lovm::Value::F64(1.));
-    expect!(repl, "f(8)", lovm::Value::F64(21.));
+    expect!(repl, "f(0)", lovm::Value::I64(0));
+    expect!(repl, "f(1)", lovm::Value::I64(1));
+    expect!(repl, "f(8)", lovm::Value::I64(21));
 }
 
 #[test]
 fn sqrt() {
     let mut repl = Repl::new();
 
-    repl.run("sqrt(x) = x ^ (1 / 2)").unwrap();
-    repl.run("sqrt(x,n) = x ^ (1 / n)").unwrap();
+    repl.run("sqrt(x) = 1.0 * x ^ (1.0 / 2)").unwrap();
+    repl.run("sqrt(x,n) = 1.0 * x ^ (1.0 / n)").unwrap();
 
     expect!(repl, "sqrt(4)", lovm::Value::F64(2.));
     expect!(repl, "sqrt(27, 3)", lovm::Value::F64(3.));
@@ -77,47 +77,47 @@ fn numeric() {
     let mut repl = Repl::new();
 
     // addition
-    expect!(repl, "1 + 1", lovm::Value::F64(2.));
-    expect!(repl, "18 + 18", lovm::Value::F64(36.));
+    expect!(repl, "1 + 1", lovm::Value::I64(2));
+    expect!(repl, "18 + 18", lovm::Value::I64(36));
 
     // subtraction
-    expect!(repl, "18 - 18", lovm::Value::F64(0.));
+    expect!(repl, "18 - 18", lovm::Value::I64(0));
 
     // multiplication
-    expect!(repl, "18 * 18", lovm::Value::F64(324.));
+    expect!(repl, "18 * 18", lovm::Value::I64(324));
 
     // division
-    expect!(repl, "18 / 18", lovm::Value::F64(1.));
+    expect!(repl, "18 / 18", lovm::Value::I64(1));
 
     // power
-    expect!(repl, "10 ^ 3", lovm::Value::F64(1000.));
+    expect!(repl, "10 ^ 3", lovm::Value::I64(1000));
 
     // modulo
-    expect!(repl, "8 % 2", lovm::Value::F64(0.));
-    expect!(repl, "9 % 2", lovm::Value::F64(1.));
+    expect!(repl, "8 % 2", lovm::Value::I64(0));
+    expect!(repl, "9 % 2", lovm::Value::I64(1));
 
     // division with zero
     //err!("18 / 0", "division by zero not allowed");
 
     // different priority
-    expect!(repl, "1 + 4 * 5", lovm::Value::F64(21.));
-    expect!(repl, "(1 + 4) * 5", lovm::Value::F64(25.));
-    expect!(repl, "(1 + 4) * 5 / 2", lovm::Value::F64(12.5));
+    expect!(repl, "1 + 4 * 5", lovm::Value::I64(21));
+    expect!(repl, "(1 + 4) * 5", lovm::Value::I64(25));
+    expect!(repl, "(1.0 + 4) * 5 / 2", lovm::Value::F64(12.5));
 
     // addition & subtraction
     expect!(
         repl,
         "1 + 1 - 1 + 1 - 1 + 1 - 1 + 1 - 1",
-        lovm::Value::F64(1.)
+        lovm::Value::I64(1)
     );
 
     // multiplication & division
-    expect!(repl, "2 * 5 / 2 * 5 / 2 * 5", lovm::Value::F64(62.5));
+    expect!(repl, "2.0 * 5 / 2 * 5 / 2 * 5", lovm::Value::F64(62.5));
 
     // mixed
-    expect!(repl, "2 + 10 / 2 - 2 * 1 + 1", lovm::Value::F64(6.));
-    expect!(repl, "10 * (2 + 1)", lovm::Value::F64(30.));
-    expect!(repl, "10 * (2 * (2 + 1) - 1) - 1", lovm::Value::F64(49.));
+    expect!(repl, "2.0 + 10 / 2 - 2 * 1 + 1", lovm::Value::F64(6.));
+    expect!(repl, "10.0 * (2 + 1)", lovm::Value::F64(30.));
+    expect!(repl, "10.0 * (2 * (2 + 1) - 1) - 1", lovm::Value::F64(49.));
 
     // TODO:
     //eq!("10 * [2 + 1]", Ok(Numeric(30.0)));
@@ -181,17 +181,17 @@ fn context_example() {
     expect!(repl, "odd(1)", lovm::Value::T(true));
     expect!(repl, "odd(2)", lovm::Value::T(false));
 
-    expect!(repl, "f(1)", lovm::Value::F64(10.));
-    expect!(repl, "f(x)", lovm::Value::F64(100.));
+    expect!(repl, "f(1)", lovm::Value::I64(10));
+    expect!(repl, "f(x)", lovm::Value::I64(100));
 
     repl.run("my_const = 2").unwrap();
-    expect!(repl, "f(1)", lovm::Value::F64(2.));
-    expect!(repl, "f(x)", lovm::Value::F64(4.));
+    expect!(repl, "f(1)", lovm::Value::I64(2));
+    expect!(repl, "f(x)", lovm::Value::I64(4));
 }
 
 #[test]
 fn tuples() {
-    use lovm::vm::object_pool::*;
+    use lovm::vm::object::*;
 
     let mut repl = Repl::new();
 
@@ -199,31 +199,39 @@ fn tuples() {
     expect!(repl, "(1,2,3,f(2))", lovm::Value::Ref(1));
 
     let tuple = repl.runtime.vm.data.obj_pool.get(&1).unwrap();
-    let mut cmp_arr = Array::new();
-    cmp_arr.append(lovm::Value::F64(1.));
-    cmp_arr.append(lovm::Value::F64(2.));
-    cmp_arr.append(lovm::Value::F64(3.));
-    cmp_arr.append(lovm::Value::F64(4.));
+    let cmp_obj = ObjectKind::Array(
+        vec![
+            lovm::Value::I64(1),
+            lovm::Value::I64(2),
+            lovm::Value::I64(3),
+            lovm::Value::I64(4),
+        ]
+        .into(),
+    );
 
-    assert!(tuple == &ObjectKind::Array(cmp_arr));
+    assert!(tuple.inner == cmp_obj);
 }
 
 #[test]
 fn sets() {
-    use lovm::vm::object_pool::*;
+    use lovm::vm::object::*;
 
     let mut repl = Repl::new();
 
     // TODO: won't work because string parser is still a bit stupid
-    expect!(repl, "{ 'x' = 10, 1, 'y' = 20 }", lovm::Value::Ref(1));
+    expect!(repl, "{ 5 = 10, 1.0, 4 = 20 }", lovm::Value::Ref(1));
 
     let set = repl.runtime.vm.data.obj_pool.get(&1).unwrap();
-    let mut cmp_obj = Object::new();
-    cmp_obj.set(&lovm::Value::Str("x".to_string()), lovm::Value::F64(10.));
-    cmp_obj.append(lovm::Value::F64(1.));
-    cmp_obj.set(&lovm::Value::Str("y".to_string()), lovm::Value::F64(20.));
 
-    assert!(set == &ObjectKind::Object(cmp_obj));
+    match &set.inner {
+        ObjectKind::Dict(got) => {
+            let got = got.inner();
+            assert_eq!(got[&lovm::Value::I64(5)], lovm::Value::I64(10));
+            assert_eq!(got[&lovm::Value::I64(4)], lovm::Value::I64(20));
+            assert_eq!(got[&lovm::Value::I64(1)], lovm::Value::F64(1.));
+        }
+        _ => unreachable!(),
+    }
 }
 
 //#[test]

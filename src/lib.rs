@@ -17,4 +17,4 @@ use localc_cc_lib::{ast::*, compiler, expr::*};
 use repl::*;
 use runtime::*;
 
-pub type Module = lovm::Module;
+pub type Unit = lovm::Unit;

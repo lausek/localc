@@ -10,7 +10,7 @@ use std::slice::Iter;
 
 #[derive(Debug)]
 pub struct Function {
-    overloads: Vec<(Overload, FunctionBuilder)>,
+    overloads: Vec<(Overload, CodeBuilder)>,
 }
 
 impl std::fmt::Display for Function {
@@ -27,7 +27,7 @@ impl Function {
         Self { overloads: vec![] }
     }
 
-    pub fn overload<T>(&mut self, overload: T, fb: FunctionBuilder)
+    pub fn overload<T>(&mut self, overload: T, fb: CodeBuilder)
     where
         T: Into<Overload>,
     {
@@ -45,7 +45,7 @@ impl Function {
     pub fn build(&self) -> Result<CodeObject, ()> {
         // every localc function takes an obligatory parameter for specifying the argument
         // amount that was meant to be passed
-        let mut atable = FunctionBuilder::new().with_params(vec!["argc"]);
+        let mut atable = CodeBuilder::new().with_params(vec!["argc"]);
         let mut it = self.overloads.iter().peekable();
 
         while it.peek().is_some() {
@@ -61,7 +61,7 @@ impl Function {
 
         atable.step(gen::Operation::ret());
 
-        atable.build()
+        atable.build(true)
     }
 }
 
@@ -77,13 +77,13 @@ impl Function {
 //  way all cases will be nested in another allowing for correct `jf` branching.
 
 // if the atable jumps to such a block, we need to pop the desired argument count from the stack
-fn build_vtable(it: &mut Peekable<Iter<(Overload, FunctionBuilder)>>) -> (usize, FunctionBuilder) {
+fn build_vtable(it: &mut Peekable<Iter<(Overload, CodeBuilder)>>) -> (usize, CodeBuilder) {
     let first = it.next().unwrap();
     let argc = first.0.count();
     // generate default arguments in form `arg0, arg1, ... argn`
     let params = (0..argc).map(|i| format!("arg{}", i)).collect::<Vec<_>>();
     // default arguments are popped off the stack here
-    let mut cases = FunctionBuilder::new().with_params(params);
+    let mut cases = CodeBuilder::new().with_params(params);
 
     cases.branch(create_case(it, &first));
 
@@ -94,10 +94,10 @@ fn build_vtable(it: &mut Peekable<Iter<(Overload, FunctionBuilder)>>) -> (usize,
 }
 
 fn create_case(
-    it: &mut Peekable<Iter<(Overload, FunctionBuilder)>>,
-    (overload, fb): &(Overload, FunctionBuilder),
-) -> FunctionBuilder {
-    let mut case = FunctionBuilder::new();
+    it: &mut Peekable<Iter<(Overload, CodeBuilder)>>,
+    (overload, fb): &(Overload, CodeBuilder),
+) -> CodeBuilder {
+    let mut case = CodeBuilder::new();
     let argc = overload.count();
 
     // not all values can be compared (e.g. variable idents), so

@@ -45,7 +45,7 @@ pub fn compile_str(s: &str) -> CompileResult {
     compile_expr(&expr)
 }
 
-pub fn compile_with_params_lazy(ast: &Expr, params: &TupleType) -> Result<FunctionBuilder, String> {
+pub fn compile_with_params_lazy(ast: &Expr, params: &TupleType) -> Result<CodeBuilder, String> {
     let params = params
         .iter()
         .filter_map(|param| match param {
@@ -53,7 +53,7 @@ pub fn compile_with_params_lazy(ast: &Expr, params: &TupleType) -> Result<Functi
             _ => None,
         })
         .collect::<Vec<_>>();
-    let mut func = FunctionBuilder::new().with_params(params);
+    let mut func = CodeBuilder::new().with_params(params);
     let mut op_stack = vec![];
     compile_deep(&mut func, &mut op_stack, ast)?;
     Ok(func)
@@ -61,21 +61,21 @@ pub fn compile_with_params_lazy(ast: &Expr, params: &TupleType) -> Result<Functi
 
 pub fn compile_with_params(ast: &Expr, params: &TupleType) -> CompileResult {
     let func = compile_with_params_lazy(ast, params)?;
-    let func = func.build().unwrap();
+    let func = func.build(true).unwrap();
     Ok(func.into())
 }
 
 pub fn compile_expr(ast: &Expr) -> CompileResult {
-    let mut func = FunctionBuilder::new();
+    let mut func = CodeBuilder::new();
     let mut op_stack = vec![];
     compile_deep(&mut func, &mut op_stack, ast)?;
     func.debug();
-    let func = func.build().unwrap();
+    let func = func.build(true).unwrap();
     Ok(func.into())
 }
 
 fn compile_deep(
-    func: &mut FunctionBuilder,
+    func: &mut CodeBuilder,
     op_stack: &mut Vec<Operation>,
     ast: &Expr,
 ) -> Result<(), String> {

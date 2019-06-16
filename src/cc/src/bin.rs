@@ -1,5 +1,7 @@
 use localc_cc_lib::*;
 
+use lovm::*;
+
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};

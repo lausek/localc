@@ -85,20 +85,20 @@ fn build_vtable(it: &mut Peekable<Iter<(Overload, CodeBuilder)>>) -> (usize, Cod
     // default arguments are popped off the stack here
     let mut cases = CodeBuilder::new().with_params(params);
 
-    cases.branch(create_case(it, &first));
+    cases.step(create_case(&first));
 
-    // delimit vtable
-    cases.step(gen::Operation::ret());
+    // if the condition turned out to false, continue with next block
+    while it.peek().as_ref().map_or(false, |(o, _)| argc == o.count()) {
+        let next_arg = it.next().unwrap();
+        let next_case = create_case(next_arg);
+        cases.step(next_case);
+    }
 
     (argc, cases)
 }
 
-fn create_case(
-    it: &mut Peekable<Iter<(Overload, CodeBuilder)>>,
-    (overload, fb): &(Overload, CodeBuilder),
-) -> CodeBuilder {
+fn create_case((overload, fb): &(Overload, CodeBuilder)) -> CodeBuilder {
     let mut case = CodeBuilder::new();
-    let argc = overload.count();
 
     // not all values can be compared (e.g. variable idents), so
     // how many components really add up to the final condition?
@@ -120,33 +120,38 @@ fn create_case(
         }
     }
 
-    let args = overload
-        .iter()
-        .enumerate()
-        .filter_map(|(i, param)| match param {
-            Expr::Ref(_) => Some(format!("arg{}", i)),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-
-    // if the condition turned out to false, continue with next block
-    if it.peek().as_ref().map_or(false, |(o, _)| argc == o.count()) {
-        let next_arg = it.next().unwrap();
-        let next_case = create_case(it, next_arg);
-        case.branch_else(next_case);
-    // if the current condition does not accept all arguments,
-    // but is the last one with same argc just return
-    } else if !overload.accepts_count(argc) {
-        case.branch_else(vec![gen::Operation::ret()]);
+    // TODO: this push could be avoided somehow
+    // in `match-everything` conditions we have to push a default value
+    if comps == 0 {
+        case.step(Operation::push().op(true).end());
     }
 
-    // calling order does not need `.rev()`
-    for arg in args.into_iter() {
-        case.step(gen::Operation::push().var(arg).end());
-    }
+    let yes_branch = {
+        let args = overload
+            .iter()
+            .enumerate()
+            .filter_map(|(i, param)| match param {
+                Expr::Ref(_) => Some(format!("arg{}", i)),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
 
-    // will not reach this place if condition was false
-    case.branch(fb.clone());
+        // this branch will be executed if the condition generated above is true
+        let mut yes_branch = CodeBuilder::new();
+
+        // add prelude for passing function arguments
+        // calling order does not need `.rev()`
+        for arg in args.into_iter() {
+            yes_branch.step(gen::Operation::push().var(arg).end());
+        }
+
+        yes_branch.step(fb.clone());
+        yes_branch.step(Operation::ret());
+
+        yes_branch
+    };
+
+    case.branch_if(yes_branch);
 
     case
 }

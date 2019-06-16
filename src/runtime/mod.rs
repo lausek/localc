@@ -61,7 +61,7 @@ impl Runtime {
             },
             _ => {
                 // TODO: if this returns a reference to an temporary object; drop it to save memory
-                let co = &compiler::compile_expr(expr)?;
+                let co = compiler::compile_expr(expr)?;
 
                 if cfg!(debug_assertions) {
                     println!("{:?}", co);
@@ -74,7 +74,9 @@ impl Runtime {
     }
 
     // thin wrapper for repl
-    pub fn run(&mut self, co: &CodeObject) -> ReplResult {
+    pub fn run(&mut self, co: CodeObject) -> ReplResult {
+        let co = co.into_ref();
+
         self.vm.data.state = vm::VmState::Running;
         self.vm.run_object(co)?;
         let result = self.vm.data.vstack.pop();
